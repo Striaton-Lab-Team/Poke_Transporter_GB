@@ -1521,7 +1521,7 @@ void mystery_gift_script::writebytetooffset(u8 byte, u32 offset)
 
 void mystery_gift_script::init_npc_location(u8 bank, u8 map, u8 npc)
 {
-    mg_script[0] = 0x33; // File ID?
+    mg_script[0] = MGSCRIPT_MAGIC_VALUE;
     mg_script[1] = bank;
     mg_script[2] = map;
     mg_script[3] = npc;

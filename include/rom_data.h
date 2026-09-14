@@ -79,6 +79,7 @@ public:
     u8 npc_id;
     u8 npc_palette;
 
+    #define MGSCRIPT_MAGIC_VALUE 0x33
     u8 def_map_bank;
     u8 def_map_id;
     u8 def_npc_id;
