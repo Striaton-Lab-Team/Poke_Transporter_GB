@@ -9,6 +9,7 @@
 #include "PTGB_chunk1_lz10_bin.h"
 #include "PTGB_chunk2_lz10_bin.h"
 #include "RSEFRLG_chunk0_lz10_bin.h"
+#include "TUTORIAL_chunk0_lz10_bin.h"
 
 static const u8 *CREDITS_chunk_list[] = {CREDITS_chunk0_lz10_bin};
 static const u8 *GB_chunk_list[] = {GB_chunk0_lz10_bin};
@@ -16,6 +17,7 @@ static const u8 *GENERAL_chunk_list[] = {GENERAL_chunk0_lz10_bin};
 static const u8 *PKMN_NAMES_chunk_list[] = {PKMN_NAMES_chunk0_lz10_bin, PKMN_NAMES_chunk1_lz10_bin};
 static const u8 *PTGB_chunk_list[] = {PTGB_chunk0_lz10_bin, PTGB_chunk1_lz10_bin, PTGB_chunk2_lz10_bin};
 static const u8 *RSEFRLG_chunk_list[] = {RSEFRLG_chunk0_lz10_bin};
+static const u8 *TUTORIAL_chunk_list[] = {TUTORIAL_chunk0_lz10_bin};
 
 void get_text_table_chunks(u32 tableIndex, const u8 ***chunkList, u32 *numChunks, u32 *chunkSize)
 {
@@ -47,6 +49,10 @@ void get_text_table_chunks(u32 tableIndex, const u8 ***chunkList, u32 *numChunks
     case PKMN_NAMES_INDEX:
         *chunkList = PKMN_NAMES_chunk_list;
         *numChunks = sizeof(PKMN_NAMES_chunk_list) / sizeof(PKMN_NAMES_chunk_list[0]);
+        break;
+    case TUTORIAL_INDEX:
+        *chunkList = TUTORIAL_chunk_list;
+        *numChunks = sizeof(TUTORIAL_chunk_list) / sizeof(TUTORIAL_chunk_list[0]);
         break;
     default:
         *chunkList = NULL;
