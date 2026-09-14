@@ -802,7 +802,7 @@ bool run_conditional(int index)
     {
         byte boxRemovalPayload[31];
         int arrayIndex = 0;
-        for (int i = 29; i >= 0; i--)
+        for (int i = (globalLinkCable.lang == JPN_ID ? 29 : 19); i >= 0; i--)
         {
             if (box.getGen3Pokemon(i)->isValid)
             {
