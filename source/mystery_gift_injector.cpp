@@ -230,6 +230,7 @@ static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *sectio
     u8 decompressionBuffer[4096];
     u16 gen3Charset[256];
     u32 bytesInjected;
+    // the reason for using std::array for these is simply to be able to use initializer lists below.
     std::array<u8, 8> section30TextSequence;
     std::array<u8, 4> scriptTextSequence;
     u8 textGreetEntryIndex;
