@@ -230,7 +230,7 @@ static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *sectio
     u8 decompressionBuffer[4096];
     u16 gen3Charset[256];
     u32 bytesInjected;
-    std::array<u8, 12> section30TextSequence;
+    std::array<u8, 8> section30TextSequence;
     std::array<u8, 4> scriptTextSequence;
     u8 textGreetEntryIndex;
     u8 youMustBeEntryIndex;
@@ -288,7 +288,7 @@ static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *sectio
 
     load_localized_charset(gen3Charset, 3, convertLangCodeIntoLanguage(curr_GBA_rom.language));
 
-    for(unsigned i=0; i < 10; ++i)
+    for(unsigned i=0; i < 8; ++i)
     {
         bytesInjected = injectTextEntryIntoBuffer(gen3Charset, section30Buffer, textReader, section30TextSequence[i]);
         section30Buffer += bytesInjected;
