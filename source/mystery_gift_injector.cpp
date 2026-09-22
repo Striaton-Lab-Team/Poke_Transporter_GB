@@ -174,6 +174,7 @@ static void __attribute__((noinline)) injectBoxIntoSection30(PokeBox* box, u8* s
         {
             tonccpy(curSection30, curr_pkmn->dataArrayPtr, POKEMON_SIZE);
 
+            curr_pkmn->decryptSubstructures();
             dex_nums[i] = curr_pkmn->getSpeciesIndexNumber();
         }
 

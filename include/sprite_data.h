@@ -97,16 +97,17 @@ extern OBJ_ATTR *grabbed_front_sprite;
 #define TYPES_PAL1 3
 #define TYPES_PAL2 4
 #define GB_CART_PAL 5
-#define FLAG_PAL 6
-#define MENU_PAL_RED 7
-#define MENU_PAL_BLU 8
-#define MENU_PAL_GRN 9
-#define MENU_PAL_BRN 10
-#define MENU_PAL_PNK 11
+#define GB_FLAG_PAL 6
+#define GBA_FLAG_PAL 7
+#define MENU_PAL_RED 8
+#define MENU_PAL_BLU 9
+#define MENU_PAL_GRN 10
+#define MENU_PAL_BRN 11
+#define MENU_PAL_PNK 12
 #define MENU_PAL_START MENU_PAL_RED
-#define GBA_CART_PAL 12
-#define LINK_CABLE_PAL 13
-#define PULLED_SPRITE_PAL 14
+#define GBA_CART_PAL 13
+#define LINK_CABLE_PAL 14
+#define PULLED_SPRITE_PAL 15
 
 enum FlexBackground
 {

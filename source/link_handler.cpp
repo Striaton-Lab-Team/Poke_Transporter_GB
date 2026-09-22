@@ -634,6 +634,11 @@ void LinkConnection::handleStateLogic()
     else if (inData == 0xFD && dataOutBufferCurrIndex > 0)
     {
       loadCurrGameFromChecksum();
+      if (currROM == GB_ROM_ERROR)
+      {
+        while(true){}
+        // Add in an error message thrown here once we, ya know, rewrite the text engine to make that possible
+      }
       loadPayloadByROM(currROM);
       exitState = SEND_SPECIFIC_PAYLOAD;
     }

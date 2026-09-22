@@ -87,13 +87,9 @@ See [BUILDING.md](BUILDING.md).
 - [Smogon's Practical Guides to RNG Abuse](https://www.smogon.com/ingame/rng/)
 
 ## ROM Data:
-- [PokeRuby](https://github.com/pret/pokeruby)
-- [PokeFireRed](https://github.com/pret/pokefirered)
-- [PokeEmerald](https://github.com/pret/pokeemerald)
-- [PokeRed](https://github.com/pret/pokered)
-- [PokeYellow](https://github.com/pret/pokeyellow)
-- [PokeGold](https://github.com/pret/pokegold)
-- [PokeCrystal](https://github.com/pret/pokecrystal)
+- [PRET](https://github.com/pret)
+- [Narishma-gb](https://github.com/Narishma-gb)
+- [Hatena Blogのvs_prof_oak] (https://vs-prof-oak.hatenablog.com/entry/2024/03/02/134741)
 
 ## Pokémon Data:
 - [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)
