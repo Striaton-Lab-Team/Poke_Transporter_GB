@@ -53,6 +53,19 @@ static_assert(sizeof(struct ROM_DATA) == 160);
 
 LinkConnection globalLinkCable;
 
+/**
+ * @brief This function determines the expected packet arrival address.
+ *
+ * PTGB sends packets with an additional read pointer. For packets intended to run commands,
+ * this address is set to the address the packet is supposed to arrive at.
+ *
+ * This address depends on the generation of the Game Boy ROM being used.
+ */
+static u16 determinePacketArrivalAddress(int gen)
+{
+  return (gen == 1) ? 0xC6DC : 0xC8DC;
+}
+
 void linkCableIRQ()
 {
   /*
@@ -119,6 +132,7 @@ void LinkConnection::setup(const u16 *debug_charset)
   link_cable_memory_section_index = 0;
   link_cable_array_index = 0;
   writeBufferOffset = 0;
+  pccsROMptr = nullptr;
   dataOutBufferCurrIndex = 0;
 
   linkSPI->activate(LinkSPI::Mode::MASTER_256KBPS);
@@ -620,6 +634,11 @@ void LinkConnection::handleStateLogic()
     else if (inData == 0xFD && dataOutBufferCurrIndex > 0)
     {
       loadCurrGameFromChecksum();
+      if (currROM == GB_ROM_ERROR)
+      {
+        while(true){}
+        // Add in an error message thrown here once we, ya know, rewrite the text engine to make that possible
+      }
       loadPayloadByROM(currROM);
       exitState = SEND_SPECIFIC_PAYLOAD;
     }
@@ -1290,7 +1309,7 @@ bool LinkConnection::LinkCommand_ReloadCurrentBox(bool waitForCompletion)
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_ReloadCurrentBox, 0x00, 0x00, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_ReloadCurrentBox, 0x00, 0x00, determinePacketArrivalAddress(gen));
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
   if (waitForCompletion)
@@ -1344,7 +1363,7 @@ bool LinkConnection::LinkCommand_TransferPokemon(int boxNumber, byte removalArra
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_TransferPokemon, removalArrayLength + SECONDARY_PAYLOAD_HEADER_SIZE, boxNumber, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_TransferPokemon, removalArrayLength + SECONDARY_PAYLOAD_HEADER_SIZE, boxNumber, determinePacketArrivalAddress(gen));
   linkPacketArr[0].loadSecondaryPayload(removalArray, removalArrayLength);
 
   // REG_TM3D = -0x4000 / 60;
@@ -1372,7 +1391,7 @@ bool LinkConnection::LinkCommand_SoftReset(bool waitForCompletion)
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_SoftReset, 0x00, 0x00, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_SoftReset, 0x00, 0x00, determinePacketArrivalAddress(gen));
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
   if (waitForCompletion)
@@ -1404,11 +1423,11 @@ bool LinkConnection::LinkCommand_ModifySRAMAccess(bool enableSRAM, byte SRAMbank
 
   if (enableSRAM)
   {
-    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x0A, SRAMbank, 0xC6DC);
+    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x0A, SRAMbank, determinePacketArrivalAddress(gen));
   }
   else
   {
-    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x00, 0x00, 0xC6DC);
+    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x00, 0x00, determinePacketArrivalAddress(gen));
   }
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
@@ -1434,7 +1453,7 @@ bool LinkConnection::LinkCommand_RunSecondaryPayload(byte payload[], int payload
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_RunSecondaryPayload, payloadLength + SECONDARY_PAYLOAD_HEADER_SIZE, 0x00, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_RunSecondaryPayload, payloadLength + SECONDARY_PAYLOAD_HEADER_SIZE, 0x00, determinePacketArrivalAddress(gen));
   linkPacketArr[0].loadSecondaryPayload(payload, payloadLength);
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);

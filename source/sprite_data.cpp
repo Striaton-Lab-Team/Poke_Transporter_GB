@@ -871,9 +871,9 @@ void load_select_sprites(GameBoyROM currROM)
         break;
     }
 
-    load_sprite_compressed(gb_flag, gb_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    load_sprite_compressed(gba_flag, gb_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    tonccpy(pal_obj_mem + (FLAG_PAL * 16), gb_flag_palette, 16); // Grit is being stupid.
+    load_sprite_compressed(gb_flag, gb_flag_tiles, curr_tile_id, GB_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    load_sprite_compressed(gba_flag, gb_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    tonccpy(pal_obj_mem + (GB_FLAG_PAL * 16), gb_flag_palette, 16); // Grit is being stupid.
 
     const unsigned int *gba_cart_tiles = 0;
     const unsigned short *gba_cart_palette = 0;
@@ -945,9 +945,9 @@ void load_select_sprites(GameBoyROM currROM)
         break;
     }
 
-    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    tonccpy(pal_obj_mem + (FLAG_PAL * 16), gba_flag_palette, 16); // Grit is being stupid.
+    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    tonccpy(pal_obj_mem + (GBA_FLAG_PAL * 16), gba_flag_palette, 16); // Grit is being stupid.
 
 }
 // tile ID, VH Flip, Palette Bank
