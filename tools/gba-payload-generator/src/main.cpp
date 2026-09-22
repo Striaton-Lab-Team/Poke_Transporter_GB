@@ -168,7 +168,7 @@ static void generatePayloadsForLanguage(const char* outputPath, char languageCod
         generateOutputPath(outputPathBuffer, outputPath, "section30", gbaRomDataArray + i);
 
         printf("[gba-payload-generator]: Generating payload: %s\n", outputPathBuffer);
-        builder.build_script(rsefrlgTableReader, gbaRomDataArray[i], gen3CharsetEng, nullptr, true);
+        builder.build_script(rsefrlgTableReader, gbaRomDataArray[i], gen3CharsetEng);
 
         // strip the injected texts again for compression sake.
         // doing it this way preserves the pointers (because the text had been temporarily injected)

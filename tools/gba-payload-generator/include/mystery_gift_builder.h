@@ -249,7 +249,6 @@
 #define CPU_SET_16BIT     0x00000000
 #define CPU_SET_32BIT     0x04000000
 
-class PokeBox;
 class UncompressedFileContainerReader;
 
 class mystery_gift_script
@@ -294,7 +293,7 @@ public:
      * You're in control!
      */
     mystery_gift_script(u8 *save_section_30_buffer, u8 *mg_script_buffer);
-    void build_script(UncompressedFileContainerReader &text_table_reader, const struct ROM_DATA& curr_GBA_rom, const uint16_t *gen3_charset, PokeBox *box, bool first_time);
+    void build_script(UncompressedFileContainerReader &text_table_reader, const struct ROM_DATA& curr_GBA_rom, const uint16_t *gen3_charset);
 
     /**
      * @brief This function removes the inserted textbox_var texts again from the payloads.
