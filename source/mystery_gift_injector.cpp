@@ -189,33 +189,44 @@ static Language convertLangCodeIntoLanguage(int32_t langCode)
  * NOTE: this code originated from text_var::insert_text() and has been adapted for use in this context.
  *
  * @param charset a charset buffer to use hen injecting the text entry. It's used to detect colored text and remove it if necessary.
- * @param bufferPos a pointer to the location in the buffer where the text entry should be injected.
+ * @param bufferPos an offset into the buffer where the text entry should be injected.
  * @param textReader a FileContainerReader instance used to read the text entry.
  * @param entryIndex the index of the text entry to inject.
  * @return u32 the number of bytes injected into the buffer.
  */
-static u32 __attribute__((noinline)) injectTextEntryIntoBuffer(const u16 *charset, u8 *bufferPos, FileContainerReader &textReader, u32 entryIndex)
+static u32 __attribute__((noinline)) injectTextEntryIntoBuffer(const u16 *charset, u8 *buffer, u32 bufferSize, u32 bufferPos, FileContainerReader &textReader, u32 entryIndex)
 {
-    const u8 *text = textReader.getPointerToFileInDecompressionBuffer(entryIndex);
-    const int text_length = get_string_char_count(text);
-    u8 *curBuffer = bufferPos;
+    const u8 *curText = textReader.getPointerToFileInDecompressionBuffer(entryIndex);
+    u8 *curBuffer = buffer + bufferPos;
+    u8 *tempBuffer = (u8*)malloc(textReader.getFileSize(entryIndex));
+    u32 bufferDepth = 0;
 
-    for (int i = 0; i < text_length; i++)
+    // Process the text entry and copy it into a temporary buffer, removing any colored text if necessary.
+    while((*curText) != 0xFF)
     {
-        if (curr_GBA_rom.is_hoenn() && (text[i] == 0xFC) && (get_char_from_charset(charset, (char16_t)(text[i + 1])) == 0x01)) // Removes colored text
+        if(curr_GBA_rom.is_hoenn())
         {
-            i += 2;
+            if(*curText == 0xFC && (get_char_from_charset(charset, (u16)(*(curText + 1))) == 0x01)) // Removes colored text
+            {
+                curText += 2;
+                continue;
+            }
         }
-        else
-        {
-            *curBuffer = text[i];
-            ++curBuffer;
-        }
-    }
-    *curBuffer = 0xFF; // End string
-    ++curBuffer;
 
-    return curBuffer - bufferPos;
+        *(tempBuffer + bufferDepth) = *curText;
+        ++bufferDepth;
+        ++curText;
+    }
+    *(tempBuffer + bufferDepth) = 0xFF; // End string
+    ++bufferDepth;
+
+    // Move the existing buffer content to make room for the new text entry
+    memmove(curBuffer + bufferDepth, curBuffer, bufferSize - bufferPos - bufferDepth);
+    // now copy the processed text into the buffer at the current position
+    memcpy(curBuffer, tempBuffer, bufferDepth);
+    free(tempBuffer);
+
+    return bufferDepth;
 }
 
 /**
@@ -236,6 +247,8 @@ static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *sectio
     u8 textGreetEntryIndex;
     u8 youMustBeEntryIndex;
     u8 iAmEntryIndex;
+    u32 section30Offset;
+    u32 mgScriptOffset;
     bool firstTime = true;
 
     // This determines if the event has been done before
@@ -258,26 +271,26 @@ static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *sectio
 
     // Also construct text entry sequences, because we need to maintain the same order of injection
     // as during the payload generation with gba-payload-generator
-    section30Buffer += 0x97E;
+    section30Offset = 0x97E;
 
     switch(curr_GBA_rom.gamecode)
     {
     case RUBY_ID:
     case SAPPHIRE_ID:
-        mgScriptBuffer += 0x268;
+        mgScriptOffset = 0x268;
         textGreetEntryIndex = RSEFRLG_dia_textGreet_rse;
         iAmEntryIndex = (firstTime) ? RSEFRLG_dia_textIAm_first_rs : RSEFRLG_dia_textIAm_second_rs;
         section30TextSequence = { RSEFRLG_dia_textThank_rs, RSEFRLG_dia_textPCFull_rs, RSEFRLG_dia_textWeHere_rs, RSEFRLG_dia_textPCConvo_rs, RSEFRLG_dia_textPCThanks_rs, RSEFRLG_dia_textLookerFull_rs, RSEFRLG_dia_textMoveBox_rs, RSEFRLG_dia_textRecieved_rs };
         break;
     case FIRERED_ID:
     case LEAFGREEN_ID:
-        mgScriptBuffer += 0x278;
+        mgScriptOffset = 0x278;
         textGreetEntryIndex = RSEFRLG_dia_textGreet_frlg;
         iAmEntryIndex = (firstTime) ? RSEFRLG_dia_textIAm_first_frlge : RSEFRLG_dia_textIAm_second_frlge;
         section30TextSequence = { RSEFRLG_dia_textThank_frlge, RSEFRLG_dia_textPCFull_frlge, RSEFRLG_dia_textWeHere_frlg, RSEFRLG_dia_textPCConvo_frlge, RSEFRLG_dia_textPCThanks_frlge, RSEFRLG_dia_textLookerFull_frlge, RSEFRLG_dia_textMoveBox_frlg, RSEFRLG_dia_textRecieved_frlge };
         break;
     default:
-        mgScriptBuffer += 0x298;
+        mgScriptOffset = 0x298;
         textGreetEntryIndex = RSEFRLG_dia_textGreet_rse;
         iAmEntryIndex = (firstTime) ? RSEFRLG_dia_textIAm_first_frlge : RSEFRLG_dia_textIAm_second_frlge;
         section30TextSequence = { RSEFRLG_dia_textThank_frlge, RSEFRLG_dia_textPCFull_frlge, RSEFRLG_dia_textWeHere_e, RSEFRLG_dia_textPCConvo_frlge, RSEFRLG_dia_textPCThanks_frlge, RSEFRLG_dia_textLookerFull_frlge, RSEFRLG_dia_textMoveBox_e, RSEFRLG_dia_textRecieved_frlge };
@@ -291,14 +304,14 @@ static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *sectio
 
     for(unsigned i=0; i < 8; ++i)
     {
-        bytesInjected = injectTextEntryIntoBuffer(gen3Charset, section30Buffer, textReader, section30TextSequence[i]);
-        section30Buffer += bytesInjected;
+        bytesInjected = injectTextEntryIntoBuffer(gen3Charset, section30Buffer, 4096, section30Offset, textReader, section30TextSequence[i]);
+        section30Offset += bytesInjected;
     }
 
     for(unsigned i=0; i < 3; ++i)
     {
-        bytesInjected = injectTextEntryIntoBuffer(gen3Charset, mgScriptBuffer, textReader, scriptTextSequence[i]);
-        mgScriptBuffer += bytesInjected;
+        bytesInjected = injectTextEntryIntoBuffer(gen3Charset, mgScriptBuffer, MG_SCRIPT_SIZE, mgScriptOffset, textReader, scriptTextSequence[i]);
+        mgScriptOffset += bytesInjected;
     }
 }
 
