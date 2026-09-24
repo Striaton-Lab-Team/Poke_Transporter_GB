@@ -1,19 +1,18 @@
-INCLUDE "include/constants/charmap.asm"
 INCLUDE "include/macros/const.asm"
+
+INCLUDE "include/constants/charmap.asm"
 INCLUDE "include/constants/serial_constants.asm"
 INCLUDE "include/constants/pokemon_constants.asm"
-INCLUDE "include/constants/symbols.asm"
+INCLUDE "include/constants/gen2universal.asm"
+INCLUDE "include/constants/gen2specific.asm"
 INCLUDE "include/constants/hardware.inc"
-INCLUDE "include/payload/payload.asm"
-INCLUDE "include/payload/patches.asm"
-; INCLUDE "include/payload/settings.asm"
 
 SECTION "Payload", ROM0
 Payload:
 LOAD "RNGSeed", WRAM0[wSerialOtherGameboyRandomNumberListBlock - 1]
 RNGSeed:
 .end
-ds RNGSIZE_GEN2 - (RNGSeed.end - RNGSeed) - 7, 0 ; 7 bytes of preamble that need to be deducted.
+ds RNGSIZE - (RNGSeed.end - RNGSeed) - 7, 0 ; 7 bytes of preamble that need to be deducted.
 ENDL
 
 PartyDataPreamble:
@@ -47,7 +46,7 @@ PartyData:
 	dw SerialPatchListKoreanPayload ; stack smash for KOR Gold/Silver
 	db '@' ; stop text printing and return to overwritten pointer on KOR Gold/Silver
 .end
-ds LINKDATASIZE_GEN2 - (PartyData.end - PartyDataPreamble), 0
+ds LINKDATASIZE - (PartyData.end - PartyDataPreamble), 0
 
 LOAD "serialPatch", WRAM0[wSerialEnemyMonsPatchList_GS]
 SerialPatchPreamble:
@@ -57,13 +56,13 @@ SerialPatchPreamble:
 
 SerialPatchListKoreanPayload:
 	ds 5, 0
-	call ClearScreen_KOR ; KOR has some weirdness in how stuff is displayed. This function provides a full reset of the screen.
+	call ClearScreen ; KOR has some weirdness in how stuff is displayed. This function provides a full reset of the screen.
 .end
 
 SerialPatchListPayload: ; on GS: this gets loaded in 0xC5D0. On C: this gets loaded in 0xC6D0. Until we align, we can't rely on jp or call.
 	ds 5, 0
 	di
-	call Bankswitch_GSC + 5 ; jump straight to a ret instruction.
+	call Bankswitch + 5 ; jump straight to a ret instruction.
 .fetchPC
 	dec sp
 	dec sp
@@ -105,7 +104,7 @@ SerialPatchListPayload: ; on GS: this gets loaded in 0xC5D0. On C: this gets loa
 	jr .alignPayload ; this entire procedure ensures that the payload gets stored in a consistent location across all versions.
 .end
 ENDL
-LOAD "serialPatchAligned", WRAM0[SerialPatchAlignedAddress] ; 0xC800
+LOAD "serialPatchAligned", WRAM0[UNIVERSALALIGNED] ; 0xC800
 SerialPatchListAligned:
 	ld a, HIGH(SerialPatchListPayload.end)
 	sub a, h ; sneaky hack. If we're on GS, this will set the z flag, allowing us to easily determine which version we're running.
@@ -142,12 +141,12 @@ SerialPatchListAligned:
 	inc hl
 	ld [hl], h
 	ld l, LOW(PACKET_SEND) ; send checksum data from this address
-	ld de, SpecificPayloadAddress ; receive payload at 0xC900
+	ld de, SPECIFICPAYLOAD ; receive payload at 0xC900
 	ld c, CHECKSUMPACKET_SIZE
 	call .callSerial_ExchangeBytes ; send checksum to PTGB, bc = 0000 on exit
 	ld e, c ; reset de to 0xC900
 	push de
-	dec c ; bc =,00FF
+	dec c ; bc = 00FF
 	call .callSerial_ExchangeBytes ; receive specific payload from PTGB
 	ld e, c ; reset de to 0xC900
 	pop hl
@@ -197,5 +196,5 @@ SerialPatchListAligned:
 .callPatchedPointer
 	jp .callPatchedPointer
 .end
-ds PATCHLIST_GEN2 - (SerialPatchListAligned.end - SerialPatchListAligned) - (SerialPatchListPayload.end - SerialPatchListPayload) - (SerialPatchListKoreanPayload.end - SerialPatchListKoreanPayload) - (SerialPatchPreamble.end - SerialPatchPreamble), 0
+ds PATCHLIST - (SerialPatchListAligned.end - SerialPatchListAligned) - (SerialPatchListPayload.end - SerialPatchListPayload) - (SerialPatchListKoreanPayload.end - SerialPatchListKoreanPayload) - (SerialPatchPreamble.end - SerialPatchPreamble), 0
 ENDL

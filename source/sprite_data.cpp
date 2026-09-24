@@ -10,7 +10,7 @@
 
 OBJ_ATTR obj_buffer[128];
 OBJ_AFFINE *obj_aff_buffer = (OBJ_AFFINE *)obj_buffer;
-int curr_flex_background = -1;
+FlexBackground curr_flex_background = FBG_None;
 int y_offset = 0;
 int y_offset_timer = 0;
 int y_offset_direction = 1;
@@ -120,7 +120,14 @@ void set_background_pal(int curr_rom_id, bool dark, bool fade)
 #include "fennelBG.h"
 #include "dexBG.h"
 #include "menu_bars.h"
-#include "boxBG.h"
+
+#include "boxBG_Green.h"
+#include "boxBG_Red.h"
+#include "boxBG_Blue.h"
+#include "boxBG_Yellow.h"
+#include "boxBG_Gold.h"
+#include "boxBG_Silver.h"
+#include "boxBG_Crystal.h"
 
 struct flex_background {
     const unsigned short *palette;
@@ -131,44 +138,86 @@ struct flex_background {
 };
 
 static const flex_background FLEX_BACKGROUNDS[] = {
-    [FLEXBG_OPENING] = {
+    [FBG_Opening] = {
         openingBGPal,
         openingBGPalLen,
         96,
         openingBGTiles,
         openingBGMap,
     },
-    [FLEXBG_FENNEL] = {
+    [FBG_Fennel] = {
         fennelBGPal,
         fennelBGPalLen,
         FENNEL_SHIFT,
         fennelBGTiles,
         fennelBGMap,
     },
-    [FLEXBG_DEX] = {
+    [FBG_Dex] = {
         dexBGPal,
         dexBGPalLen,
         0,
         dexBGTiles,
         dexBGMap,
     },
-    [FLEXBG_MAIN_MENU] = {
+    [FBG_Main_Menu] = {
         pal_bg_mem,
         backgroundPalLen,
         0,
         menu_barsTiles,
         menu_barsMap,
     },
-    [FLEXBG_BOX] = {
-        boxBGPal,
-        boxBGPalLen,
+    [FBG_Box_Green] = {
+        boxBG_GreenPal,
+        boxBG_GreenPalLen,
         0,
-        boxBGTiles,
-        boxBGMap,
-    }
+        boxBG_GreenTiles,
+        boxBG_GreenMap,
+    },
+    [FBG_Box_Red] = {
+        boxBG_RedPal,
+        boxBG_RedPalLen,
+        0,
+        boxBG_RedTiles,
+        boxBG_RedMap,
+    },
+    [FBG_Box_Blue] = {
+        boxBG_BluePal,
+        boxBG_BluePalLen,
+        0,
+        boxBG_BlueTiles,
+        boxBG_BlueMap,
+    },
+    [FBG_Box_Yellow] = {
+        boxBG_YellowPal,
+        boxBG_YellowPalLen,
+        0,
+        boxBG_YellowTiles,
+        boxBG_YellowMap,
+    },
+    [FBG_Box_Gold] = {
+        boxBG_GoldPal,
+        boxBG_GoldPalLen,
+        0,
+        boxBG_GoldTiles,
+        boxBG_GoldMap,
+    },
+    [FBG_Box_Silver] = {
+        boxBG_SilverPal,
+        boxBG_SilverPalLen,
+        0,
+        boxBG_SilverTiles,
+        boxBG_SilverMap,
+    },
+    [FBG_Box_Crystal] = {
+        boxBG_CrystalPal,
+        boxBG_CrystalPalLen,
+        0,
+        boxBG_CrystalTiles,
+        boxBG_CrystalMap,
+    },
 };
 
-void load_flex_background(int background_id, int layer)
+void load_flex_background(FlexBackground background_id, int layer)
 {
     if (curr_flex_background != background_id) // Only load the background if it isn't already loaded
     {
@@ -710,7 +759,9 @@ void load_select_sprites(GameBoyROM currROM)
         break;
 
     case CRYSTAL_JP:
-    case CRYSTAL_EN:
+    case CRYSTAL_EN_v0:
+    case CRYSTAL_EN_v1:
+    case CRYSTAL_EN_vA:
     case CRYSTAL_FR:
     case CRYSTAL_IT:
     case CRYSTAL_DE:
@@ -761,7 +812,9 @@ void load_select_sprites(GameBoyROM currROM)
     case YELLOW_EN:
     case GOLD_EN:
     case SILVER_EN:
-    case CRYSTAL_EN:
+    case CRYSTAL_EN_v0:
+    case CRYSTAL_EN_v1:
+    case CRYSTAL_EN_vA:
         gb_flag_tiles = flag_engTiles;
         gb_flag_palette = flag_engPal;
         break;
@@ -818,9 +871,9 @@ void load_select_sprites(GameBoyROM currROM)
         break;
     }
 
-    load_sprite_compressed(gb_flag, gb_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    load_sprite_compressed(gba_flag, gb_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    tonccpy(pal_obj_mem + (FLAG_PAL * 16), gb_flag_palette, 16); // Grit is being stupid.
+    load_sprite_compressed(gb_flag, gb_flag_tiles, curr_tile_id, GB_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    load_sprite_compressed(gba_flag, gb_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    tonccpy(pal_obj_mem + (GB_FLAG_PAL * 16), gb_flag_palette, 16); // Grit is being stupid.
 
     const unsigned int *gba_cart_tiles = 0;
     const unsigned short *gba_cart_palette = 0;
@@ -892,9 +945,9 @@ void load_select_sprites(GameBoyROM currROM)
         break;
     }
 
-    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    tonccpy(pal_obj_mem + (FLAG_PAL * 16), gba_flag_palette, 16); // Grit is being stupid.
+    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    tonccpy(pal_obj_mem + (GBA_FLAG_PAL * 16), gba_flag_palette, 16); // Grit is being stupid.
 
 }
 // tile ID, VH Flip, Palette Bank

@@ -227,7 +227,7 @@ void link_animation_state(int state)
 
 void determine_fennel_blink()
 {
-    if (get_curr_flex_background() == FLEXBG_FENNEL)
+    if (get_curr_flex_background() == FBG_Fennel)
     {
         if (fennel_blink_timer == 0)
         {

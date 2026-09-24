@@ -5,6 +5,7 @@
 #include "libraries/gba-link-connection/LinkSPI.hpp"
 #include "GB_Payloads.h"
 #include "typeDefs.h"
+#include "gb_rom_values/base_gb_rom_struct.h"
 
 #define SPI_TEXT_OUT_ARRAY_ELEMENT_SIZE 64
 
@@ -51,7 +52,9 @@ enum GameBoyROM
     SILVER_SP,
     SILVER_KOR,
     CRYSTAL_JP,
-    CRYSTAL_EN,
+    CRYSTAL_EN_v0,
+    CRYSTAL_EN_v1,
+    CRYSTAL_EN_vA,
     CRYSTAL_FR,
     CRYSTAL_IT,
     CRYSTAL_DE,
@@ -87,28 +90,30 @@ const GB_PayloadsFiles GameBoyROMPayloads[] =
         GB_PayloadsFiles::SPECIFICPAYLOADGEN1_IT_Y,    // YELLOW_IT
         GB_PayloadsFiles::SPECIFICPAYLOADGEN1_DE_Y,    // YELLOW_DE
         GB_PayloadsFiles::SPECIFICPAYLOADGEN1_SP_Y,    // YELLOW_SP
-                                                       // GOLD_JP_v0
-                                                       // GOLD_JP_v1
-                                                       // GOLD_EN
-                                                       // GOLD_FR
-                                                       // GOLD_IT
-                                                       // GOLD_DE
-                                                       // GOLD_SP
-                                                       // GOLD_KOR
-                                                       // SILVER_JP_v0
-                                                       // SILVER_JP_v1
-                                                       // SILVER_EN
-                                                       // SILVER_FR
-                                                       // SILVER_IT
-                                                       // SILVER_DE
-                                                       // SILVER_SP
-                                                       // SILVER_KOR
-                                                       // CRYSTAL_JP
-                                                       // CRYSTAL_EN
-                                                       // CRYSTAL_FR
-                                                       // CRYSTAL_IT
-                                                       // CRYSTAL_DE
-                                                       // CRYSTAL_SP
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_JP_G,    // GOLD_JP_v0
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_JP_G11,  // GOLD_JP_v1
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_EN_G,    // GOLD_EN
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_FR_G,    // GOLD_FR
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_IT_G,    // GOLD_IT
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_DE_G,    // GOLD_DE
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_SP_G,    // GOLD_SP
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_KOR_G,   // GOLD_KOR
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_JP_S,    // SILVER_JP_v0
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_JP_S11,  // SILVER_JP_v1
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_EN_S,    // SILVER_EN
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_FR_S,    // SILVER_FR
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_IT_S,    // SILVER_IT
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_DE_S,    // SILVER_DE
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_SP_S,    // SILVER_SP
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_KOR_S,   // SILVER_KOR
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_JP_C,    // CRYSTAL_JP
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_EN_C,    // CRYSTAL_EN_v0
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_EN_C11,  // CRYSTAL_EN_v1
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_EN_CAU,  // CRYSTAL_EN_vA
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_FR_C,    // CRYSTAL_FR
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_IT_C,    // CRYSTAL_IT
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_DE_C,    // CRYSTAL_DE
+        GB_PayloadsFiles::SPECIFICPAYLOADGEN2_SP_C,    // CRYSTAL_SP
 };
 
 const Language GameBoyROMLanguages[] =
@@ -154,11 +159,66 @@ const Language GameBoyROMLanguages[] =
         SPANISH,  // SILVER_SP
         KOREAN,   // SILVER_KOR
         JAPANESE, // CRYSTAL_JP
-        ENGLISH,  // CRYSTAL_EN
+        ENGLISH,  // CRYSTAL_EN_v0
+        ENGLISH,  // CRYSTAL_EN_v1
+        ENGLISH,  // CRYSTAL_EN_vA
         FRENCH,   // CRYSTAL_FR
         ITALIAN,  // CRYSTAL_IT
         GERMAN,   // CRYSTAL_DE
         SPANISH,  // CRYSTAL_SP
+};
+
+// This would probably make more sense as a "greater than less than" check.
+const Version GameBoyROMVersions[] =
+    {
+            RED,     // RED_JP_v0
+            RED,     // RED_JP_v1
+            RED,     // RED_EN
+            RED,     // RED_FR
+            RED,     // RED_IT
+            RED,     // RED_DE
+            RED,     // RED_SP
+            GREEN,   // GREEN_JP_v0
+            GREEN,   // GREEN_JP_v1
+            BLUE,    // BLUE_JP
+            BLUE,    // BLUE_EN
+            BLUE,    // BLUE_FR
+            BLUE,    // BLUE_IT
+            BLUE,    // BLUE_DE
+            BLUE,    // BLUE_SP
+            YELLOW,  // YELLOW_JP_v0
+            YELLOW,  // YELLOW_JP_v1
+            YELLOW,  // YELLOW_JP_v2
+            YELLOW,  // YELLOW_JP_v3
+            YELLOW,  // YELLOW_EN
+            YELLOW,  // YELLOW_FR
+            YELLOW,  // YELLOW_IT
+            YELLOW,  // YELLOW_DE
+            YELLOW,  // YELLOW_SP
+            GOLD,    // GOLD_JP_v0
+            GOLD,    // GOLD_JP_v1
+            GOLD,    // GOLD_EN
+            GOLD,    // GOLD_FR
+            GOLD,    // GOLD_IT
+            GOLD,    // GOLD_DE
+            GOLD,    // GOLD_SP
+            GOLD,    // GOLD_KOR
+            SILVER,  // SILVER_JP_v0
+            SILVER,  // SILVER_JP_v1
+            SILVER,  // SILVER_EN
+            SILVER,  // SILVER_FR
+            SILVER,  // SILVER_IT
+            SILVER,  // SILVER_DE
+            SILVER,  // SILVER_SP
+            SILVER,  // SILVER_KOR
+            CRYSTAL, // CRYSTAL_JP
+            CRYSTAL, // CRYSTAL_EN_v0
+            CRYSTAL, // CRYSTAL_EN_v1
+            CRYSTAL, // CRYSTAL_EN_vA
+            CRYSTAL, // CRYSTAL_FR
+            CRYSTAL, // CRYSTAL_IT
+            CRYSTAL, // CRYSTAL_DE
+            CRYSTAL, // CRYSTAL_SP
 };
 
 // This table has the 3 checksums, followed by the enum value
@@ -204,7 +264,9 @@ const u8 GameBoyROMChecksumTable[][4]{
     {0x1C, 0x06, 0x4B, SILVER_SP},
     {0xE7, 0x98, 0x5B, SILVER_KOR},
     {0x22, 0x9A, 0x40, CRYSTAL_JP},
-    {0x26, 0x18, 0xD2, CRYSTAL_EN},
+    {0x27, 0x12, 0x9F, CRYSTAL_EN_v0},
+    {0x26, 0x18, 0xD2, CRYSTAL_EN_v1},
+    {0x17, 0xAF, 0x7C, CRYSTAL_EN_vA},
     {0x26, 0xF2, 0xE2, CRYSTAL_FR},
     {0x23, 0xDB, 0xBA, CRYSTAL_IT},
     {0x28, 0x49, 0x82, CRYSTAL_DE},
@@ -214,7 +276,9 @@ const u8 GameBoyROMChecksumTable[][4]{
 enum LinkState
 {
     INITIAL_CONNECTION = 0x00,
-    CLOCK,
+    DISCOVERY_RESET,
+    CLOCK_ACQUIRE,
+    CLOCK_CONFIRM,
     SAVE_SUCCESS,
     MENU_OPEN,
     MENU_SUCCESS,
@@ -244,6 +308,7 @@ enum LinkConnectionError
     PACKET_TIMED_OUT,
     CHECKSUM_MISMATCH,
     ECHO_MISMATCH,
+    ERROR_FLAG,
 
     PACKET_SUCCESS,
     PACKET_READ,
@@ -312,16 +377,19 @@ public:
 
     LinkConnectionError lastError = NO_ERROR;
 
-    uint8_t inData;
-    uint8_t outData;
-    uint8_t nextOutData;
+    uint8_t inData = 0xFF;
+    uint8_t outData = 0xFF;
+    uint8_t nextOutData = 0xFF;
 
     int globalStateCounter = 0; // The counter for the total number of bytes sent
     int subStateCounter = 0;    // The counter for the total number of bytes sent in this substate
 
     int gen = 0;                      // The generation we are trading with
     Language lang = LANGUAGE_UNKNOWN; // The language we are trading with
+    Version vers = VERSION_UNKNOWN;   // The version we are trading with
     GameBoyROM currROM = NO_GB_ROM;   // The GameBoy ROM we're communicating with
+    const GB_ROM *pccsROMptr = nullptr;     // A pointer to the ROM data for the game we're communicating with
+    byte boxNum = 0;                    // The current box the user has selected
 
     int FF_count = 0;   // The number of 0xFF bytes that have been in a row
     int zero_count = 0; // The number of 0x00 bytes that have been in a row
@@ -368,7 +436,7 @@ public:
     bool LinkCommand_SoftReset(bool waitForCompletion = true);
     bool LinkCommand_ModifySRAMAccess(bool enableSRAM, byte SRAMbank, bool waitForCompletion = true);
     bool LinkCommand_RunSecondaryPayload(byte payload[], int payloadLength, bool waitForCompletion = true);
-    bool LinkCommand_ReadMemorySection(u16 dataPointer, byte outArray[], int outArraySize, bool waitForCompletion = true);
+    bool LinkCommand_ReadMemorySection(u32 dataPointer, byte outArray[], int outArraySize, bool waitForCompletion = true);
 
     // Some operations are too long to be done within the IRQ.
     // So we need to handle them in the main loop instead to avoid data corruption.

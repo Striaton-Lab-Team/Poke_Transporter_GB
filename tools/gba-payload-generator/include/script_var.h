@@ -12,6 +12,12 @@ using byte = uint8_t;
 
 struct ROM_DATA;
 
+typedef struct TextBoxVarInsertionPoint
+{
+    u32 offset;
+    u32 size;
+} TextBoxVarInsertionPoint;
+
 class script_var
 {
 public:
@@ -56,13 +62,12 @@ public:
 class textbox_var : public xse_var
 {
 public:
-    using xse_var::xse_var;
+    textbox_var(std::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr, TextBoxVarInsertionPoint &outInsertionPoint);
     void set_text(const byte nText[]);
     void insert_text(const u16 *charset, u8 mg_array[], bool is_hoenn, bool should_set_virtual_start = false);
     void set_start() override;
-    void set_virtual_start();
     const byte *text;
-    int text_length;
+    TextBoxVarInsertionPoint &outInsertionPoint;
 };
 
 class movement_var : public xse_var

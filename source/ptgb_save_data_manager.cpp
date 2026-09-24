@@ -5,6 +5,7 @@
 #include "button_menu.h"
 #include "pokemon_data.h"
 #include "libraries/Pokemon-Gen3-to-Gen-X/include/save.h"
+#include "script_array.h"
 
 byte save_data_array[SAVE_DATA_SIZE];
 
@@ -31,6 +32,10 @@ bool is_caught(int dex_num)
 
 void set_caught(int dex_num)
 {
+    if (!is_caught(dex_num))
+    {
+        newPkmn |= true;
+    }
     save_data_array[CAUGHT_DATA + (dex_num / 8)] = save_data_array[CAUGHT_DATA + (dex_num / 8)] | (1 << (dex_num % 8));
 }
 

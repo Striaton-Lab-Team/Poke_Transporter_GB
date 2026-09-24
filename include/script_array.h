@@ -5,6 +5,8 @@
 #include "rom_data.h"
 #include "translated_text.h"
 
+extern bool newPkmn; // This is stupid and dumb and stupid but we're storing it like this until this whole mess gets rewritten.
+
 // Commands
 #define T_SCRIPT_START DIA_END + 0
 #define E_SCRIPT_START DIA_END + 1

@@ -18,22 +18,53 @@
 #include "text_tables.h"
 #include "translated_text.h"
 #include "gb_rom_values/base_gb_rom_struct.h"
+#include "gb_rom_values/gb_rom_values.h"
+#include "gb_rom_values_jpn_lz10_bin.h"
+#include "gb_rom_values_eng_lz10_bin.h"
+#include "gb_rom_values_fre_lz10_bin.h"
+#include "gb_rom_values_ger_lz10_bin.h"
+#include "gb_rom_values_ita_lz10_bin.h"
+#include "gb_rom_values_spa_lz10_bin.h"
+#include "gb_rom_values_kor_lz10_bin.h"
 
 #include "GB_Payloads_chunk0_lz10_bin.h"
 #include "GB_Payloads_chunk1_lz10_bin.h"
 #include "GB_Payloads_chunk2_lz10_bin.h"
 #include "GB_Payloads_chunk3_lz10_bin.h"
+#include "GB_Payloads_chunk4_lz10_bin.h"
+#include "GB_Payloads_chunk5_lz10_bin.h"
+#include "GB_Payloads_chunk6_lz10_bin.h"
+
 #include "GB_Payloads.h"
 
 LinkSPI linkSPIInstance;
 LinkSPI *linkSPI = &linkSPIInstance;
 
+#define INITIAL_LINK_TIMER (0x4000 / 60)
+#define DISCOVERY_TIMER_MIN 4
+#define DISCOVERY_TIMER_PHASE_MASK 0x0F
+#define DISCOVERY_TIMEOUT_TRANSFERS 2048
+#define DISCOVERY_CONFIRM_TIMEOUT_TRANSFERS 180
+
 // Here's a compilation check to ensure that the size of these structs match our expectations.
 // Just update it if you changed the struct members. The data-generator process prints their actual sizes.
-static_assert(sizeof(struct GB_ROM) == 136);
+static_assert(sizeof(struct GB_ROM) == 140);
 static_assert(sizeof(struct ROM_DATA) == 160);
 
 LinkConnection globalLinkCable;
+
+/**
+ * @brief This function determines the expected packet arrival address.
+ *
+ * PTGB sends packets with an additional read pointer. For packets intended to run commands,
+ * this address is set to the address the packet is supposed to arrive at.
+ *
+ * This address depends on the generation of the Game Boy ROM being used.
+ */
+static u16 determinePacketArrivalAddress(int gen)
+{
+  return (gen == 1) ? 0xC6DC : 0xC8DC;
+}
 
 void linkCableIRQ()
 {
@@ -101,6 +132,8 @@ void LinkConnection::setup(const u16 *debug_charset)
   link_cable_memory_section_index = 0;
   link_cable_array_index = 0;
   writeBufferOffset = 0;
+  pccsROMptr = nullptr;
+  dataOutBufferCurrIndex = 0;
 
   linkSPI->activate(LinkSPI::Mode::MASTER_256KBPS);
   linkSPI->setWaitModeActive(false);
@@ -142,8 +175,11 @@ void LinkConnection::loadPayload(GB_PayloadsFiles payload)
       (const u8 *)GB_Payloads_chunk1_lz10_bin,
       (const u8 *)GB_Payloads_chunk2_lz10_bin,
       (const u8 *)GB_Payloads_chunk3_lz10_bin,
+      (const u8 *)GB_Payloads_chunk4_lz10_bin,
+      (const u8 *)GB_Payloads_chunk5_lz10_bin,
+      (const u8 *)GB_Payloads_chunk6_lz10_bin,
   };
-  FileContainerReader reader(chunkList, 4);
+  FileContainerReader reader(chunkList, 7);
   const u32 fileIndex = (u32)payload;
 
   reader.init(decompressionBuffer, sizeof(decompressionBuffer));
@@ -158,13 +194,46 @@ void LinkConnection::loadPayloadByROM(GameBoyROM rom)
 {
   loadPayload(GameBoyROMPayloads[rom]);
   lang = GameBoyROMLanguages[rom];
+  vers = GameBoyROMVersions[rom];
+
+  static GB_ROM gb_rom_values_buffer[7];
+  const u8 *compressed_rom_values;
+
+  switch (lang){
+    case JAPANESE:
+      compressed_rom_values = gb_rom_values_jpn_lz10_bin;
+      break;
+    default:
+    case ENGLISH:
+      compressed_rom_values = gb_rom_values_eng_lz10_bin;
+      break;
+    case FRENCH:
+      compressed_rom_values = gb_rom_values_fre_lz10_bin;
+      break;
+    case ITALIAN:
+      compressed_rom_values = gb_rom_values_ita_lz10_bin;
+      break;
+    case GERMAN:
+      compressed_rom_values = gb_rom_values_ger_lz10_bin;
+      break;
+    case SPANISH:
+      compressed_rom_values = gb_rom_values_spa_lz10_bin;
+      break;
+    case KOREAN:
+      compressed_rom_values = gb_rom_values_kor_lz10_bin;
+      break;
+  }
+
+  LZ77UnCompWram(compressed_rom_values, gb_rom_values_buffer);
+  pccsROMptr = &gb_rom_values_buffer[vers];
 }
 
 void LinkConnection::loadCurrGameFromChecksum()
 {
-  if (((dataOutBuffer[0] + dataOutBuffer[1]) & 0x7F) != dataOutBuffer[3])
+  if (((dataOutBuffer[0] + dataOutBuffer[1]) & 0x7F) != dataOutBuffer[2])
   {
     currROM = GB_ROM_ERROR;
+    return;
   };
 
   int start = RED_JP_v0;
@@ -204,7 +273,7 @@ void LinkConnection::exchangeBytes()
   case WRITE_CABLE_DATA_MODE_OFF:
     // Normal transfer :-)
     inData = linkSPI->transfer(outData);
-    PTGB_MGBA_INFO("in: %X, out: %X", inData, outData);
+    // PTGB_MGBA_INFO("in: %X, out: %X", inData, outData);
     break;
   case WRITE_CABLE_DATA_MODE_SRAM:
     // Pretend transfer, by loading the bytes from SRAM (where we stored them with writeData() in a previous transfer)
@@ -240,19 +309,37 @@ void LinkConnection::startConnection(LinkState startState)
   switch (startState)
   {
   case INITIAL_CONNECTION:
-    REG_TM3D = -0x4000 / 60;
-    REG_TM3CNT = TM_FREQ_1024 | TM_ENABLE;
+    // Start searching and make sure the first byte sent requests the external clock
+    irq_disable(II_TIMER3);
+    REG_TM3CNT = 0;
+    REG_IF = (1 << II_TIMER3);
+    linkSPI->activate(LinkSPI::Mode::MASTER_256KBPS);
+
+    inData = 0xFF;
+    outData = 0x01;
+    nextOutData = 0x01;
+    globalStateCounter = 0;
+    subStateCounter = 0;
+    subStateChanged = false;
+    enterState = CLOCK_ACQUIRE;
+    exitState = CLOCK_ACQUIRE;
+
+    REG_TM3D = -DISCOVERY_TIMER_MIN;
+    REG_TM3CNT = TM_FREQ_1024 | TM_IRQ | TM_ENABLE;
     break;
   case PACKET_EXCHANGE:
     REG_TM3D = -0x0040;
     // REG_TM3D = -0x4000 / 60;
-    REG_TM3CNT = TM_FREQ_1024 | TM_ENABLE;
+    REG_TM3CNT = TM_FREQ_1024 | TM_IRQ | TM_ENABLE;
     break;
   default:
     break;
   }
 
-  enterState = startState;
+  if (startState != INITIAL_CONNECTION)
+  {
+    enterState = startState;
+  }
   irq_enable(II_TIMER3);
 }
 
@@ -373,15 +460,62 @@ void LinkConnection::handleStateLogic()
   switch (enterState)
   {
   case INITIAL_CONNECTION:
-    nextOutData = 0xFF;
-    exitState = CLOCK;
+    nextOutData = 0x01;
+    exitState = DISCOVERY_RESET;
     break;
 
-  case CLOCK:
+  case DISCOVERY_RESET:
+    // Reset and try a different timer phase
+    REG_TM3CNT = 0;
+    REG_IF = (1 << II_TIMER3);
+    linkSPI->activate(LinkSPI::Mode::MASTER_256KBPS);
+    outData = 0x01;
+    nextOutData = 0x01;
+    REG_TM3D = -(DISCOVERY_TIMER_MIN +
+                 (globalStateCounter & DISCOVERY_TIMER_PHASE_MASK));
+    REG_TM3CNT = TM_FREQ_1024 | TM_IRQ | TM_ENABLE;
+    exitState = CLOCK_ACQUIRE;
+    break;
+
+  case CLOCK_ACQUIRE:
+    nextOutData = 0x01;
+
+    if (inData == 0x02)
+    {
+      // Receiving 0x02 while sending 0x01 means the other Game Boy offered
+      // external-clock mode and should now have selected the GBA as master.
+      REG_TM3D = -INITIAL_LINK_TIMER;
+      exitState = CLOCK_CONFIRM;
+    }
+    else if (inData == 0xFE)
+    {
+      // Keep compatibility with an already-established connection where the
+      // role-selection byte was completed before discovery began.
+      REG_TM3D = -INITIAL_LINK_TIMER;
+      exitState = SAVE_SUCCESS;
+      nextOutData = 0x01;
+    }
+    else if (subStateCounter >= DISCOVERY_TIMEOUT_TRANSFERS)
+    {
+      exitState = DISCOVERY_RESET;
+    }
+    else
+    {
+      REG_TM3D = -(DISCOVERY_TIMER_MIN +
+                   (subStateCounter & DISCOVERY_TIMER_PHASE_MASK));
+    }
+    break;
+
+  case CLOCK_CONFIRM:
     if (inData == 0xFE)
     {
       exitState = SAVE_SUCCESS;
-      nextOutData = 0x00;
+      nextOutData = 0x01;
+    }
+    else if (subStateCounter >= DISCOVERY_CONFIRM_TIMEOUT_TRANSFERS)
+    {
+      exitState = DISCOVERY_RESET;
+      nextOutData = 0x01;
     }
     else
     {
@@ -390,12 +524,17 @@ void LinkConnection::handleStateLogic()
     break;
 
   case SAVE_SUCCESS:
-    if (inData == 0x60 || inData == 0x61)
+    nextOutData = 0x01;
+
+    if (inData == 0x02)
+    {
+      // Don't exit if we already set the GB as the follower
+    }
+    else if (inData == 0x60 || inData == 0x61)
     {
       exitState = MENU_OPEN;
       nextOutData = inData;
     }
-    // nextOutData defaults to 0x00
     break;
 
   case MENU_OPEN:
@@ -495,6 +634,11 @@ void LinkConnection::handleStateLogic()
     else if (inData == 0xFD && dataOutBufferCurrIndex > 0)
     {
       loadCurrGameFromChecksum();
+      if (currROM == GB_ROM_ERROR)
+      {
+        while(true){}
+        // Add in an error message thrown here once we, ya know, rewrite the text engine to make that possible
+      }
       loadPayloadByROM(currROM);
       exitState = SEND_SPECIFIC_PAYLOAD;
     }
@@ -960,11 +1104,13 @@ bool LinkConnection::processPacket()
 
   if ((currIncomingPacket->command != CMD_ReadDataRequest) && (dataOutBuffer[INP_DATA_INDEX] & 0x80))
   {
+    currIncomingPacket->latestError = ERROR_FLAG;
     PTGB_MGBA_INFO("Packet reports GB command failure: packet=%u cmd=%d encodedFirstData=%X decodedFirstData=%X",
                    currIncomingPacket->packetID,
                    currIncomingPacket->command,
                    dataOutBuffer[INP_DATA_INDEX],
                    currIncomingPacket->recievedData[0]);
+    return false;
   }
 
   if (currIncomingPacket->command != CMD_ReadDataRequest)
@@ -1131,6 +1277,10 @@ bool LinkConnection::LinkCommand_InitalizeConnection(bool waitForCompletion)
   {
     return true;
   }
+  else if (!linkSPI->isActive())
+  {
+    return false;
+  }
 
   PTGB_MGBA_INFO("Running command: InitalizeConnection");
 
@@ -1150,12 +1300,16 @@ bool LinkConnection::LinkCommand_ReloadCurrentBox(bool waitForCompletion)
   {
     return true;
   }
+  else if (!linkSPI->isActive())
+  {
+    return false;
+  }
   
   PTGB_MGBA_INFO("Running command: ReloadCurrentBox");
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_ReloadCurrentBox, 0x00, 0x00, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_ReloadCurrentBox, 0x00, 0x00, determinePacketArrivalAddress(gen));
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
   if (waitForCompletion)
@@ -1170,6 +1324,10 @@ bool LinkConnection::LinkCommand_TransferPokemon(int boxNumber, byte removalArra
   if (g_debug_options.ignore_link_cable)
   {
     return true;
+  }
+  else if (!linkSPI->isActive())
+  {
+    return false;
   }
 
   int maxBoxes = 0;
@@ -1205,7 +1363,7 @@ bool LinkConnection::LinkCommand_TransferPokemon(int boxNumber, byte removalArra
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_TransferPokemon, removalArrayLength + SECONDARY_PAYLOAD_HEADER_SIZE, boxNumber, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_TransferPokemon, removalArrayLength + SECONDARY_PAYLOAD_HEADER_SIZE, boxNumber, determinePacketArrivalAddress(gen));
   linkPacketArr[0].loadSecondaryPayload(removalArray, removalArrayLength);
 
   // REG_TM3D = -0x4000 / 60;
@@ -1224,12 +1382,16 @@ bool LinkConnection::LinkCommand_SoftReset(bool waitForCompletion)
   {
     return true;
   }
+  else if (!linkSPI->isActive())
+  {
+    return false;
+  }
 
   PTGB_MGBA_INFO("Running command: SoftReset");
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_SoftReset, 0x00, 0x00, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_SoftReset, 0x00, 0x00, determinePacketArrivalAddress(gen));
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
   if (waitForCompletion)
@@ -1245,6 +1407,10 @@ bool LinkConnection::LinkCommand_ModifySRAMAccess(bool enableSRAM, byte SRAMbank
   {
     return true;
   }
+  else if (!linkSPI->isActive())
+  {
+    return false;
+  }
   
   if (SRAMbank > 3)
   {
@@ -1257,11 +1423,11 @@ bool LinkConnection::LinkCommand_ModifySRAMAccess(bool enableSRAM, byte SRAMbank
 
   if (enableSRAM)
   {
-    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x0A, SRAMbank, 0xC6DC);
+    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x0A, SRAMbank, determinePacketArrivalAddress(gen));
   }
   else
   {
-    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x00, 0x00, 0xC6DC);
+    linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x00, 0x00, determinePacketArrivalAddress(gen));
   }
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
@@ -1278,12 +1444,16 @@ bool LinkConnection::LinkCommand_RunSecondaryPayload(byte payload[], int payload
   {
     return true;
   }
+  else if (!linkSPI->isActive())
+  {
+    return false;
+  }
 
   PTGB_MGBA_INFO("Running command: RunSecondaryPayload");
 
   resetLinkPackets();
 
-  linkPacketArr[0] = LinkPacket(CMD_RunSecondaryPayload, payloadLength + SECONDARY_PAYLOAD_HEADER_SIZE, 0x00, 0xC6DC);
+  linkPacketArr[0] = LinkPacket(CMD_RunSecondaryPayload, payloadLength + SECONDARY_PAYLOAD_HEADER_SIZE, 0x00, determinePacketArrivalAddress(gen));
   linkPacketArr[0].loadSecondaryPayload(payload, payloadLength);
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
@@ -1294,11 +1464,21 @@ bool LinkConnection::LinkCommand_RunSecondaryPayload(byte payload[], int payload
   return true;
 };
 
-bool LinkConnection::LinkCommand_ReadMemorySection(u16 dataPointer, byte outArray[], int outArraySize, bool waitForCompletion)
+bool LinkConnection::LinkCommand_ReadMemorySection(u32 dataPointer, byte outArray[], int outArraySize, bool waitForCompletion)
 {
   if (g_debug_options.ignore_link_cable)
   {
     return true;
+  }
+  else if (!linkSPI->isActive())
+  {
+    return false;
+  }
+
+  if (dataPointer > 0xFFFF)
+  {
+    waitForCompletion = true; // We have to wait for completion with the SRAM bank loading, so we can close it
+    LinkCommand_ModifySRAMAccess(true, dataPointer >> 16);
   }
 
   PTGB_MGBA_INFO("Running command: ReadMemorySection");
@@ -1307,13 +1487,20 @@ bool LinkConnection::LinkCommand_ReadMemorySection(u16 dataPointer, byte outArra
 
   linkPacketDataStart = dataPointer;
   linkPacketDataSize = outArraySize;
-  linkPacketDataAddr = dataPointer;
+  linkPacketDataAddr = dataPointer & 0xFFFF;
   outDataArrayPtr = outArray;
 
   for (int i = 0; i < LINK_PACKET_ARRAY_SIZE; i++)
   {
-    linkPacketArr[i] = LinkPacket(CMD_ReadDataRequest, 0x00, 0x00, linkPacketDataAddr);
-    linkPacketDataAddr += 8;
+    if ((i * 8) < linkPacketDataSize)
+    {
+      linkPacketArr[i] = LinkPacket(CMD_ReadDataRequest, 0x00, 0x00, linkPacketDataAddr);
+      linkPacketDataAddr += 8;
+    }
+    else
+    {
+      linkPacketArr[i] = dummyPacket;
+    }
   }
 
   globalLinkCable.startConnection(PACKET_EXCHANGE);
@@ -1321,5 +1508,8 @@ bool LinkConnection::LinkCommand_ReadMemorySection(u16 dataPointer, byte outArra
   {
     waitForEnd();
   }
+
+  LinkCommand_ModifySRAMAccess(false, dataPointer >> 16);
+
   return true;
 }

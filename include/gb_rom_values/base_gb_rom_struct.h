@@ -88,6 +88,7 @@ public:
     u32 garbageDataLocation;     // location of random data starting with 0xFD in the ROM
 
     u32 wRemoveMonFromBox;     // location of wRemoveMonFromBox in RAM
+    u32 wCurrentBoxNum;        // location of wCurrentBoxNum in RAM
     u32 wBoxCount;             // location of wBoxCount in RAM
     u32 wWhichPokemon;         // location of wWhichPokemon in RAM
     u32 wBoxDataStart;         // location of wBoxDataStart in RAM

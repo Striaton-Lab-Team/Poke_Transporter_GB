@@ -14,7 +14,7 @@
 
 Box_Menu::Box_Menu() {};
 
-int Box_Menu::box_main(PokeBox* box)
+int Box_Menu::box_main(PokeBox* box, Version vers)
 {
     PokemonTables pkmnTables;
     u8 names_decompression_buffer[2048];
@@ -27,7 +27,7 @@ int Box_Menu::box_main(PokeBox* box)
     FileContainerReader namesReader(chunkList, numChunks, chunkSize);
 
     tte_erase_screen();
-    load_flex_background(FLEXBG_BOX, 2);
+    load_flex_background((FlexBackground)((int)FBG_Box_Green + (int)vers), 2); // This is kinda gross, but it works
     REG_BG1VOFS = 0;
     REG_BG1HOFS = 0;
     load_temp_box_sprites(box);
@@ -125,7 +125,7 @@ int Box_Menu::box_main(PokeBox* box)
                     obj_hide(party_sprites[i]);
                 }
                 tte_erase_screen();
-                load_flex_background(FLEXBG_FENNEL, 2);
+                load_flex_background(FBG_Fennel, 2);
                 REG_BG2VOFS = BG2VOF_SMALL_TEXTBOX;
                 VBlankIntrWait();
                 return curr_button;

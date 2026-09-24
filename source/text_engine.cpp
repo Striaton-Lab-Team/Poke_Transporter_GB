@@ -263,9 +263,9 @@ int ptgb_write_textbox(const byte *text, bool instant, bool waitForUser,
     erase_textbox_tiles();
     create_textbox(text_section, text_key, eraseMainBox);
     // Set up Fennel if we are in a PTGB dialogue box
-    if (get_curr_flex_background() == FLEXBG_FENNEL && text_section == PTGB_INDEX)
+    if (get_curr_flex_background() == FBG_Fennel && text_section == PTGB_INDEX)
     {
-        load_flex_background(FLEXBG_FENNEL, 2);
+        load_flex_background(FBG_Fennel, 2);
     }
     int out = ptgb_write(text, instant, 9999, text_box_type_tables[text_section][text_key]); // This is kinda silly but it'll work.
     if (waitForUser)
@@ -385,7 +385,7 @@ int ptgb_write(const byte *text, bool instant, int length, int box_type)
             }
             num += 1;
         }
-        if (get_curr_flex_background() == FLEXBG_FENNEL && !instant)
+        if (get_curr_flex_background() == FBG_Fennel && !instant)
         {
             fennel_speak(((num / 4) % 4) + 1);
         }
@@ -431,7 +431,7 @@ int ptgb_write_debug(const u16 *charset, const char *text, bool instant)
 
 void wait_for_user_to_continue(int right, int bottom)
 {
-    if (get_curr_flex_background() == FLEXBG_FENNEL)
+    if (get_curr_flex_background() == FBG_Fennel)
     {
         if (get_missingno_enabled())
         {

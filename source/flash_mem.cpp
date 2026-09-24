@@ -186,7 +186,8 @@ bool read_flag(u16 flag_id)
 bool compare_map_and_npc_data(int map_bank, int map_id, int npc_id)
 {
     copy_save_to_ram(memory_section_array[4], &global_memory_buffer[0], 0x1000);
-    return (global_memory_buffer[curr_GBA_rom.offset_script + 5] == map_bank &&
+    return (global_memory_buffer[curr_GBA_rom.offset_script + 4] == MGSCRIPT_MAGIC_VALUE &&
+            global_memory_buffer[curr_GBA_rom.offset_script + 5] == map_bank &&
             global_memory_buffer[curr_GBA_rom.offset_script + 6] == map_id &&
             global_memory_buffer[curr_GBA_rom.offset_script + 7] == npc_id);
 }

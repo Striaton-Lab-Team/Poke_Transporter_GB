@@ -59,7 +59,7 @@ Button_Menu yes_no_menu(1, 2, 40, 24, false);
 void load_graphics()
 {
 	//  Load opening background first so it hides everything else
-	load_flex_background(FLEXBG_OPENING, 1);
+	load_flex_background(FBG_Opening, 1);
 	load_background();
 	load_textbox_background();
 	load_eternal_sprites();
@@ -434,9 +434,10 @@ int main(void)
 
 	set_background_pal(curr_GBA_rom.gamecode, false, true);
 
-	if (!g_debug_options.ignore_mg_e4_flags && (!get_tutorial_flag() || g_debug_options.force_tutorial))
+	if (!get_tutorial_flag() || g_debug_options.force_tutorial)
 	{
 		obj_hide_multi(ptgb_logo_l, 2);
+		load_flex_background(FBG_Fennel, 2);
 		text_loop(BTN_TRANSFER);
 		initialize_save_data();
 		// TODO: We should be able to test for a Bootleg rom in here- if the save data isn't written, then it is bootleg.
@@ -452,7 +453,7 @@ int main(void)
 			print_mem_section();
 			curr_GBA_rom.print_rom_info();
 		}
-		load_flex_background(FLEXBG_MAIN_MENU, 2);
+		load_flex_background(FBG_Main_Menu, 2);
 
 		obj_unhide_multi(ptgb_logo_l, 1, 2);
 		obj_set_pos(ptgb_logo_l, 56, 12);
@@ -463,7 +464,7 @@ int main(void)
 		case (BTN_TRANSFER):
 			tte_set_ink(INK_DARK_GREY);
 			obj_hide_multi(ptgb_logo_l, 2);
-			load_flex_background(FLEXBG_FENNEL, 3);
+			load_flex_background(FBG_Fennel, 3);
 			text_loop(SCRIPT_TRANSFER);
 			break;
 		case (BTN_POKEDEX):
@@ -471,10 +472,10 @@ int main(void)
 			{
 				obj_hide_multi(ptgb_logo_l, 2);
 				// global_next_frame();
-				load_flex_background(FLEXBG_DEX, 2);
+				load_flex_background(FBG_Dex, 2);
 				set_background_pal(curr_GBA_rom.gamecode, true, false);
 				pokedex_loop();
-				load_flex_background(FLEXBG_DEX, 3);
+				load_flex_background(FBG_Dex, 3);
 				set_background_pal(curr_GBA_rom.gamecode, false, false);
 			}
 			break;
@@ -497,7 +498,7 @@ int main(void)
 #if ENABLE_DEBUG_MENU
 		case (BTN_DEBUG_MENU):
 			obj_hide_multi(ptgb_logo_l, 2);
-			load_flex_background(FLEXBG_FENNEL, 3);
+			load_flex_background(FBG_Fennel, 3);
 			show_debug_menu();
 			break;
 #endif

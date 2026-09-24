@@ -3,11 +3,9 @@ INCLUDE "include/macros/const.asm"
 INCLUDE "include/constants/charmap.asm"
 INCLUDE "include/constants/serial_constants.asm"
 INCLUDE "include/constants/pokemon_constants.asm"
-INCLUDE "include/constants/symbols.asm"
+INCLUDE "include/constants/gen1universal.asm"
+INCLUDE "include/constants/gen1specific.asm"
 INCLUDE "include/constants/hardware.inc"
-
-INCLUDE "include/payload/payload.asm"
-INCLUDE "include/payload/patches.asm"
 
 SECTION "Payload", ROM0
 Payload:
@@ -144,7 +142,7 @@ SerialPatchListAligned:
 	ld [hl], a	; place checksum
 	ds 5, 0 ; expected result is FD [16 bit cartridge checksum] [8 bit safety checksum]. There are no valid cartridge checksums containing 0xFD or 0xFE.
 	ld l, LOW(PACKET_SEND) ; send checksum data from this address
-	ld de, SpecificPayloadAddress ; receive payload at this address
+	ld de, SPECIFICPAYLOAD ; receive payload at this address
 	ld c, CHECKSUMPACKET_SIZE
 	call .callSerial_ExchangeBytes ; send checksum to PTGB, bc = 0000 on exit
 	ld e, c

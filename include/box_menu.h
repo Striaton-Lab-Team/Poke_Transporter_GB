@@ -26,7 +26,7 @@ class Box_Menu
 {
 public:
     Box_Menu();
-    int box_main(PokeBox* box);
+    int box_main(PokeBox* box, Version vers);
 private:
     int curr_button;
     int x;

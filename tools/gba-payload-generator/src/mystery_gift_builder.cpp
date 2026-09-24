@@ -1,14 +1,16 @@
 #include "mystery_gift_builder.h"
 #include "UncompressedFileContainerReader.h"
-#include "script_var.h"
 
 #include <vector>
 #include <cassert>
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 
 #define MG_SCRIPT false
 #define S30_SCRIPT true
+
+#define MGSCRIPT_MAGIC_VALUE 0x33
 
 #define MAX_PKMN_IN_BOX 30
 #define POKEMON_SIZE 80
@@ -80,6 +82,34 @@ static const char* getGameName(u32 gamecode)
     }
 }
 
+/**
+ * @brief This function determines the longest of 2 text entries and sets that one to the textbox_var.
+ *
+ * The reason we do this is to make the references to the textbox_vars consistently pointing
+ * to the same addresses, even if certain entries have different lengths based on some game context.
+ * (tbh this is about the first_time-based text entries)
+ *
+ * This may look strange, but this ties together with our approach to strip the actual texts in the strip_injected_texts() function
+ * and inject them back into the payload at runtime.
+ *
+ * If this strip_injected_texts() function wasn't called, doing this wouldn't make any sense.
+ *
+ */
+static void setLongestTextEntryOnTextBoxVar(textbox_var &textVar, UncompressedFileContainerReader &textReader, uint32_t firstEntryIndex, uint32_t secondEntryIndex)
+{
+    uint32_t selectedEntryIndex;
+
+    if(textReader.getFileSize(firstEntryIndex) > textReader.getFileSize(secondEntryIndex))
+    {
+        selectedEntryIndex = firstEntryIndex;
+    }
+    else
+    {
+        selectedEntryIndex = secondEntryIndex;
+    }
+    textVar.set_text(textReader.getPointerToFile(selectedEntryIndex));
+}
+
 mystery_gift_script::mystery_gift_script(u8 *save_section_30_buffer, u8 *mg_script_buffer)
     : curr_mg_index(NPC_LOCATION_OFFSET)
     , curr_section30_index(0)
@@ -92,10 +122,16 @@ mystery_gift_script::mystery_gift_script(u8 *save_section_30_buffer, u8 *mg_scri
 {
 }
 
-void mystery_gift_script::build_script(UncompressedFileContainerReader &text_table_reader, const struct ROM_DATA& curr_GBA_rom, const uint16_t *gen3_charset, PokeBox *box, bool first_time)
+void mystery_gift_script::build_script(UncompressedFileContainerReader &text_table_reader, const struct ROM_DATA& curr_GBA_rom, const uint16_t *gen3_charset)
 {
     std::vector<script_var *> mg_variable_list;
     std::vector<script_var *> sec30_variable_list;
+
+    ptr_call_check_flag = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x08);
+    ptr_box_return = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x0C);
+    ptr_dex_seen_caught = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x0E);
+    ptr_index = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x12);
+    ptr_pkmn_offset = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x14);
 
     asm_var sendMonToPC_ptr(curr_GBA_rom.loc_copyMonToPC + READ_AS_THUMB, sec30_variable_list, &curr_section30_index);
     asm_var returned_box_success_ptr(ptr_box_return, sec30_variable_list, &curr_section30_index);
@@ -131,19 +167,18 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
     xse_var jumpNotToSide(mg_variable_list, &curr_mg_index);
     xse_var jumpNotToSideFull(mg_variable_list, &curr_mg_index);
 
-    textbox_var textGreet(mg_variable_list, &curr_mg_index);
-    textbox_var textYouMustBe(mg_variable_list, &curr_mg_index);
-    textbox_var textIAm(mg_variable_list, &curr_mg_index);
+    textbox_var textGreet(mg_variable_list, &curr_mg_index, textGreetInsertionPoint);
+    textbox_var textYouMustBe(mg_variable_list, &curr_mg_index, textYouMustBeInsertionPoint);
+    textbox_var textIAm(mg_variable_list, &curr_mg_index, textIAmInsertionPoint);
 
-    textbox_var textReceived(sec30_variable_list, &curr_section30_index);
-    textbox_var textPCFull(sec30_variable_list, &curr_section30_index);
-    textbox_var textThank(sec30_variable_list, &curr_section30_index);
-    textbox_var textTest(sec30_variable_list, &curr_section30_index);
-    textbox_var textWeHere(sec30_variable_list, &curr_section30_index);
-    textbox_var textPCConvo(sec30_variable_list, &curr_section30_index);
-    textbox_var textPCThanks(sec30_variable_list, &curr_section30_index);
-    textbox_var textLookerFull(sec30_variable_list, &curr_section30_index);
-    textbox_var textMoveBox(sec30_variable_list, &curr_section30_index);
+    textbox_var textReceived(sec30_variable_list, &curr_section30_index, textReceivedInsertionPoint);
+    textbox_var textPCFull(sec30_variable_list, &curr_section30_index, textPCFullInsertionPoint);
+    textbox_var textThank(sec30_variable_list, &curr_section30_index, textThankInsertionPoint);
+    textbox_var textWeHere(sec30_variable_list, &curr_section30_index, textWeHereInsertionPoint);
+    textbox_var textPCConvo(sec30_variable_list, &curr_section30_index, textPCConvoInsertionPoint);
+    textbox_var textPCThanks(sec30_variable_list, &curr_section30_index, textPCThanksInsertionPoint);
+    textbox_var textLookerFull(sec30_variable_list, &curr_section30_index, textLookerFullInsertionPoint);
+    textbox_var textMoveBox(sec30_variable_list, &curr_section30_index, textMoveBoxInsertionPoint);
 
     movement_var movementSlowSpin(sec30_variable_list, &curr_section30_index);
     movement_var movementFastSpin(sec30_variable_list, &curr_section30_index);
@@ -232,12 +267,6 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
     static const byte movementWalkBackArrayFRLG[4] = {MOVEMENT_ACTION_WALK_FAST_DOWN, MOVEMENT_ACTION_WALK_FAST_DOWN};
     static const byte movementWalkBackArrayE[8] = {MOVEMENT_ACTION_WALK_FAST_RIGHT, MOVEMENT_ACTION_WALK_FAST_RIGHT, MOVEMENT_ACTION_WALK_FAST_RIGHT, MOVEMENT_ACTION_WALK_FAST_DOWN};
 
-    ptr_call_check_flag = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x08);
-    ptr_box_return = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x0C);
-    ptr_dex_seen_caught = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x0E);
-    ptr_index = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x12);
-    ptr_pkmn_offset = (curr_GBA_rom.loc_gSpecialVar_0x8000 + 0x14);
-
     switch (curr_GBA_rom.gamecode)
     {
     case RUBY_ID:
@@ -317,10 +346,11 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
 
     // printf("[mystery_gift_builder]: Pokémon insertion point at save_section_30 offset 0x%08X\n", curr_section30_index);
 
+    // carve/zero out section for pokémon insertion. This will be done at runtime by mystery_gift_injector.cpp
     memset(save_section_30 + curr_section30_index, 0, (MAX_PKMN_IN_BOX * POKEMON_SIZE) + MAX_PKMN_IN_BOX);
     curr_section30_index += (MAX_PKMN_IN_BOX * POKEMON_SIZE);
 
-    // dex numbers:
+    // compensate for dex numbers:
     curr_section30_index += MAX_PKMN_IN_BOX;
 
     // insert text
@@ -340,23 +370,12 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
     switch (curr_GBA_rom.gamecode)
     {
     case RUBY_ID:
-        textGreet.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textGreet_rse));
-        textMoveBox.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textMoveBox_rs));
-        textWeHere.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textWeHere_rs));
-        textReceived.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textRecieved_rs));
-        textIAm.set_text(text_table_reader.getPointerToFile(first_time ? RSEFRLG_dia_textIAm_first_rs : RSEFRLG_dia_textIAm_second_rs));
-        textPCConvo.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCConvo_rs)); // ȼDon’t worry ƲÀ,Ňyou won’t have to do a thing!");
-        textPCThanks.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCThanks_rs));
-        textThank.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textThank_rs));
-        textPCFull.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCFull_rs));
-        textLookerFull.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textLookerFull_rs));
-        break;
     case SAPPHIRE_ID:
         textGreet.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textGreet_rse));
         textMoveBox.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textMoveBox_rs));
         textWeHere.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textWeHere_rs));
         textReceived.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textRecieved_rs));
-        textIAm.set_text(text_table_reader.getPointerToFile(first_time ? RSEFRLG_dia_textIAm_first_rs : RSEFRLG_dia_textIAm_second_rs));
+        setLongestTextEntryOnTextBoxVar(textIAm, text_table_reader, RSEFRLG_dia_textIAm_first_rs, RSEFRLG_dia_textIAm_second_rs);
         textPCConvo.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCConvo_rs)); // ȼDon’t worry ƲÀ,Ňyou won’t have to do a thing!");
         textPCThanks.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCThanks_rs));
         textThank.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textThank_rs));
@@ -369,7 +388,7 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
         textMoveBox.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textMoveBox_frlg));
         textWeHere.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textWeHere_frlg));
         textReceived.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textRecieved_frlge));
-        textIAm.set_text(text_table_reader.getPointerToFile(first_time ? RSEFRLG_dia_textIAm_first_frlge : RSEFRLG_dia_textIAm_second_frlge));
+        setLongestTextEntryOnTextBoxVar(textIAm, text_table_reader, RSEFRLG_dia_textIAm_first_frlge, RSEFRLG_dia_textIAm_second_frlge);
         textPCConvo.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCConvo_frlge)); // ȼDon’t worry ƲÀ,Ňyou won’t have to do a thing!");
         textPCThanks.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCThanks_frlge));
         textThank.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textThank_frlge));
@@ -381,7 +400,7 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
         textMoveBox.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textMoveBox_e));
         textWeHere.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textWeHere_e));
         textReceived.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textRecieved_frlge));
-        textIAm.set_text(text_table_reader.getPointerToFile(first_time ? RSEFRLG_dia_textIAm_first_frlge : RSEFRLG_dia_textIAm_second_frlge));
+        setLongestTextEntryOnTextBoxVar(textIAm, text_table_reader, RSEFRLG_dia_textIAm_first_frlge, RSEFRLG_dia_textIAm_second_frlge);
         textPCConvo.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCConvo_frlge)); // ȼDon’t worry ƲÀ,Ňyou won’t have to do a thing!");
         textPCThanks.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textPCThanks_frlge));
         textThank.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textThank_frlge));
@@ -389,7 +408,7 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
         textLookerFull.set_text(text_table_reader.getPointerToFile(RSEFRLG_dia_textLookerFull_frlge));
         break;
     }
-    textYouMustBe.set_text(text_table_reader.getPointerToFile(first_time ? RSEFRLG_dia_textYouMustBe_first : RSEFRLG_dia_textYouMustBe_second));
+    setLongestTextEntryOnTextBoxVar(textYouMustBe, text_table_reader, RSEFRLG_dia_textYouMustBe_first, RSEFRLG_dia_textYouMustBe_second);
 
     textThank.insert_text(gen3_charset, save_section_30, is_hoenn_game);
     textPCFull.insert_text(gen3_charset, save_section_30, is_hoenn_game);
@@ -838,13 +857,68 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
     mg_script_size = curr_mg_index;
     section30_size = curr_section30_index;
 
-    printf("Mystery Gift payload generated for %s, lang %c, revision %d:\n", getGameName(curr_GBA_rom.gamecode), curr_GBA_rom.language, curr_GBA_rom.version);
-    printf("\tScript Size: %d bytes\n", mg_script_size);
-    printf("\tSection 30 Size: %d bytes\n", section30_size);
-    
-    //assert(curr_mg_index <= MG_SCRIPT_SIZE); // Assert that the script is not too large
-    //assert(curr_section30_index <= 4096);   // Assert that the script
+    if(mg_script_size > MG_SCRIPT_SIZE)
+    {
+        fprintf(stderr, "[gba-payload-generator]: Error: Mystery Gift Script is too large for %s, lang %c, revision %d!\n", getGameName(curr_GBA_rom.gamecode), curr_GBA_rom.language, curr_GBA_rom.version);
+        fprintf(stderr, "\tScript size: %d bytes, max size: %d bytes\n", mg_script_size, MG_SCRIPT_SIZE);
+        exit(1);
+    }
+
+    if(section30_size > 4096)
+    {
+        fprintf(stderr, "[gba-payload-generator]: Error: Section30 is too large for %s, lang %c, revision %d!\n", getGameName(curr_GBA_rom.gamecode), curr_GBA_rom.language, curr_GBA_rom.version);
+        fprintf(stderr, "\tSection30 size: %d bytes, max size: %d bytes\n", section30_size, 4096);
+        exit(1);
+    }
 };
+
+void mystery_gift_script::strip_injected_texts()
+{
+    u32 removedBytes;
+    u32 totalRemovedBytes;
+
+    TextBoxVarInsertionPoint *scriptTextboxVarInsertionPoints[] = {
+        &textGreetInsertionPoint,
+        &textYouMustBeInsertionPoint,
+        &textIAmInsertionPoint
+    };
+
+    TextBoxVarInsertionPoint *sec30TextboxVarInsertionPoints[] = {
+        &textThankInsertionPoint,
+        &textPCFullInsertionPoint,
+        &textWeHereInsertionPoint,
+        &textPCConvoInsertionPoint,
+        &textPCThanksInsertionPoint,
+        &textLookerFullInsertionPoint,
+        &textMoveBoxInsertionPoint,
+        &textReceivedInsertionPoint
+    };
+
+    printf("[gba-payload-generator]: Stripping injected texts...\n");
+    totalRemovedBytes = 0;
+
+    for(TextBoxVarInsertionPoint *insertionPoint : scriptTextboxVarInsertionPoints)
+    {
+        removedBytes = stripText(mg_script, insertionPoint, mg_script_size, totalRemovedBytes);
+
+        printf("[gba-payload-generator]: Stripped script text at origOffset 0x%08x, curOffset 0x%08x\n", insertionPoint->offset, insertionPoint->offset - totalRemovedBytes);
+        totalRemovedBytes += removedBytes;
+    }
+    mg_script_size -= totalRemovedBytes;
+
+    totalRemovedBytes = 0;
+    for(TextBoxVarInsertionPoint *insertionPoint : sec30TextboxVarInsertionPoints)
+    {
+        removedBytes = stripText(save_section_30, insertionPoint, section30_size, totalRemovedBytes);
+
+        printf("[gba-payload-generator]: Stripped section30 text at origOffset 0x%08x, curOffset 0x%08x\n", insertionPoint->offset, insertionPoint->offset - totalRemovedBytes);
+        totalRemovedBytes += removedBytes;
+    }
+    section30_size -= totalRemovedBytes;
+
+    printf("[gba-payload-generator]: Finished stripping injected texts.\n");
+
+}
 
 const u8 *mystery_gift_script::get_script() const
 {
@@ -1237,7 +1311,7 @@ void mystery_gift_script::writebytetooffset(u8 byte, u32 offset)
 
 void mystery_gift_script::init_npc_location(u8 bank, u8 map, u8 npc)
 {
-    mg_script[0] = 0x33; // File ID?
+    mg_script[0] = MGSCRIPT_MAGIC_VALUE;
     mg_script[1] = bank;
     mg_script[2] = map;
     mg_script[3] = npc;
@@ -1432,4 +1506,15 @@ void mystery_gift_script::add_word(u32 word)
 {
     add_asm(word >> 0);
     add_asm(word >> 16);
+}
+
+u32 mystery_gift_script::stripText(u8 *payloadBuffer, TextBoxVarInsertionPoint *insertionPoint, u32 payloadSize, u32 accumulatedOffsetCorrection)
+{
+    u32 realOffset = insertionPoint->offset - accumulatedOffsetCorrection;
+    u32 realPayloadSize = payloadSize - accumulatedOffsetCorrection;
+
+    const size_t bytesToMove = realPayloadSize - realOffset - insertionPoint->size;
+    memmove(payloadBuffer + realOffset, payloadBuffer + realOffset + insertionPoint->size, bytesToMove);
+
+    return insertionPoint->size;
 }
