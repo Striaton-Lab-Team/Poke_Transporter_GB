@@ -275,7 +275,7 @@ static u32 __attribute__((noinline)) injectTextEntryIntoBuffer(const u16 *charse
     // this is done to make sure the pointer references within the payload remain the same, no matter which one we inject.
     // however, we need to take this into account, so we inject the next entry at the right offset as well, taking that reservation
     // of space into account.
-    if(otherEntryIndex != UINT32_MAX)
+    if(otherEntryIndex != UINT16_MAX)
     {
         loadProcessedTextEntry(charset, textReader, otherEntryIndex, tempBuffer, otherBufferDepth);
         free(tempBuffer);
