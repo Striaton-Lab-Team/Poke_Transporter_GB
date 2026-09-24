@@ -244,6 +244,7 @@ $(GENERATE_STAMP): compress_lz10.sh | data to_compress generated_dir
 	@$(HOST_ENV) $(MAKE) -C tools/make-file-container
 	@$(HOST_ENV) $(MAKE) -C tools/gb-payload-generator
 	@$(HOST_ENV) $(MAKE) -C tools/gba-payload-generator
+	@$(HOST_ENV) $(MAKE) -C tools/bps-patch-trim
 	@echo
 	@echo "----------------------------------------------------------------"
 	@echo
@@ -285,6 +286,7 @@ clean:
 	@$(MAKE) -C tools/make-file-container clean
 	@$(MAKE) -C tools/gb-payload-generator clean
 	@$(MAKE) -C tools/gba-payload-generator clean
+	@$(MAKE) -C tools/bps-patch-trim clean
 	@$(MAKE) -C loader clean
 	@$(MAKE) -C PCCS clean
 	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).gba $(LOADERNAME).gba data/ to_compress/

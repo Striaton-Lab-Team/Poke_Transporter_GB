@@ -20,10 +20,8 @@ langs=("english" "french" "german" "italian" "japanese" "spanish")
 
 # This function uses the flips application to generate a BPS patch
 create_patch(){
-    flips --create --bps $1 $2 temp.bps
-    tail -c +5 temp.bps > $3
-    truncate -s -12 $3
-    rm temp.bps
+    flips --create --bps $1 $2 $3
+    tools/bps-patch-trim/bps-patch-trim $3
 }
 
 determine_base_section30(){
