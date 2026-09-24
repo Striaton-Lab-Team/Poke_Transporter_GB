@@ -167,19 +167,26 @@ static void generatePayloadsForLanguage(const char* outputPath, char languageCod
 
         generateOutputPath(outputPathBuffer, outputPath, "section30", gbaRomDataArray + i);
 
-        builder.build_script(rsefrlgTableReader, gbaRomDataArray[i], gen3CharsetEng, nullptr, true);
+        printf("[gba-payload-generator]: Generating payload: %s\n", outputPathBuffer);
+        builder.build_script(rsefrlgTableReader, gbaRomDataArray[i], gen3CharsetEng);
+
+        // strip the injected texts again for compression sake.
+        // doing it this way preserves the pointers (because the text had been temporarily injected)
+        // but it does remove the potential for storing texts more than once in the patch files
+        // because of the FileDataContainer chunks.
+        builder.strip_injected_texts();
 
         FILE *section30OutputFile = fopen(outputPathBuffer, "wb");
         if (!section30OutputFile)
         {
-            fprintf(stderr, "Error: Could not open output file %s for writing! Skipping!\n", outputPathBuffer);
+            fprintf(stderr, "[gba-payload-generator]: Error: Could not open output file %s for writing! Skipping!\n", outputPathBuffer);
             continue;
         }
 
         size_t write_size = fwrite(section30Buffer, 1, builder.get_section30_size(), section30OutputFile);
         if (write_size != builder.get_section30_size())
         {
-            fprintf(stderr, "Error: Could not write to output file %s!\n", outputPathBuffer);
+            fprintf(stderr, "[gba-payload-generator]: Error: Could not write to output file %s!\n", outputPathBuffer);
         }
         fclose(section30OutputFile);
 
@@ -187,14 +194,14 @@ static void generatePayloadsForLanguage(const char* outputPath, char languageCod
         FILE *mgScriptOutputFile = fopen(outputPathBuffer, "wb");
         if (!mgScriptOutputFile)
         {
-            fprintf(stderr, "Error: Could not open output file %s for writing! Skipping!\n", outputPathBuffer);
+            fprintf(stderr, "[gba-payload-generator]: Error: Could not open output file %s for writing! Skipping!\n", outputPathBuffer);
             continue;
         }
 
         write_size = fwrite(mgScriptBuffer, 1, builder.get_script_size(), mgScriptOutputFile);
         if (write_size != builder.get_script_size())
         {
-            fprintf(stderr, "Error: Could not write to output file %s!\n", outputPathBuffer);
+            fprintf(stderr, "[gba-payload-generator]: Error: Could not write to output file %s!\n", outputPathBuffer);
         }
         fclose(mgScriptOutputFile);
     }
@@ -216,7 +223,7 @@ int main(int argc, char **argv)
     FILE *text_table_file = fopen(argv[1], "rb");
     if (!text_table_file)
     {
-        fprintf(stderr, "Error: Could not open RSEFRLG text table file %s!\n", argv[1]);
+        fprintf(stderr, "[gba-payload-generator]: Error: Could not open RSEFRLG text table file %s!\n", argv[1]);
         printUsage();
         return 1;
     }
@@ -231,7 +238,7 @@ int main(int argc, char **argv)
     const size_t read_size = fread(textTableBuffer, 1, textTableSize, text_table_file);
     if (read_size != textTableSize)
     {
-        fprintf(stderr, "Error: Could not read RSEFRLG text table file %s!\n", argv[1]);
+        fprintf(stderr, "[gba-payload-generator]: Error: Could not read RSEFRLG text table file %s!\n", argv[1]);
         printUsage();
 
         delete[] textTableBuffer;
@@ -246,7 +253,6 @@ int main(int argc, char **argv)
 
     for(char langCode : langCodes)
     {
-        printf("Generating payloads for language code %c...\n", langCode);
         generatePayloadsForLanguage(argv[2], langCode, textTableBuffer, textTableSize);
     }
 

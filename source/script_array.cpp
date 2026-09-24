@@ -487,6 +487,22 @@ const script_obj_params event_script_params[SCRIPT_SIZE] = {
     {}, // COND_CHECK_MISSINGNO
 };
 
+static bool isFirstTime()
+{
+    bool firstTime = true;
+
+    // This determines if the event has been done before
+    for (unsigned i = 1; i <= 251; i++)
+    {
+        if (is_caught(i))
+        {
+            firstTime = false;
+            break;
+        }
+    }
+    return firstTime;
+}
+
 static void __attribute__((noinline)) convertPokeBox()
 {
     PokemonTables tables;
@@ -694,9 +710,14 @@ bool run_conditional(int index)
         return true;
 
     case CMD_IMPORT_POKEMON:
+    {
+        // we need to determine firstTime BEFORE calling convertPokeBox()
+        // because convertPokeBox will call set_caught()
+        const bool firstTime = isFirstTime();
         convertPokeBox();
-        inject_mystery(&box);
+        inject_mystery(&box, firstTime);
         return true;
+    }
     case CMD_BACK_TO_MENU:
         set_text_exit();
         REG_BG1HOFS = 0;

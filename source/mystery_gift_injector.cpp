@@ -7,6 +7,8 @@
 #include "pokemon_data.h"
 #include "ptgb_save_data_manager.h"
 #include "FileContainerReader.h"
+#include "global_frame_controller.h"
+#include "translated_text.h"
 #include "script_patches.h"
 #include "section30_patches.h"
 #include "script_ruby_english_1_0_lz10_bin.h"
@@ -15,8 +17,10 @@
 #include "section30_ruby_english_1_0_lz10_bin.h"
 #include "section30_patches_chunk0_lz10_bin.h"
 #include "section30_patches_chunk1_lz10_bin.h"
+#include "RSEFRLG_chunk0_lz10_bin.h"
 #include <cstdlib>
 #include <cstring>
+#include <array>
 
 extern "C"
 {
@@ -113,6 +117,12 @@ static constexpr PatchFileTableEntry patchFileTable[] =
     { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_SPANISH_1_0 }
 };
 
+static constexpr std::pair<u16, u16> firstTimeTextEntryPairs[] = {
+    {RSEFRLG_dia_textIAm_first_rs, RSEFRLG_dia_textIAm_second_rs},
+    {RSEFRLG_dia_textIAm_first_frlge, RSEFRLG_dia_textIAm_second_frlge},
+    {RSEFRLG_dia_textYouMustBe_first, RSEFRLG_dia_textYouMustBe_second}
+};
+
 // This will need to be modified for the JP releases
 static constexpr u8 em_wonder_card[0x14E] = {
     0x08, 0x6E, 0x00, 0x00, 0xBA, 0xB4, 0xBE, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00, 0xCA, 0xCC, 0xC9, 0xC0, 0xBF, 0xCD, 0xCD, 0xC9, 0xCC, 0x00, 0xC0, 0xBF, 0xC8, 0xC8, 0xBF, 0xC6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCE, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0x00, 0xBD, 0xD9, 0xE6, 0xE8, 0xDD, 0xDA, 0xDD, 0xD7, 0xD5, 0xE8, 0xD9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD0, 0xDD, 0xE7, 0xDD, 0xE8, 0x00, 0xE8, 0xDC, 0xD9, 0x00, 0xDC, 0xE3, 0xE9, 0xE7, 0xD9, 0x00, 0xE7, 0xE3, 0xE9, 0xE8, 0xDC, 0xD9, 0xD5, 0xE7, 0xE8, 0x00, 0xE3, 0xDA, 0x00, 0xE8, 0xDC, 0xD9, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xBD, 0xBF, 0xC8, 0xCE, 0xBF, 0xCC, 0x00, 0xDD, 0xE2, 0x00, 0xCD, 0xE3, 0xE3, 0xE8, 0xE3, 0xE4, 0xE3, 0xE0, 0xDD, 0xE7, 0x00, 0xBD, 0xDD, 0xE8, 0xED, 0x00, 0xE8, 0xE3, 0x00, 0xE6, 0xD9, 0xD7, 0xDD, 0xD9, 0xEA, 0xD9, 0x00, 0x00, 0x00, 0x00, 0xED, 0xE3, 0xE9, 0xE6, 0x00, 0xE8, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0xD9, 0xD8, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xBE, 0xE3, 0x00, 0xE2, 0xE3, 0xE8, 0x00, 0xE8, 0xE3, 0xE7, 0xE7, 0x00, 0xE8, 0xDC, 0xDD, 0xE7, 0x00, 0xBF, 0xEC, 0xD7, 0xDC, 0xD5, 0xE2, 0xDB, 0xD9, 0x00, 0xBD, 0xD5, 0xE6, 0xD8, 0x00, 0xD6, 0xD9, 0xDA, 0xE3, 0xE6, 0xD9, 0x00, 0x00, 0x00, 0xE6, 0xD9, 0xD7, 0xD9, 0xDD, 0xEA, 0xDD, 0xE2, 0xDB, 0x00, 0xED, 0xE3, 0xE9, 0xE6, 0x00, 0xE8, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0xD9, 0xD8, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -120,6 +130,8 @@ static constexpr u8 em_wonder_card[0x14E] = {
 //    0xCE, 0x7C, 0x00, 0x00, 0xBA, 0xB4, 0xBE, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00, 0xCA, 0xCC, 0xC9, 0xC0, 0xBF, 0xCD, 0xCD, 0xC9, 0xCC, 0x00, 0xC0, 0xBF, 0xC8, 0xC8, 0xBF, 0xC6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCE, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0x00, 0xBD, 0xD9, 0xE6, 0xE8, 0xDD, 0xDA, 0xDD, 0xD7, 0xD5, 0xE8, 0xD9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD0, 0xDD, 0xE7, 0xDD, 0xE8, 0x00, 0xE8, 0xDC, 0xD9, 0x00, 0xDC, 0xE3, 0xE9, 0xE7, 0xD9, 0x00, 0xE7, 0xE3, 0xE9, 0xE8, 0xDC, 0xD9, 0xD5, 0xE7, 0xE8, 0x00, 0xE3, 0xDA, 0x00, 0xE8, 0xDC, 0xD9, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xBD, 0xBF, 0xC8, 0xCE, 0xBF, 0xCC, 0x00, 0xDD, 0xE2, 0x00, 0xC7, 0xE3, 0xE7, 0xE7, 0xD8, 0xD9, 0xD9, 0xE4, 0x00, 0xBD, 0xDD, 0xE8, 0xED, 0x00, 0xE8, 0xE3, 0x00, 0xE6, 0xD9, 0xD7, 0xDD, 0xD9, 0xEA, 0xD9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xED, 0xE3, 0xE9, 0xE6, 0x00, 0xE8, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0xD9, 0xD8, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xBE, 0xE3, 0x00, 0xE2, 0xE3, 0xE8, 0x00, 0xE8, 0xE3, 0xE7, 0xE7, 0x00, 0xE8, 0xDC, 0xDD, 0xE7, 0x00, 0xBF, 0xEC, 0xD7, 0xDC, 0xD5, 0xE2, 0xDB, 0xD9, 0x00, 0xBD, 0xD5, 0xE6, 0xD8, 0x00, 0xD6, 0xD9, 0xDA, 0xE3, 0xE6, 0xD9, 0x00, 0x00, 0x00, 0xE6, 0xD9, 0xD7, 0xD9, 0xDD, 0xEA, 0xDD, 0xE2, 0xDB, 0x00, 0xED, 0xE3, 0xE9, 0xE6, 0x00, 0xE8, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0xD9, 0xD8, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // checksum
 static constexpr u8 frlg_wonder_card[0x14E] = {
     0x67, 0x18, 0x00, 0x00, 0xBA, 0xB4, 0xBE, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00, 0xCA, 0xCC, 0xC9, 0xC0, 0xBF, 0xCD, 0xCD, 0xC9, 0xCC, 0x00, 0xC0, 0xBF, 0xC8, 0xC8, 0xBF, 0xC6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCE, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0x00, 0xBD, 0xD9, 0xE6, 0xE8, 0xDD, 0xDA, 0xDD, 0xD7, 0xD5, 0xE8, 0xD9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD0, 0xDD, 0xE7, 0xDD, 0xE8, 0x00, 0xE8, 0xDC, 0xD9, 0x00, 0xDC, 0xE3, 0xE9, 0xE7, 0xD9, 0x00, 0xE7, 0xE3, 0xE9, 0xE8, 0xDC, 0x00, 0xE3, 0xDA, 0x00, 0xE8, 0xDC, 0xD9, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0x00, 0x00, 0x00, 0x00, 0xBD, 0xBF, 0xC8, 0xCE, 0xBF, 0xCC, 0x00, 0xE3, 0xE2, 0x00, 0xCD, 0xD9, 0xEA, 0xD9, 0xE2, 0x00, 0xC3, 0xE7, 0xE0, 0xD5, 0xE2, 0xD8, 0x00, 0xE8, 0xE3, 0x00, 0xE6, 0xD9, 0xD7, 0xDD, 0xD9, 0xEA, 0xD9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xED, 0xE3, 0xE9, 0xE6, 0x00, 0xE8, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0xD9, 0xD8, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xBE, 0xE3, 0x00, 0xE2, 0xE3, 0xE8, 0x00, 0xE8, 0xE3, 0xE7, 0xE7, 0x00, 0xE8, 0xDC, 0xDD, 0xE7, 0x00, 0xBF, 0xEC, 0xD7, 0xDC, 0xD5, 0xE2, 0xDB, 0xD9, 0x00, 0xBD, 0xD5, 0xE6, 0xD8, 0x00, 0xD6, 0xD9, 0xDA, 0xE3, 0xE6, 0xD9, 0x00, 0x00, 0x00, 0xE6, 0xD9, 0xD7, 0xD9, 0xDD, 0xEA, 0xDD, 0xE2, 0xDB, 0x00, 0xED, 0xE3, 0xE9, 0xE6, 0x00, 0xE8, 0xE6, 0xD5, 0xE2, 0xE7, 0xDA, 0xD9, 0xE6, 0xD9, 0xD8, 0x00, 0xCA, 0xC9, 0xC5, 0x1B, 0xC7, 0xC9, 0xC8, 0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // checksum
+
+static const u8 *RSEFRLG_chunklist[] = { RSEFRLG_chunk0_lz10_bin };
 
 /// function to calculate a 32-bit checksum of a script buffer.
 static u32 calc_checksum32(const u8 *buffer, u32 size)
@@ -154,6 +166,200 @@ static u16 calc_crc16(const u8 *buffer, u32 size) // Implementation taken from P
     }
     return ~crc;
 };
+
+/** Converts the lang code to the PCCS Language enum */
+static Language convertLangCodeIntoLanguage(int32_t langCode)
+{
+    switch(langCode)
+    {
+        case LANG_JPN:
+            return JAPANESE;
+        case LANG_ENG:
+            return ENGLISH;
+        case LANG_FRE:
+            return FRENCH;
+        case LANG_ITA:
+            return ITALIAN;
+        case LANG_GER:
+            return GERMAN;
+        case LANG_SPA:
+            return SPANISH;
+        default:
+            return ENGLISH;
+    }
+}
+
+/**
+ * @brief This one loads the specified textEntry index into a newly malloc'ed outBuffer.
+ * It removes the colored text from the text entry if necessary and stores the actual buffer depth into outBufferDepth
+ *
+ * WARNING: the caller  becomes owner of the outBuffer pointer. Make sure to free() it!
+ */
+static void loadProcessedTextEntry(const u16 *charset, FileContainerReader &textReader, u16 entryIndex, u8 *&outBuffer, u32 &outBufferDepth)
+{
+    const u8 *curText = textReader.getPointerToFileInDecompressionBuffer(entryIndex);
+    u8 *curBuffer;
+
+    outBuffer = (u8*)malloc(textReader.getFileSize(entryIndex));
+    curBuffer = outBuffer;
+
+    // Process the text entry and copy it into a temporary buffer, removing any colored text if necessary.
+    while((*curText) != 0xFF)
+    {
+        if(curr_GBA_rom.is_hoenn())
+        {
+            if(*curText == 0xFC && (get_char_from_charset(charset, (u16)(*(curText + 1))) == 0x01)) // Removes colored text
+            {
+                curText += 2;
+                continue;
+            }
+        }
+
+        *(curBuffer) = *curText;
+        ++curBuffer;
+        ++curText;
+    }
+    *(curBuffer) = 0xFF; // End string
+    ++curBuffer;
+
+    outBufferDepth = curBuffer - outBuffer;
+}
+
+/**
+ * @brief This function injects a text entry generated by text_helper into the provided buffer.
+ * NOTE: bufferPos should point to the exact location at which the text entry should be injected.
+ * NOTE: this code originated from text_var::insert_text() and has been adapted for use in this context.
+ *
+ * @param charset a charset buffer to use hen injecting the text entry. It's used to detect colored text and remove it if necessary.
+ * @param bufferPos an offset into the buffer where the text entry should be injected.
+ * @param textReader a FileContainerReader instance used to read the text entry.
+ * @param entryIndex the index of the text entry to inject.
+ * @return u32 the number of bytes injected into the buffer.
+ */
+static u32 __attribute__((noinline)) injectTextEntryIntoBuffer(const u16 *charset, u8 *buffer, u32 bufferSize, u32 bufferPos, FileContainerReader &textReader, u16 entryIndex, bool isFirstTime)
+{
+    u8 *curBuffer = buffer + bufferPos;
+    u8 *tempBuffer;
+    u32 bufferDepth;
+    u16 selectedEntryIndex;
+    u16 otherEntryIndex;
+    u32 otherBufferDepth;
+
+    // if this is a first_time related text, determine which entry to inject first.
+    selectedEntryIndex = entryIndex;
+    otherEntryIndex = UINT16_MAX;
+    for(u32 i = 0; i < sizeof(firstTimeTextEntryPairs) / sizeof(firstTimeTextEntryPairs[0]); ++i)
+    {
+        if(entryIndex == firstTimeTextEntryPairs[i].first)
+        {
+            if(isFirstTime)
+            {
+                otherEntryIndex = firstTimeTextEntryPairs[i].second;
+            }
+            else
+            {
+                selectedEntryIndex = firstTimeTextEntryPairs[i].second;
+                otherEntryIndex = entryIndex;
+            }
+        }
+    }
+
+    loadProcessedTextEntry(charset, textReader, selectedEntryIndex, tempBuffer, bufferDepth);
+    // Move the existing buffer content to make room for the new text entry
+    memmove(curBuffer + bufferDepth, curBuffer, bufferSize - bufferPos - bufferDepth);
+    // now copy the processed text into the buffer at the current position
+    memcpy(curBuffer, tempBuffer, bufferDepth);
+    free(tempBuffer);
+
+    // mystery_gift_builder in gba-payload-generator reserves space for the largest entry of the first_time/second_time pair.
+    // this is done to make sure the pointer references within the payload remain the same, no matter which one we inject.
+    // however, we need to take this into account, so we inject the next entry at the right offset as well, taking that reservation
+    // of space into account.
+    if(otherEntryIndex != UINT16_MAX)
+    {
+        loadProcessedTextEntry(charset, textReader, otherEntryIndex, tempBuffer, otherBufferDepth);
+        free(tempBuffer);
+        if(bufferDepth < otherBufferDepth)
+        {
+            bufferDepth = otherBufferDepth;
+        }
+    }
+
+    return bufferDepth;
+}
+
+/**
+ * @brief This function re-injects the RSEFRLG text table entries into the section30 and script payload buffers.
+ * In gba-payload-generator, we are stripping those texts after payload generation to improve compression and while keeping the pointers/offsets
+ * inside the payload intact.
+ *
+ * But in order to use the payload, we actually need to reinsert those at runtime.
+ */
+static void __attribute__((noinline)) reinjectMysteryGiftPayloadTexts(u8 *section30Buffer, u8 *mgScriptBuffer, bool isFirstTime)
+{
+    u8 decompressionBuffer[4096];
+    u16 gen3Charset[256];
+    u32 bytesInjected;
+    // the reason for using std::array for these is simply to be able to use initializer lists below.
+    std::array<u8, 8> section30TextSequence;
+    std::array<u8, 4> scriptTextSequence;
+    u8 textGreetEntryIndex;
+    u8 iAmEntryIndex;
+    u32 section30Offset;
+    u32 mgScriptOffset;
+
+    FileContainerReader textReader(RSEFRLG_chunklist, sizeof(RSEFRLG_chunklist) / sizeof(RSEFRLG_chunklist[0]), sizeof(decompressionBuffer));
+    textReader.init(decompressionBuffer, sizeof(decompressionBuffer));
+
+
+    // make the section30Buffer and mgScriptBuffer pointers point to the exact insertion position within them.
+    // the section30 text offset (0x97E) remains consistent across languages and games in the payload.
+    // the script text offset shifts depending on the game version. (observed based on logs from gba-payload-generator)
+
+    // Also construct text entry sequences, because we need to maintain the same order of injection
+    // as during the payload generation with gba-payload-generator
+    section30Offset = 0x97E;
+
+    switch(curr_GBA_rom.gamecode)
+    {
+    case RUBY_ID:
+    case SAPPHIRE_ID:
+        mgScriptOffset = 0x268;
+        textGreetEntryIndex = RSEFRLG_dia_textGreet_rse;
+        iAmEntryIndex = RSEFRLG_dia_textIAm_first_rs;
+        section30TextSequence = { RSEFRLG_dia_textThank_rs, RSEFRLG_dia_textPCFull_rs, RSEFRLG_dia_textWeHere_rs, RSEFRLG_dia_textPCConvo_rs, RSEFRLG_dia_textPCThanks_rs, RSEFRLG_dia_textLookerFull_rs, RSEFRLG_dia_textMoveBox_rs, RSEFRLG_dia_textRecieved_rs };
+        break;
+    case FIRERED_ID:
+    case LEAFGREEN_ID:
+        mgScriptOffset = 0x278;
+        textGreetEntryIndex = RSEFRLG_dia_textGreet_frlg;
+        iAmEntryIndex = RSEFRLG_dia_textIAm_first_frlge;
+        section30TextSequence = { RSEFRLG_dia_textThank_frlge, RSEFRLG_dia_textPCFull_frlge, RSEFRLG_dia_textWeHere_frlg, RSEFRLG_dia_textPCConvo_frlge, RSEFRLG_dia_textPCThanks_frlge, RSEFRLG_dia_textLookerFull_frlge, RSEFRLG_dia_textMoveBox_frlg, RSEFRLG_dia_textRecieved_frlge };
+        break;
+    default:
+        mgScriptOffset = 0x298;
+        textGreetEntryIndex = RSEFRLG_dia_textGreet_rse;
+        iAmEntryIndex = RSEFRLG_dia_textIAm_first_frlge;
+        section30TextSequence = { RSEFRLG_dia_textThank_frlge, RSEFRLG_dia_textPCFull_frlge, RSEFRLG_dia_textWeHere_e, RSEFRLG_dia_textPCConvo_frlge, RSEFRLG_dia_textPCThanks_frlge, RSEFRLG_dia_textLookerFull_frlge, RSEFRLG_dia_textMoveBox_e, RSEFRLG_dia_textRecieved_frlge };
+        break;
+    }
+
+    scriptTextSequence = {textGreetEntryIndex, RSEFRLG_dia_textYouMustBe_first, iAmEntryIndex };
+
+    load_localized_charset(gen3Charset, 3, convertLangCodeIntoLanguage(curr_GBA_rom.language));
+
+    for(unsigned i=0; i < 8; ++i)
+    {
+        bytesInjected = injectTextEntryIntoBuffer(gen3Charset, section30Buffer, 0x1000, section30Offset, textReader, section30TextSequence[i], isFirstTime);
+        section30Offset += bytesInjected;
+    }
+
+    for(unsigned i=0; i < 3; ++i)
+    {
+        bytesInjected = injectTextEntryIntoBuffer(gen3Charset, mgScriptBuffer, MG_SCRIPT_SIZE, mgScriptOffset, textReader, scriptTextSequence[i], isFirstTime);
+        mgScriptOffset += bytesInjected;
+    }
+}
 
 /**
  * @brief This function injects the PokeBox pokémons into section30 at offset 0x0, which is what the payload expects.
@@ -255,13 +461,49 @@ static void pickPatchFiles(u32 &gamePatchFile, u32 &specificPatchFile)
  * @brief This helper function will apply the BPS patch with index patchFileIndex stored in reader
  * to the srcBuffer data and store the result in dstBuffer. srcBuffer remains untouched.
  */
-static void apply_bps_patch_to_buffer(FileContainerReader &reader, u8* dstBuffer, u8 *srcBuffer, u32 patchFileIndex)
+static void __attribute__((noinline)) applyBPSPatchToBuffer(FileContainerReader &reader, u8* dstBuffer, u8 *srcBuffer, u32 patchFileIndex)
 {
+    // Note: you may think it's peculiar that we're malloc'ing patchBuffer below.
+    // But here's the dilemma: the files in the file container may span multiple chunks.
+    // (mostly the last file in each chunk)
+    // Therefore using getPointerToFileInDecompressionBuffer() would be unsafe.
+    // We could've used the @noSpanChunks directive in the .containerdef file to overcome that.
+    // However, then we're hit by an additional problem: We've constructed patchFileTable above using the script_patches
+    // indexes, relying on those to be consistent/representative for both the section30 and script patch filecontainers.
+    // but section30 is much larger than script. Therefore the patches don't have the same filesizes either.
+    // This would result in @noSpanChunks injecting a different number of dummy files in each filecontainer,
+    // which would break the index consistency.
+    //
+    // You might argue that we might as well use a statically allocated buffer for the patch.
+    // However, our IWRAM consumption is already quite high here. And malloc() will just use unused space at the end of EWRAM.
+    // (=where our multiboot rom resides)
     const u32 patchFileSize = reader.getFileSize(patchFileIndex);
     u8 *patchBuffer = (u8*)malloc(patchFileSize);
     reader.readFile(patchFileIndex, patchBuffer);
     bps_patch(srcBuffer, dstBuffer, patchBuffer, patchFileSize);
     free(patchBuffer);
+}
+
+static void __attribute__((noinline)) patchBuffer(FileContainerReader &reader, u8 *buffer, u32 bufferSize, u32 gamePatchFileIndex, u32 specificPatchFileIndex)
+{
+    u8 tempBuffer[4096];
+    memset(tempBuffer, 0, bufferSize);
+
+    applyBPSPatchToBuffer(reader, tempBuffer, buffer, gamePatchFileIndex);
+
+    // We shouldn't attempt to apply the same base payload patch twice.
+    // that's what the magic SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX value is for.
+    if(specificPatchFileIndex != SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX)
+    {
+        // now turn the english <gametype> payload into the specific language payload.
+        // the result will be stored back in buffer
+        applyBPSPatchToBuffer(reader, buffer, tempBuffer, specificPatchFileIndex);
+    }
+    else
+    {
+        // no specific patch file, so just copy the tempBuffer back to buffer
+        memcpy(buffer, tempBuffer, bufferSize);
+    }
 }
 
 /**
@@ -287,10 +529,9 @@ static void apply_bps_patch_to_buffer(FileContainerReader &reader, u8* dstBuffer
  * NOTE: __attribute__((noinline)) is used to ensure this function gets its own stack frame and therefore the local
  * buffers don't leak into the caller's stack frame. This is important because IWRAM consumption is a big concern in PTGB.
  */
-static void __attribute__((noinline)) reconstruct_pregenerated_payloads(u8* section30Buffer, u8* scriptBuffer)
+static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* section30Buffer, u8* scriptBuffer)
 {
     u8 decompressionBuffer[DEFAULT_CHUNK_SIZE];
-    u8 tempBuffer[4096];
     u32 gamePatchFile;
     u32 specificPatchFile = (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_0;
 
@@ -311,70 +552,28 @@ static void __attribute__((noinline)) reconstruct_pregenerated_payloads(u8* sect
     pickPatchFiles(gamePatchFile, specificPatchFile);
 
     // assume we found the entry.
-    // start with section30
     memset(section30Buffer, 0, 0x1000);
-    memset(tempBuffer, 0, 0x1000);
-    LZ77UnCompWram(section30_ruby_english_1_0_lz10_bin, section30Buffer);
-    section30PatchesReader.init(decompressionBuffer, DEFAULT_CHUNK_SIZE);
-    
-    // Note: you may think it's peculiar that we're malloc'ing patchBuffer below.
-    // But here's the dilemma: the files in the file container may span multiple chunks. 
-    // (mostly the last file in each chunk)
-    // Therefore using getPointerToFileInDecompressionBuffer() would be unsafe.
-    // We could've used the @noSpanChunks directive in the .containerdef file to overcome that.
-    // However, then we're hit by an additional problem: We've constructed patchFileTable above using the script_patches
-    // indexes, relying on those to be consistent/representative for both the section30 and script patch filecontainers.
-    // but section30 is much larger than script. Therefore the patches don't have the same filesizes either.
-    // This would result in @noSpanChunks injecting a different number of dummy files in each filecontainer, 
-    // which would break the index consistency.
-    //
-    // You might argue that we might as well use a statically allocated buffer for the patch.
-    // However, our IWRAM consumption is already quite high here. And malloc() will just use unused space at the end of EWRAM. 
-    // (where our multiboot rom resides)
-
-    // turn the base (english) payload into the english <gametype> payload.
-    // the result will be stored in tempBuffer
-    apply_bps_patch_to_buffer(section30PatchesReader, tempBuffer, section30Buffer, gamePatchFile);
-
-    // We shouldn't attempt to apply the same base payload patch twice.
-    // that's what the magic SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX value is for.
-    if(specificPatchFile != SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX)
-    {
-        // now turn the english <gametype> payload into the specific language payload.
-        // the result will be stored back in section30Buffer
-        apply_bps_patch_to_buffer(section30PatchesReader, section30Buffer, tempBuffer, specificPatchFile);
-    }
-    else
-    {
-        // no specific patch file, so just copy the tempBuffer back to section30Buffer
-        memcpy(section30Buffer, tempBuffer, 0x1000);
-    }
-
-    // now do the same with scriptBuffer
     memset(scriptBuffer, 0, MG_SCRIPT_SIZE);
-    memset(tempBuffer, 0, 0x1000);
+    LZ77UnCompWram(section30_ruby_english_1_0_lz10_bin, section30Buffer);
     LZ77UnCompWram(script_ruby_english_1_0_lz10_bin, scriptBuffer);
+
+    // patch section30
+    section30PatchesReader.init(decompressionBuffer, DEFAULT_CHUNK_SIZE);
+    patchBuffer(section30PatchesReader, section30Buffer, 0x1000, gamePatchFile, specificPatchFile);
+
+    // patch script
     scriptPatchesReader.init(decompressionBuffer, DEFAULT_CHUNK_SIZE);
-
-    apply_bps_patch_to_buffer(scriptPatchesReader, tempBuffer, scriptBuffer, gamePatchFile);
-
-    if(specificPatchFile != SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX)
-    {
-        apply_bps_patch_to_buffer(scriptPatchesReader, scriptBuffer, tempBuffer, specificPatchFile);
-    }
-    else
-    {
-        memcpy(scriptBuffer, tempBuffer, MG_SCRIPT_SIZE);
-    }
+    patchBuffer(scriptPatchesReader, scriptBuffer, MG_SCRIPT_SIZE, gamePatchFile, specificPatchFile);
 }
 
 
-bool inject_mystery(PokeBox* box)
+bool inject_mystery(PokeBox* box, bool isFirstTime)
 {
     u32 checksum;
     u8 script_buffer[MG_SCRIPT_SIZE];
 
-    reconstruct_pregenerated_payloads(global_memory_buffer, script_buffer);
+    reconstructPregeneratedPayloads(global_memory_buffer, script_buffer);
+    reinjectMysteryGiftPayloadTexts(global_memory_buffer, script_buffer, isFirstTime);
 
     // One thing our pregeneration process obviously leaves out is the pokemon data.
     // so let's add that in now.

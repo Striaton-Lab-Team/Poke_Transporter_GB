@@ -156,33 +156,34 @@ u32 xse_var::get_loc_in_sec30(const struct ROM_DATA &curr_GBA_rom)
 
 // TEXTBOX VAR
 
+textbox_var::textbox_var(std::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr, TextBoxVarInsertionPoint &outInsertionPoint)
+    : xse_var(var_list_ref, nCurr_loc_ptr)
+    , outInsertionPoint(outInsertionPoint)
+{
+    outInsertionPoint.size = 0;
+}
+
 void textbox_var::set_text(const byte nText[])
 {
     text = nText;
-    text_length = get_string_char_count(nText);
 }
 
 void textbox_var::set_start()
 {
     start_location_in_script = *curr_loc_ptr;
-}
-
-void textbox_var::set_virtual_start()
-{
-    start_location_in_script = *curr_loc_ptr - 4;
+    outInsertionPoint.offset = start_location_in_script;
 }
 
 void textbox_var::insert_text(const u16 *charset, u8 mg_array[], bool is_hoenn, bool should_set_virtual_start)
 {
-    if(!should_set_virtual_start)
+    set_start();
+
+    if(should_set_virtual_start)
     {
-        set_start();
-    }
-    else
-    {
-        set_virtual_start();
+        start_location_in_script -= 4;
     }
 
+    const u32 text_length = get_string_char_count(text);
     for (int parser = 0; parser < text_length; parser++)
     {
         if (is_hoenn && (text[parser] == 0xFC) && (get_char_from_charset(charset, (char16_t)(text[parser + 1])) == 0x01)) // Removes colored text
@@ -197,6 +198,8 @@ void textbox_var::insert_text(const u16 *charset, u8 mg_array[], bool is_hoenn, 
     }
     mg_array[*curr_loc_ptr] = 0xFF; // End string
     (*curr_loc_ptr)++;
+
+    outInsertionPoint.size = *curr_loc_ptr - outInsertionPoint.offset;
 }
 
 // MOVEMENT VAR
