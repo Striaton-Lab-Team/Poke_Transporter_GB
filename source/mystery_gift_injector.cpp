@@ -13,10 +13,8 @@
 #include "section30_patches.h"
 #include "script_ruby_english_1_0_lz10_bin.h"
 #include "script_patches_chunk0_lz10_bin.h"
-#include "script_patches_chunk1_lz10_bin.h"
 #include "section30_ruby_english_1_0_lz10_bin.h"
 #include "section30_patches_chunk0_lz10_bin.h"
-#include "section30_patches_chunk1_lz10_bin.h"
 #include "RSEFRLG_chunk0_lz10_bin.h"
 #include <cstdlib>
 #include <cstring>
@@ -531,18 +529,17 @@ static void __attribute__((noinline)) patchBuffer(FileContainerReader &reader, u
  */
 static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* section30Buffer, u8* scriptBuffer)
 {
-    u8 decompressionBuffer[DEFAULT_CHUNK_SIZE];
+    const u32 patchContainerChunkSize = 4096; // defined by @chunkSize directive in the .containerdef files
+    u8 decompressionBuffer[patchContainerChunkSize];
     u32 gamePatchFile;
     u32 specificPatchFile = (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_0;
 
     const u8* section30PatchesChunkList[] = {
-        section30_patches_chunk0_lz10_bin,
-        section30_patches_chunk1_lz10_bin
+        section30_patches_chunk0_lz10_bin
     };
 
     const u8* scriptPatchesChunkList[] = {
-        script_patches_chunk0_lz10_bin,
-        script_patches_chunk1_lz10_bin
+        script_patches_chunk0_lz10_bin
     };
 
     FileContainerReader section30PatchesReader(section30PatchesChunkList, sizeof(section30PatchesChunkList) / sizeof(section30PatchesChunkList[0]));
@@ -558,11 +555,11 @@ static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* sectio
     LZ77UnCompWram(script_ruby_english_1_0_lz10_bin, scriptBuffer);
 
     // patch section30
-    section30PatchesReader.init(decompressionBuffer, DEFAULT_CHUNK_SIZE);
+    section30PatchesReader.init(decompressionBuffer, patchContainerChunkSize);
     patchBuffer(section30PatchesReader, section30Buffer, 0x1000, gamePatchFile, specificPatchFile);
 
     // patch script
-    scriptPatchesReader.init(decompressionBuffer, DEFAULT_CHUNK_SIZE);
+    scriptPatchesReader.init(decompressionBuffer, patchContainerChunkSize);
     patchBuffer(scriptPatchesReader, scriptBuffer, MG_SCRIPT_SIZE, gamePatchFile, specificPatchFile);
 }
 
