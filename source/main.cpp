@@ -158,6 +158,34 @@ void __attribute__((noinline)) game_load_error(void)
 	}
 };
 
+// attribute noinline is used to make sure it doesn't get inlined and permanently use IWRAM for the decompression_buffer
+void __attribute__((noinline)) lang_mismatch_error(void)
+{
+	u8 general_text_buffer[2048];
+	u8 lineBuffer[1024];
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
+
+	get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader text_reader(chunkList, numChunks, chunkSize);
+
+	text_reader.init(general_text_buffer, sizeof(general_text_buffer));
+
+	BG_TEXTBOX = (BG_TEXTBOX & ~BG_PRIO_MASK) | BG_PRIO(1);
+	text_reader.readFile(GENERAL_lang_mismatch_warning, lineBuffer);
+	ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX, GENERAL_lang_mismatch_warning, false);
+
+	// key_poll();
+	do
+	{
+		VBlankIntrWait();
+	} while (!key_hit(KEY_A) && !key_hit(KEY_SELECT));
+
+	tte_erase_rect(0, 0, H_MAX, V_MAX);
+	erase_textbox_tiles();
+};
+
 // avoid inlining to avoid permanently storing the credits_decompression_buffer in IWRAM
 int __attribute__((noinline)) credits()
 {
@@ -424,6 +452,13 @@ int main(void)
 			game_load_error();
 			// initialization_script();
 		}
+	}
+
+	if ((curr_GBA_rom.language == LANG_JPN) != (PTGB_BUILD_LANGUAGE == JPN_ID))
+	{			
+		obj_hide_multi(ptgb_logo_l, 2);
+		VBlankIntrWait();
+		lang_mismatch_error();
 	}
 
 	// Initialize memory and save data after loading the game
