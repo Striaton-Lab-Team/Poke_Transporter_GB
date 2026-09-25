@@ -6,8 +6,8 @@
 #include "gb_rom_values/gb_rom_values.h"
 #include "global_frame_controller.h"
 #include "link_handler.h"
-#include "mystery_gift_builder.h"
 #include "mystery_gift_injector.h"
+#include "ptgb_save_data_manager.h"
 #include "pokemon_data.h"
 #include "select_menu.h"
 #include "sprite_data.h"
@@ -18,8 +18,7 @@
 
 int last_error;
 bool newPkmn = false;
-PokemonTables pokeTable;
-PokeBox box(&pokeTable);
+PokeBox box;
 
 Select_Menu langs(false, LANG_MENU, 18, 0);
 Select_Menu games(false, CART_MENU, 18, 0);
@@ -488,55 +487,27 @@ const script_obj_params event_script_params[SCRIPT_SIZE] = {
     {}, // COND_CHECK_MISSINGNO
 };
 
-void populate_lang_menu()
+static bool isFirstTime()
 {
-    langs.clear_options();
+    bool firstTime = true;
 
-    langs.add_option(GENERAL_option_english, ENG_ID);
-    langs.add_option(GENERAL_option_japanese, JPN_ID);
-    langs.add_option(GENERAL_option_spanish, SPA_ID);
-    langs.add_option(GENERAL_option_french, FRE_ID);
-    langs.add_option(GENERAL_option_german, GER_ID);
-    langs.add_option(GENERAL_option_italian, ITA_ID);
-    langs.add_option(GENERAL_option_korean, KOR_ID);
-    // TODO: Removing the cancel option for the time being, since canceling the
-    // link trade when there is no link connection crashes the game
-    // langs.add_option(GENERAL_option_cancel, UINT8_MAX);
+    // This determines if the event has been done before
+    for (unsigned i = 1; i <= 251; i++)
+    {
+        if (is_caught(i))
+        {
+            firstTime = false;
+            break;
+        }
+    }
+    return firstTime;
 }
 
-void populate_game_menu(int lang)
+static void __attribute__((noinline)) convertPokeBox()
 {
-    games.clear_options();
-
-    switch (lang)
-    {
-    case (JPN_ID):
-        games.add_option(GENERAL_option_red, RED_ID);
-        games.add_option(GENERAL_option_green, GREEN_ID);
-        games.add_option(GENERAL_option_blue, BLUE_ID);
-        games.add_option(GENERAL_option_yellow, YELLOW_ID);
-        games.add_option(GENERAL_option_gold, GOLD_ID);
-        games.add_option(GENERAL_option_silver, SILVER_ID);
-        games.add_option(GENERAL_option_crystal, CRYSTAL_ID);
-        games.add_option(GENERAL_option_cancel, UINT8_MAX);
-        break;
-
-    case (KOR_ID):
-        games.add_option(GENERAL_option_gold, GOLD_ID);
-        games.add_option(GENERAL_option_silver, SILVER_ID);
-        games.add_option(GENERAL_option_cancel, UINT8_MAX);
-        break;
-
-    default:
-        games.add_option(GENERAL_option_red, RED_ID);
-        games.add_option(GENERAL_option_blue, BLUE_ID);
-        games.add_option(GENERAL_option_yellow, YELLOW_ID);
-        games.add_option(GENERAL_option_gold, GOLD_ID);
-        games.add_option(GENERAL_option_silver, SILVER_ID);
-        games.add_option(GENERAL_option_crystal, CRYSTAL_ID);
-        games.add_option(GENERAL_option_cancel, UINT8_MAX);
-        break;
-    }
+    PokemonTables tables;
+    newPkmn = false;
+    box.convertAll(&tables);
 }
 
 bool run_conditional(int index)
@@ -739,9 +710,14 @@ bool run_conditional(int index)
         return true;
 
     case CMD_IMPORT_POKEMON:
-        inject_mystery(&box);
+    {
+        // we need to determine firstTime BEFORE calling convertPokeBox()
+        // because convertPokeBox will call set_caught()
+        const bool firstTime = isFirstTime();
+        convertPokeBox();
+        inject_mystery(&box, firstTime);
         return true;
-
+    }
     case CMD_BACK_TO_MENU:
         set_text_exit();
         REG_BG1HOFS = 0;

@@ -243,11 +243,14 @@ $(GENERATE_STAMP): compress_lz10.sh | data to_compress generated_dir
 	@echo "----------------------------------------------------------------"
 	@$(HOST_ENV) $(MAKE) -C tools/make-file-container
 	@$(HOST_ENV) $(MAKE) -C tools/gb-payload-generator
+	@$(HOST_ENV) $(MAKE) -C tools/gba-payload-generator
 	@echo
 	@echo "----------------------------------------------------------------"
 	@echo
-	@find $(FILE_CONTAINERS) -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress
 	@find tools/text_helper/build -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container to_compress
+	tools/generate_gba_payloads.sh build/ to_compress/RSEFRLG.chunk0.bin
+	@find build/bps-patches -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress
+	@find $(FILE_CONTAINERS) -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress
 	@echo "Compressing bin files!" 
 	@echo -n "["
 	@find to_compress -name "*.bin" -print0 | xargs -0 -n1 $(SRCDIR)/compress_lz10.sh
@@ -281,6 +284,7 @@ clean:
 	@echo clean ...
 	@$(MAKE) -C tools/make-file-container clean
 	@$(MAKE) -C tools/gb-payload-generator clean
+	@$(MAKE) -C tools/gba-payload-generator clean
 	@$(MAKE) -C loader clean
 	@$(MAKE) -C PCCS clean
 	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).gba $(LOADERNAME).gba data/ to_compress/

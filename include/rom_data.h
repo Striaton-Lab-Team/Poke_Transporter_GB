@@ -37,35 +37,15 @@ public:
     int version;
     int language;
 
-    int loc_sendMonToPC;
-    int loc_gSpecialVar_0x8000;
-    int loc_gSaveBlock1; // Only used in R/S
-    int loc_setPokedexFlag;
-    int loc_gSaveDataBuffer; // The location of the saveDataBuffer
-    int loc_readFlashSector;
-    int loc_loadSaveSection30; // The location of the function that loads save section 30: CEReaderTool_LoadTrainerTower_r in FRLG, TryReadTrainerHill_Internal in Emerald
-    int loc_m4aMPlayStop;
-    int loc_gMPlayInfo_BGM;
-    int loc_gMPlayInfo_SE2;
-    int loc_MPlayStart;
-    int loc_CreateFanfareTask;
-    int loc_sFanfareCounter;
-    int loc_gPlttBufferFaded;
-    int loc_gSprites;
     int loc_gMonIconPalettes;
-    int loc_voicegroup;
-    int loc_sPicTable_NPC;
     int loc_gMonFrontPicTable;
     int loc_gMonPaletteTable;
     int loc_gMonShinyPaletteTable;
     int loc_gMonIconTable;
     int loc_gMonIconPaletteIndices;
-    int offset_ramscript; // Ramscript offset as found within the SaveBlock1 struct in global.h
     int offset_flags;     // Flag offset as found within the SaveBlock1 struct in global.h
     int offset_wondercard;
     int offset_script;
-    int text_region;
-    int special_DrawWholeMapView;
 
     // PKHeX's list of flags is useful for making sure the detection is accurate: https://github.com/kwsch/PKHeX/blob/78a557c3cdaa6f48b42cc96df8ccb4d20b897937/PKHeX.Core/Resources/text/other/flags_rs.txt
     int e4_flag;                   // The flag that is set when you become champion. Often listed as "GAME_CLEAR"
@@ -77,14 +57,11 @@ public:
     u8 map_bank;
     u8 map_id;
     u8 npc_id;
-    u8 npc_palette;
 
     #define MGSCRIPT_MAGIC_VALUE 0x33
     u8 def_map_bank;
     u8 def_map_id;
     u8 def_npc_id;
-
-    int loc_gSaveBlock1PTR; // TODO: Only used for old script, can be removed later
 
 private:
     void fill_values(const ROM_DATA *rom_values);

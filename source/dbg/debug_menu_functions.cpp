@@ -233,7 +233,7 @@ void dbg_inject_pkmn(void *context, unsigned user_param)
     PokemonTables tables;
     tables.load_gen3_charset(game_lang);
 
-    Gen3Pokemon celebi(&tables);
+    Gen3Pokemon celebi;
     celebi.loadData(RSEFL_10_ANIV_Celebi_0BF5_ENG_, false);
 
     // front_sprite_tile_id is reserved behind the box sprites

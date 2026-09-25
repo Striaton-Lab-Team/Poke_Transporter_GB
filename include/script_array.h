@@ -64,8 +64,6 @@ extern const script_obj_params transfer_script_params[];
 extern const script_obj_params event_script_params[];
 extern rom_data curr_GBA_rom;
 
-void populate_lang_menu();
-void populate_game_menu(int lang);
 bool run_conditional(int index);
 
 // These should be removed eventually, or added to PCCS.

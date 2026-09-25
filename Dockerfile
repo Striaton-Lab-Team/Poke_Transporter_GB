@@ -18,6 +18,11 @@ RUN apt-get update && apt-get install -y sudo build-essential cmake bison flex p
 RUN echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER} && chmod 0440 /etc/sudoers.d/${USER}
 
 RUN mkdir -p rgbds && curl -fsSL https://github.com/gbdev/rgbds/releases/download/v1.0.2+hotfix/rgbds-linux-x86_64.tar.xz | tar -xJ -C rgbds && cd rgbds && ./install.sh
+RUN mkdir -p flipsdir && cd flipsdir \
+    && curl -fsSL https://github.com/Alcaro/Flips/archive/refs/tags/v198.tar.gz | tar -xz --strip-components=1 \
+    && TARGET=cli ./make-linux.sh --profile=no \
+    && cp flips /usr/local/bin \
+    && cd .. && rm -rf flipsdir
 
 RUN git config --global --add safe.directory /ptgb
 

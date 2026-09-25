@@ -1,20 +1,40 @@
-#include <tonc.h>
-#include "libstd_replacements.h"
 #include "script_var.h"
-#include "pokemon_data.h"
-#include "dbg/debug_mode.h"
-#include "global_frame_controller.h"
+#include "rom_values/base_gba_rom_struct.h"
+#include <cstdio>
+#include <cstring>
 
-extern rom_data curr_GBA_rom;
+static uint32_t get_string_char_count(const byte *str)
+{
+    // This would be bad if str doesn't contain 0xFF.
+    // Then again, the original implementation had the same issue.
+    // This is just more compact and probably faster too.
+    const byte *const ret = (const byte*)memchr(str, 0xFF, UINT32_MAX);
 
-script_var::script_var(u32 nValue, ptgb::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr)
+    return ret - str;
+}
+
+static byte get_char_from_charset(const u16 *charset, u16 input_char)
+{
+    u16 i = 0;
+    while (i < 256)
+    {
+        if (charset[i] == input_char)
+        {
+            return i;
+        }
+        ++i;
+    }
+    return 0;
+}
+
+script_var::script_var(u32 nValue, std::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr)
 {
     var_list_ref.push_back(this); // Place the new object in the var_list
     value = nValue;
     curr_loc_ptr = nCurr_loc_ptr;
 };
 
-script_var::script_var(ptgb::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr)
+script_var::script_var(std::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr)
 {
     var_list_ref.push_back(this); // Place the new object in the var_list
     curr_loc_ptr = nCurr_loc_ptr;
@@ -28,16 +48,16 @@ u32 script_var::place_word()
 
 void script_var::set_start()
 {
-    tte_write("set_start error");
+    printf("set_start error");
     while (true)
     {
         // This should never run
     }
 }
 
-void script_var::fill_refrences(u8 mg_array[])
+void script_var::fill_references(const struct ROM_DATA &, u8 [])
 {
-    tte_write("fill_refrences error");
+    printf("fill_references error\n");
     while (true)
     {
         // This should never run
@@ -45,7 +65,6 @@ void script_var::fill_refrences(u8 mg_array[])
 }
 
 // ASM VAR ----------------
-
 void asm_var::set_start()
 {
     start_location_in_script = *curr_loc_ptr - 2;
@@ -69,7 +88,7 @@ u8 asm_var::add_reference(int nCommand_offset)
     return 0x00;
 }
 
-void asm_var::fill_refrences(u8 mg_array[])
+void asm_var::fill_references(const struct ROM_DATA &curr_GBA_rom, u8 mg_array[])
 {
     for (unsigned int i = 0; i < location_list.size(); i++)
     {
@@ -87,7 +106,7 @@ void asm_var::fill_refrences(u8 mg_array[])
     }
 }
 
-u32 asm_var::get_loc_in_sec30()
+u32 asm_var::get_loc_in_sec30(const struct ROM_DATA &curr_GBA_rom)
 {
     return start_location_in_script + curr_GBA_rom.loc_gSaveDataBuffer + 3; // plus 3 to offset the -2 in set_start, and one for reading as thumb
 }
@@ -116,7 +135,7 @@ u8 xse_var::add_reference(int nCommand_offset, xse_var *offset_from)
     return 0x0000;
 }
 
-void xse_var::fill_refrences(u8 mg_array[])
+void xse_var::fill_references(const struct ROM_DATA &, u8 mg_array[])
 {
     for (unsigned int i = 0; i < location_list.size(); i++)
     {
@@ -130,43 +149,44 @@ void xse_var::fill_refrences(u8 mg_array[])
     }
 }
 
-u32 xse_var::get_loc_in_sec30()
+u32 xse_var::get_loc_in_sec30(const struct ROM_DATA &curr_GBA_rom)
 {
     return start_location_in_script + curr_GBA_rom.loc_gSaveDataBuffer;
 }
 
 // TEXTBOX VAR
 
+textbox_var::textbox_var(std::vector<script_var *> &var_list_ref, int *nCurr_loc_ptr, TextBoxVarInsertionPoint &outInsertionPoint)
+    : xse_var(var_list_ref, nCurr_loc_ptr)
+    , outInsertionPoint(outInsertionPoint)
+{
+    outInsertionPoint.size = 0;
+}
+
 void textbox_var::set_text(const byte nText[])
 {
     text = nText;
-    text_length = get_string_char_count(nText);
 }
 
 void textbox_var::set_start()
 {
     start_location_in_script = *curr_loc_ptr;
+    outInsertionPoint.offset = start_location_in_script;
 }
 
-void textbox_var::set_virtual_start()
+void textbox_var::insert_text(const u16 *charset, u8 mg_array[], bool is_hoenn, bool should_set_virtual_start)
 {
-    start_location_in_script = *curr_loc_ptr - 4;
-}
+    set_start();
 
-void textbox_var::insert_text(const u16 *charset, u8 mg_array[], bool should_set_virtual_start)
-{
-    if(!should_set_virtual_start)
+    if(should_set_virtual_start)
     {
-        set_start();
-    }
-    else
-    {
-        set_virtual_start();
+        start_location_in_script -= 4;
     }
 
+    const u32 text_length = get_string_char_count(text);
     for (int parser = 0; parser < text_length; parser++)
     {
-        if (curr_GBA_rom.is_hoenn() && (text[parser] == 0xFC) && (get_char_from_charset(charset, (char16_t)(text[parser + 1])) == 0x01)) // Removes colored text
+        if (is_hoenn && (text[parser] == 0xFC) && (get_char_from_charset(charset, (char16_t)(text[parser + 1])) == 0x01)) // Removes colored text
         {
             parser += 2;
         }
@@ -178,14 +198,17 @@ void textbox_var::insert_text(const u16 *charset, u8 mg_array[], bool should_set
     }
     mg_array[*curr_loc_ptr] = 0xFF; // End string
     (*curr_loc_ptr)++;
+
+    outInsertionPoint.size = *curr_loc_ptr - outInsertionPoint.offset;
 }
 
 // MOVEMENT VAR
 
-void movement_var::set_movement(const byte nMovement[], unsigned int nSize)
+void movement_var::set_movement(const byte nMovement[], unsigned int nSize, bool is_hoenn_var)
 {
     movement = nMovement;
     size = nSize;
+    is_hoenn = is_hoenn_var;
 }
 
 void movement_var::set_start()
@@ -197,7 +220,7 @@ void movement_var::insert_movement(u8 mg_array[])
 {
     set_start();
     // movement data is { hoenn, frlg, hoenn, frlg, ...}
-    int offset = curr_GBA_rom.is_hoenn() ? 0 : 1;
+    int offset = is_hoenn ? 0 : 1;
 
     for (unsigned int parser = 0; parser < size; parser++)
     {
@@ -215,7 +238,7 @@ void sprite_var::set_start()
     start_location_in_script = *curr_loc_ptr;
 }
 
-void sprite_var::insert_sprite_data(u8 mg_array[], const unsigned int sprite_array[], unsigned int size, const unsigned short palette_array[])
+void sprite_var::insert_sprite_data(const ROM_DATA &curr_GBA_rom, u8 mg_array[], const unsigned int sprite_array[], unsigned int size, const unsigned short palette_array[])
 {
 
     set_start();
@@ -231,7 +254,7 @@ void sprite_var::insert_sprite_data(u8 mg_array[], const unsigned int sprite_arr
         (*curr_loc_ptr)++;
     }
 
-    LZ77UnCompWram(sprite_array, &mg_array[*curr_loc_ptr]);
+    memcpy(mg_array + (*curr_loc_ptr), sprite_array, size);
     *curr_loc_ptr += size;
 
     for (unsigned int parser = 0; parser < 32; parser++)
@@ -250,11 +273,16 @@ void music_var::set_start()
 
 void music_var::add_track(const byte* trackBytes, size_t trackSize)
 {
-    const ptgb::vector track(trackBytes, trackSize);
+    std::vector<byte> track;
+    track.reserve(trackSize);
+    for(unsigned i=0; i < trackSize; ++i)
+    {
+        track.emplace_back(trackBytes[i]);
+    }
     trackArrays.push_back(track);
 }
 
-void music_var::insert_music_data(u8 mg_array[], u8 blockCount, u8 priority, u8 reverb, u32 toneDataPointer)
+void music_var::insert_music_data(const ROM_DATA &curr_GBA_rom, u8 mg_array[], u8 blockCount, u8 priority, u8 reverb, u32 toneDataPointer)
 {
     for (unsigned int i = 0; i < trackArrays.size(); i++)
     {

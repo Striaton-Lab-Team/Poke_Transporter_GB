@@ -22,7 +22,6 @@
 #include "pkmn_font.h"
 #include "ptgb_save_data_manager.h"
 #include "mystery_gift_injector.h"
-#include "mystery_gift_builder.h"
 #include "multiboot_upload.h"
 #include "rom_data.h"
 #include "libraries/Pokemon-Gen3-to-Gen-X/include/save.h"

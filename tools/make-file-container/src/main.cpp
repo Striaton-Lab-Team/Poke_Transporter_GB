@@ -21,11 +21,19 @@ typedef struct
     uint16_t size;
     char altName[FILE_RECORD_NAME_LENGTH];
     char path[PATH_BUFFER_SIZE];
+    bool isDummy;
 } FileRecord;
 
 typedef struct
 {
     uint8_t hasNames;
+    /**
+     * @brief Indicates whether the container can span a single file across multiple chunks.
+     * If set to 1, it won't.
+     * This is useful to ensure that we can safely use FileContainerReader::getPointerToFileInDecompressionBuffer() in PTGB, 
+     * which assumes that files are not split across chunks.
+     */
+    uint8_t noSpanChunks;
     uint16_t chunkSize;
     std::vector<FileRecord> entries;
 } ContainerMetadata;
@@ -41,19 +49,20 @@ static void printUsage()
 /**
  * @brief This function parses a directive.
  * A directive starts with '@' and is used to set certain parameters for the container generation.
- * Right now, we only support @chunkSize
+ * Right now, we only support @chunkSize and @noSpanChunks.
  */
 static void parseDirective(ContainerMetadata &meta, char *line)
 {
-    char * equals = strchr(line, '=');
-    if(equals == NULL)
-    {
-        fprintf(stderr, "Invalid directive (missing '='): %s\n", line);
-        return;
-    }
+    char *equals;
     if(strncmp(line + 1, "chunkSize", 9) == 0)
     {
         char *endptr;
+        equals = strchr(line, '=');
+        if(equals == NULL)
+        {
+            fprintf(stderr, "Invalid directive (missing '='): %s\n", line);
+            return;
+        }
         const long value = strtol(equals + 1, &endptr, 10);
         if(*endptr != '\0' || value <= 0 || value > 0xFFFF)
         {
@@ -62,6 +71,10 @@ static void parseDirective(ContainerMetadata &meta, char *line)
             return;
         }
         meta.chunkSize = static_cast<uint16_t>(value);
+    }
+    else if(strncmp(line + 1, "noSpanChunks", 12) == 0)
+    {
+        meta.noSpanChunks = 1;
     }
     else
     {
@@ -164,13 +177,6 @@ static bool parseDefinition(const char *defPath, ContainerMetadata &meta)
             return false;
         }
 
-        if(meta.entries.size() >= 0xFF)
-        {
-            fprintf(stderr, "Too many files (max 255).\n");
-            fclose(f);
-            return false;
-        }
-
         memset(&entry, 0, sizeof(entry));
 
         if(!determineFileSize(filePath, entry.size))
@@ -187,6 +193,7 @@ static bool parseDefinition(const char *defPath, ContainerMetadata &meta)
             strncpy(entry.altName, altName, FILE_RECORD_NAME_LENGTH - 1);
             entry.altName[FILE_RECORD_NAME_LENGTH - 1] = '\0';
         }
+        entry.isDummy = false;
 
         meta.entries.push_back(entry);
     }
@@ -200,6 +207,50 @@ static bool parseDefinition(const char *defPath, ContainerMetadata &meta)
     }
 
     return true;
+}
+
+static void guardAgainstFileSpanningChunks(ContainerMetadata &meta)
+{
+    if(!meta.noSpanChunks)
+    {
+        return;
+    }
+    uint16_t remainingChunkSize = meta.chunkSize;
+    unsigned dummyNum = 0;
+
+    for(auto it = meta.entries.begin(); it != meta.entries.end(); ++it)
+    {
+        if(it->size <= remainingChunkSize)
+        {
+            remainingChunkSize -= it->size;
+            if(remainingChunkSize == 0)
+            {
+                remainingChunkSize = meta.chunkSize;
+            }
+        }
+        else
+        {
+            if(it->size > meta.chunkSize)
+            {
+                fprintf(stderr, "File %s is too large to fit in a single chunk (size: %u, chunk size: %u)\n", it->path, it->size, meta.chunkSize);
+                exit(EXIT_FAILURE);
+            }
+            // insert dummy record
+            FileRecord dummyEntry = {
+                .size = remainingChunkSize,
+                .altName = {0},
+                .path = {0},
+                .isDummy = true
+            };
+
+            snprintf(dummyEntry.path, PATH_BUFFER_SIZE, "DUMMY_%u", dummyNum);
+            ++dummyNum;
+
+            it = meta.entries.insert(it, dummyEntry);
+            remainingChunkSize = meta.chunkSize;
+
+        }
+    }
 }
 
 /**
@@ -285,7 +336,17 @@ static void writeFiles(FileContainerChunkWriter &writer, ContainerMetadata &meta
 
     for(auto &entry : meta.entries)
     {
-        readFileIntoMemory(entry.path, &fileBuffer, fileSize);
+        if(entry.isDummy)
+        {
+            // this is a dummy entry
+            fileSize = entry.size;
+            fileBuffer = (uint8_t*)calloc(1, fileSize);
+        }
+        else
+        {
+            readFileIntoMemory(entry.path, &fileBuffer, fileSize);
+        }
+
         if(!fileBuffer)
         {
             fprintf(stderr, "Failed to read file into memory: %s\n", entry.path);
@@ -393,11 +454,19 @@ int main(int argc, char *argv[])
     }
 
     meta.hasNames = storeNames ? 1 : 0;
+    meta.noSpanChunks = 0;
     meta.chunkSize = DEFAULT_CHUNK_SIZE;
 
     if(!parseDefinition(defPath, meta))
     {
         return rc;
+    }
+    guardAgainstFileSpanningChunks(meta);
+
+    if(meta.entries.size() >= 0xFF)
+    {
+        fprintf(stderr, "Too many files (max 255).\n");
+        exit(1);
     }
 
     if(headerOutPath != NULL)

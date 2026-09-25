@@ -1,12 +1,8 @@
 #ifndef MYSTERY_GIFT_BUILDER_H
 #define MYSTERY_GIFT_BUILDER_H
 
-#include <tonc.h>
-#include "dbg/debug_mode.h"
-#include "ptgb_save_data_manager.h"
+#include "rom_values/base_gba_rom_struct.h"
 #include "script_var.h"
-#include "pokemon_data.h"
-#include "PokeBox.h"
 
 #define VIR_ADDRESS 0x08000000
 #define MG_SCRIPT_SIZE 0x3E8
@@ -252,33 +248,76 @@
 
 #define CPU_SET_16BIT     0x00000000
 #define CPU_SET_32BIT     0x04000000
+
+class UncompressedFileContainerReader;
+
 class mystery_gift_script
 {
-    int curr_mg_index = 0;
-    int curr_section30_index = 0;
+private:
+    int curr_mg_index;
+    int curr_section30_index;
+    u32 mg_script_size;
+    u32 section30_size;
     u8 *save_section_30;
-    u8 mg_script[MG_SCRIPT_SIZE];
+    u8 *mg_script;
     u8 value_buffer[9];
     u8 four_align_value;
+
+    // Track textbox_var insertions
+    // For compression sake, we want to remove these again to avoid storing the same times multiple times
+    // across various payload variants, while retaining the offsets stored in the payloads
+    // mg_script:
+    TextBoxVarInsertionPoint textGreetInsertionPoint;
+    TextBoxVarInsertionPoint textYouMustBeInsertionPoint;
+    TextBoxVarInsertionPoint textIAmInsertionPoint;
+
+    //section30:
+    TextBoxVarInsertionPoint textThankInsertionPoint;
+    TextBoxVarInsertionPoint textPCFullInsertionPoint;
+    TextBoxVarInsertionPoint textWeHereInsertionPoint;
+    TextBoxVarInsertionPoint textPCConvoInsertionPoint;
+    TextBoxVarInsertionPoint textPCThanksInsertionPoint;
+    TextBoxVarInsertionPoint textLookerFullInsertionPoint;
+    TextBoxVarInsertionPoint textMoveBoxInsertionPoint;
+    TextBoxVarInsertionPoint textReceivedInsertionPoint;
 
 public:
     /**
      * @brief Construct a new mystery gift script object
-     * 
+     *
      * @param save_section_30_buffer This needs to be a 4KB buffer to store the section 30 data.
      * It was done this way to pass the global_memory_buffer to this class, thereby saving IWRAM.
-     * 
+     *
      * Be careful of what you do with this buffer after running build_script(). 
      * Especially if you're using global_memory_buffer!
      * You're in control!
      */
-    mystery_gift_script(u8 *save_section_30_buffer);
-    void build_script(PokeBox *box);
-    //void build_script_old(Pokemon_Party &incoming_box_data);
+    mystery_gift_script(u8 *save_section_30_buffer, u8 *mg_script_buffer);
+    void build_script(UncompressedFileContainerReader &text_table_reader, const struct ROM_DATA& curr_GBA_rom, const uint16_t *gen3_charset);
+
+    /**
+     * @brief This function removes the inserted textbox_var texts again from the payloads.
+     * The reason is compression. We're bound by the FileContainer chunk size limits and having multiple chunks
+     * could mean storing duplicate data from content that was already stored in a previous chunk.
+     *
+     * Instead, we're going to inject these texts again at runtime.
+     *
+     * You may wonder why we don't just avoid inserting the texts in the first place.
+     * But the reason for this is that we want to keep the pointers to these texts and other variables intact.
+     *
+     * This way we only really need to store the pointer value differences to transform one payload variant into another
+     * alongside a single instance of the relevant text table to inject at runtime.
+     * This should compress WAY better theoretically.
+     */
+    void strip_injected_texts();
+
     const u8 *get_script() const;
     const u8 * get_section30() const;
     u32 calc_checksum32();
     u16 calc_crc16();
+
+    u32 get_script_size() const;
+    u32 get_section30_size() const;
 
 private:
     void add_command(int len);
@@ -325,8 +364,8 @@ private:
     void waitse();
 
     void msgboxMacro(u32 location);
-    void changeSpriteMacro(u8 npcId, u32 spriteTablePtr);
-    void changePaletteMacro(u8 npcId, u8 palNum);
+    void changeSpriteMacro(const ROM_DATA& curr_GBA_rom, u8 npcId, u32 spriteTablePtr);
+    void changePaletteMacro(const ROM_DATA& curr_GBA_rom, u8 npcId, u8 palNum);
 
     // ASM commands
     void push(u16 register_list);
@@ -344,6 +383,19 @@ private:
     void ldr2(u8 rd, u8 rn, u8 rm);
     void strh(u8 rd, u8 rn, u8 immed_5);
     void swi(u8 immed_8);
+
+    /**
+     * @brief Removes a text from the payload buffer by moving everything that comes after it over it.
+     *
+     * @param payloadBuffer Buffer to manipulate
+     * @param insertionPoint Insertion point of the text to remove
+     * @param payloadSize Size of the payload buffer
+     * @param accumulatedOffsetCorrection Accumulated offset correction expressed as a number of bytes
+     *  to apply when removing the text. This accounts for the fact that previous removeText calls have shifted
+     * the offsets of subsequent texts in the payload buffer.
+     * @return u32 Number of bytes removed from the payload buffer
+     */
+    u32 stripText(u8 *payloadBuffer, TextBoxVarInsertionPoint *insertionPoint, u32 payloadSize, u32 accumulatedOffsetCorrection);
 };
 
 #endif

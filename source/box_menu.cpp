@@ -16,6 +16,7 @@ Box_Menu::Box_Menu() {};
 
 int Box_Menu::box_main(PokeBox* box, Version vers)
 {
+    PokemonTables pkmnTables;
     u8 names_decompression_buffer[2048];
     u8 single_name_buffer[16];
     const u8 **chunkList;
@@ -143,7 +144,7 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
                 u32 nameEntryIndex = curr_pkmn->getSpeciesIndexNumber();
 
                 tte_set_pos(6, 88);
-                curr_pkmn->externalConvertNickname(val);
+                curr_pkmn->externalConvertNickname(&pkmnTables, val);
                 ptgb_write_simple(val, true);
                 if (curr_pkmn->getIsShiny())
                 {

@@ -4,6 +4,6 @@
 #include "PokeBox.h"
 #include "pokemon_data.h"
 
-bool inject_mystery(PokeBox* box);
+bool inject_mystery(PokeBox* box, bool isFirstTime);
 
 #endif
