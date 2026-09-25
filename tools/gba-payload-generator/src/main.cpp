@@ -209,6 +209,10 @@ static void generatePayloadsForLanguage(const char* outputPath, char languageCod
 
 int main(int argc, char **argv)
 {
+    // disable stdout buffering, to ensure asserts don't
+    // make stdout messages disappear.
+    setvbuf(stdout, nullptr, _IONBF, 0);
+
     u8 *textTableBuffer = nullptr;
     uint32_t textTableSize = 0;
     char languageCode;

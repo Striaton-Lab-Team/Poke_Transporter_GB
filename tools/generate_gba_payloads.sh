@@ -21,6 +21,7 @@ langs=("english" "french" "german" "italian" "japanese" "spanish")
 # This function uses the flips application to generate a BPS patch
 create_patch(){
     flips --create --bps $1 $2 $3
+    tools/bps-patch-trim/bps-patch-trim $3
 }
 
 determine_base_section30(){
@@ -123,6 +124,11 @@ done
 # we want to fill up the containerdef files separately from the BPS file generation, because we want the containerdef file ordered by language.
 # For optimal compression, we want to keep the same language game variants stored contiguously, because
 # the translation texts from the RSEFRLG text table will be mostly the same. Therefore compression could leverage that redundancy.
+# Note: we use a 4096 byte chunk size in order to maximize compression. (this way all patches fit in a single chunk)
+# The other function peers (for instance for text insertion) in mystery_gift_injector.cpp are also
+# using a 4096 byte IWRAM buffer, so it shouldn't be a problem.
+echo "@chunkSize=4096" >> $BPS_PATCH_DIR/script_patches.containerdef
+echo "@chunkSize=4096" >> $BPS_PATCH_DIR/section30_patches.containerdef
 for j in "${langs[@]}"
 do
 	for i in "${games[@]}"
