@@ -634,7 +634,7 @@ void LinkConnection::handleStateLogic()
     else if (inData == 0xFD && dataOutBufferCurrIndex > 0)
     {
       loadCurrGameFromChecksum();
-      if (currROM == GB_ROM_ERROR)
+      if (currROM == GB_ROM_ERROR || currROM == GOLD_KOR || currROM == SILVER_KOR)
       {
         while(true){}
         // Add in an error message thrown here once we, ya know, rewrite the text engine to make that possible
