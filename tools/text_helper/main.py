@@ -852,10 +852,21 @@ def format_text_entry(ogDict, lang, context=None):
     )
 
 def convert_item(ogDict, lang, context=None):
+    # convert_item replaces ogDict["bytes"] (the source text) with the encoded hex string,
+    # so re-running it on an already converted entry would encode that hex string as text.
+    # This is a destructive operation, so we need to make sure it's not run more than once.
+    # This is relevant because generate_text_tables() runs through all tables (including RSEFRLG)
+    # and generate_rsefrlg_tables_for_all_langs() does it again for the RSEFRLG section multiple times.
+    # Note however that ogDict being passed here is a specific entry for a specific language.
+    # however, because both generate_text_tables() and generate_rsefrlg_tables_for_all_langs() 
+    # are getting called, BUILD_LANG is being converted twice for the RSEFRLG section!
+    if ogDict.get("converted"):
+        return ogDict
     normalized_text = format_text_entry(ogDict, lang, context)
     arr = get_language_config(lang).char_array["array"]
     entry_id = ogDict.get("entryId")
     ogDict["bytes"] = encode_formatted_text(normalized_text, arr, lang, entry_id, context)
+    ogDict["converted"] = True
     return ogDict
 
 # in order to safely use getPointerToFileInDecompressionBuffer() in FileContainerReader
