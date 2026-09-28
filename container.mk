@@ -253,11 +253,11 @@ $(GENERATE_STAMP): compress_lz10.sh | data to_compress generated_dir
 	@echo "----------------------------------------------------------------"
 	@echo
 	@find tools/text_helper/build -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container to_compress
-	tools/generate_gba_payloads.sh build/ english to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,english).chunk0.bin
-	tools/generate_gba_payloads.sh build/ japanese to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,japanese).chunk0.bin
-	tools/generate_gba_payloads.sh build/ french to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,french).chunk0.bin
-	tools/generate_gba_payloads.sh build/ german to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,german).chunk0.bin
-	tools/generate_gba_payloads.sh build/ italian to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,italian).chunk0.bin
+	tools/generate_gba_payloads.sh build/ english to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,english).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ japanese to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,japanese).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ french to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,french).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ german to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,german).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ italian to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,italian).chunk0.bin && \
 	tools/generate_gba_payloads.sh build/ spanish to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,spanish).chunk0.bin
 	@find build/bps-patches -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress
 	@find $(FILE_CONTAINERS) -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress

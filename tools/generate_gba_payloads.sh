@@ -29,13 +29,13 @@ create_patch(){
 determine_base_section30(){
 	case "$1" in
 		*ruby*|*sapphire*)
-			printf '%s\n' "section30_ruby_english_1_0.bin"
+			printf '%s\n' "section30_ruby_${LANG}_1_0.bin"
 			;;
 		*emerald*)
-			printf '%s\n' "section30_emerald_english_1_0.bin"
+			printf '%s\n' "section30_emerald_${LANG}_1_0.bin"
 			;;
 		*firered*|*leafgreen*)
-			printf '%s\n' "section30_firered_english_1_0.bin"
+			printf '%s\n' "section30_firered_${LANG}_1_0.bin"
 			;;
 		*)
 			return 1
@@ -46,13 +46,13 @@ determine_base_section30(){
 determine_base_script(){
 	case "$1" in
 		*ruby*|*sapphire*)
-			printf '%s\n' "script_ruby_english_1_0.bin"
+			printf '%s\n' "script_ruby_${LANG}_1_0.bin"
 			;;
 		*emerald*)
-			printf '%s\n' "script_emerald_english_1_0.bin"
+			printf '%s\n' "script_emerald_${LANG}_1_0.bin"
 			;;
 		*firered*|*leafgreen*)
-			printf '%s\n' "script_firered_english_1_0.bin"
+			printf '%s\n' "script_firered_${LANG}_1_0.bin"
 			;;
 		*)
 			return 1
@@ -76,11 +76,21 @@ cp $RAW_PAYLOAD_DIR/section30_$ABSOLUTE_BASE_VARIANT to_compress/
 # Convert from Ruby to Emerald
 # Convert from Ruby to FireRed
 #
-# All the language specific ones can be based on those 3 variants (english included)
-create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_emerald_english_1_0.bin" "$BPS_PATCH_DIR/script_emerald_english_1_0.bps"
-create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_firered_english_1_0.bin" "$BPS_PATCH_DIR/script_firered_english_1_0.bps"
-create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_emerald_english_1_0.bin" "$BPS_PATCH_DIR/section30_emerald_english_1_0.bps"
-create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_firered_english_1_0.bin" "$BPS_PATCH_DIR/section30_firered_english_1_0.bps"
+
+# Now create all the language specific ones can be based on those 3 variants (ruby, emerald, firered)
+if [[ $LANG != "english" ]]; then
+	create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_ruby_${LANG}_1_0.bin" "$BPS_PATCH_DIR/script_ruby_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/script_firered_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_firered_${LANG}_1_0.bin" "$BPS_PATCH_DIR/script_firered_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/script_emerald_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_emerald_${LANG}_1_0.bin" "$BPS_PATCH_DIR/script_emerald_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_ruby_${LANG}_1_0.bin" "$BPS_PATCH_DIR/section30_ruby_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_firered_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_firered_${LANG}_1_0.bin" "$BPS_PATCH_DIR/section30_firered_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_emerald_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_emerald_${LANG}_1_0.bin" "$BPS_PATCH_DIR/section30_emerald_${LANG}_1_0.bps"
+else
+	create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_emerald_english_1_0.bin" "$BPS_PATCH_DIR/script_emerald_english_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_firered_english_1_0.bin" "$BPS_PATCH_DIR/script_firered_english_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_emerald_english_1_0.bin" "$BPS_PATCH_DIR/section30_emerald_english_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_firered_english_1_0.bin" "$BPS_PATCH_DIR/section30_firered_english_1_0.bps"
+fi
 
 # Generate patches for every game and language variant. Each variant is based on
 # the smallest appropriate English game-family payload.

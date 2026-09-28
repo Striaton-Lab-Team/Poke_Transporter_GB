@@ -60,65 +60,77 @@ extern "C"
 // So we can pack this data into a single byte.
 #define PACK_PATCH_KEY(game, lang, version) (((game) << 5) | ((lang) << 2) | (version))
 
-#define SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX 0xFF
+#define SKIP_PATCH_INDEX 0xFF
 
 typedef struct PatchFileTableEntry
 {
     u8 key;
-    u8 patchIndex;
+    u8 languagePatchIndex;
+    u8 specificPatchIndex;
 } PatchFileTableEntry;
 
 // We only need to have a single map of the patch files, because the order and size of the section30 and script patches are exactly the same.
 static constexpr PatchFileTableEntry patchFileTable[] =
 {
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_ENGLISH, VERS_1_0), SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_ENGLISH, VERS_1_2), (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_2 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_ENGLISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ENGLISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ENGLISH_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ENGLISH, VERS_1_2), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ENGLISH_1_2 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ENGLISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ENGLISH_1_0 },
-    { PACK_PATCH_KEY(MAP_EMERALD, MAP_ENGLISH, VERS_1_0), SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_ENGLISH, VERS_1_0), SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_ENGLISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_FIRERED_ENGLISH_1_1 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_ENGLISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_ENGLISH_1_0 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_ENGLISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_ENGLISH_1_1 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_FRENCH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_FRENCH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_FRENCH_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_FRENCH_1_0 },
-    { PACK_PATCH_KEY(MAP_EMERALD, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_FRENCH_1_0 },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_FRENCH_1_0 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_FRENCH_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_GERMAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_1 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_0 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_GERMAN_1_0 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_GERMAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_GERMAN_1_1 },
-    { PACK_PATCH_KEY(MAP_EMERALD, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_GERMAN_1_0 },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_GERMAN_1_0 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_GERMAN_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_ITALIAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ITALIAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ITALIAN_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ITALIAN_1_0 },
-    { PACK_PATCH_KEY(MAP_EMERALD, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_ITALIAN_1_0 },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_ITALIAN_1_0 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_ITALIAN_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_JAPANESE_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_JAPANESE_1_0 },
-    { PACK_PATCH_KEY(MAP_EMERALD, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_JAPANESE_1_0 },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_1 },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_0 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_JAPANESE_1_1 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_JAPANESE_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_0 },
-    { PACK_PATCH_KEY(MAP_RUBY, MAP_SPANISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_SPANISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_SPANISH_1_1 },
-    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_SPANISH_1_0 },
-    { PACK_PATCH_KEY(MAP_EMERALD, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_SPANISH_1_0 },
-    { PACK_PATCH_KEY(MAP_FIRERED, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_SPANISH_1_0 },
-    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_SPANISH_1_0 }
+    // english: game-specific transformation happens outside of this table
+    // no language specific transformation required
+    // only version-specific one
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_ENGLISH, VERS_1_0), SKIP_PATCH_INDEX, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_ENGLISH, VERS_1_1), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_1 },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_ENGLISH, VERS_1_2), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_2 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ENGLISH, VERS_1_0), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ENGLISH_1_0 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ENGLISH, VERS_1_1), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ENGLISH_1_1 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ENGLISH, VERS_1_2), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ENGLISH_1_2 },
+    { PACK_PATCH_KEY(MAP_EMERALD, MAP_ENGLISH, VERS_1_0), SKIP_PATCH_INDEX, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_ENGLISH, VERS_1_0), SKIP_PATCH_INDEX, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_ENGLISH, VERS_1_1), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_FIRERED_ENGLISH_1_1 },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_ENGLISH, VERS_1_0), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_ENGLISH_1_0 },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_ENGLISH, VERS_1_1), SKIP_PATCH_INDEX, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_ENGLISH_1_1 },
+    // Other languages: game-specific transformation (e.g. english ruby -> english fire red) happens outside of this table
+    // language-specific transformation transforms the english game specific payload to the french one
+    // version-specific transformation transforms ruby->sapphire or 1.0->1.1 or both.
+    // French:
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_FRENCH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_0, (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_1 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_FRENCH_1_0 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_FRENCH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_FRENCH_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_FRENCH_1_1 },
+    { PACK_PATCH_KEY(MAP_EMERALD, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_FRENCH_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_FRENCH_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_FRENCH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_FRENCH_1_0, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_FRENCH_1_0 },
+    // German:
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_GERMAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_0, (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_1 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_GERMAN_1_0 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_GERMAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_GERMAN_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_GERMAN_1_1 },
+    { PACK_PATCH_KEY(MAP_EMERALD, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_GERMAN_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_GERMAN_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_GERMAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_GERMAN_1_0, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_GERMAN_1_0 },
+    // Italian:
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_ITALIAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_0, (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_1 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ITALIAN_1_0 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_ITALIAN, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_ITALIAN_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_ITALIAN_1_1 },
+    { PACK_PATCH_KEY(MAP_EMERALD, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_ITALIAN_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_ITALIAN_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_ITALIAN, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_ITALIAN_1_0, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_ITALIAN_1_0 },
+    // Japanese:
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_0, (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_1 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_JAPANESE_1_0 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_JAPANESE_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_JAPANESE_1_1 },
+    { PACK_PATCH_KEY(MAP_EMERALD, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_JAPANESE_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_0, (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_1 },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_JAPANESE, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_0, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_JAPANESE_1_0 },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_JAPANESE, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_FIRERED_JAPANESE_1_0, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_JAPANESE_1_1 },
+    // Spanish:
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_RUBY, MAP_SPANISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_0, (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_1 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_SPANISH_1_0 },
+    { PACK_PATCH_KEY(MAP_SAPPHIRE, MAP_SPANISH, VERS_1_1), (u8)Script_patchesFiles::SCRIPT_RUBY_SPANISH_1_0, (u8)Script_patchesFiles::SCRIPT_SAPPHIRE_SPANISH_1_1 },
+    { PACK_PATCH_KEY(MAP_EMERALD, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_EMERALD_SPANISH_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_FIRERED, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_SPANISH_1_0, SKIP_PATCH_INDEX },
+    { PACK_PATCH_KEY(MAP_LEAFGREEN, MAP_SPANISH, VERS_1_0), (u8)Script_patchesFiles::SCRIPT_FIRERED_SPANISH_1_0, (u8)Script_patchesFiles::SCRIPT_LEAFGREEN_SPANISH_1_0 }
 };
 
 static constexpr std::pair<u16, u16> firstTimeTextEntryPairs[] = {
@@ -435,7 +447,7 @@ static void __attribute__((noinline)) injectBoxIntoSection30(PokeBox* box, u8* s
     tonccpy(curSection30, dex_nums, MAX_PKMN_IN_BOX);
 }
 
-static void pickPatchFiles(u32 &gamePatchFile, u32 &specificPatchFile)
+static void pickPatchFiles(u32 &gamePatchFile, u32 &languagePatchFile, u32 &specificPatchFile)
 {
     u32 simplifiedGameCode;
     u32 simplifiedLanguageCode;
@@ -495,7 +507,8 @@ static void pickPatchFiles(u32 &gamePatchFile, u32 &specificPatchFile)
     {
         if(patchFileTable[i].key == mapKey)
         {
-            specificPatchFile = patchFileTable[i].patchIndex;
+            languagePatchFile = patchFileTable[i].languagePatchIndex;
+            specificPatchFile = patchFileTable[i].specificPatchIndex;
             break;
         }
     }
@@ -528,7 +541,7 @@ static void __attribute__((noinline)) applyBPSPatchToBuffer(FileContainerReader 
     free(patchBuffer);
 }
 
-static void __attribute__((noinline)) patchBuffer(FileContainerReader &reader, u8 *buffer, u32 bufferSize, u32 gamePatchFileIndex, u32 specificPatchFileIndex)
+static void __attribute__((noinline)) patchBuffer(FileContainerReader &reader, u8 *buffer, u32 bufferSize, u32 gamePatchFileIndex, u32 languagePatchFileIndex, u32 specificPatchFileIndex)
 {
     u8 tempBuffer[4096];
     memset(tempBuffer, 0, bufferSize);
@@ -537,15 +550,20 @@ static void __attribute__((noinline)) patchBuffer(FileContainerReader &reader, u
 
     // We shouldn't attempt to apply the same base payload patch twice.
     // that's what the magic SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX value is for.
-    if(specificPatchFileIndex != SKIP_SPECIFIC_PAYLOAD_PATCH_INDEX)
+    if(languagePatchFileIndex != SKIP_PATCH_INDEX)
     {
-        // now turn the english <gametype> payload into the specific language payload.
-        // the result will be stored back in buffer
-        applyBPSPatchToBuffer(reader, buffer, tempBuffer, specificPatchFileIndex);
+        applyBPSPatchToBuffer(reader, buffer, tempBuffer, languagePatchFileIndex);
     }
     else
     {
-        // no specific patch file, so just copy the tempBuffer back to buffer
+        memcpy(buffer, tempBuffer, bufferSize);
+    }
+
+    if(specificPatchFileIndex != SKIP_PATCH_INDEX)
+    {
+        // now turn the english <gametype> payload into the specific language payload.
+        // the result will be stored in tempBuffer
+        applyBPSPatchToBuffer(reader, tempBuffer, buffer, specificPatchFileIndex);
         memcpy(buffer, tempBuffer, bufferSize);
     }
 }
@@ -554,15 +572,15 @@ static void __attribute__((noinline)) patchBuffer(FileContainerReader &reader, u
  * @brief This function reconstructs the pregenerated payload for section30 and the script buffer.
  * The way it works is this:
  * - We have stored the english ruby 1.0 payload (section30 + scriptbuffer) in compressed form.
- * - We have created BPS patches to convert this payload from english ruby to english <gametype> (e.g. sapphire, emerald, ...)
- * - We have created another BPS patch to convert the english <gametype> payload to the specific language variant of the game.
+ * - We have created BPS patches to convert this payload from english ruby to english <gametype> for 3 variants (ruby, emerald and fire red)
+ * - There's another BPS patch to convert the english <gameType> variant to the language specific variant (for 3 game types: ruby, emerald and fire red)
+ * - Finally, there's another BPS patch to convert the language specific base payload to the final payload (for example: from french ruby 1.0 to french sapphire 1.1)
  * 
  * This is all done to conserve space as much as possible and benefit most from compression. 
  * 
  * So, in order to reconstruct the payload for a specific game and language, we need to:
  * 1. Decompress the english ruby payload into section30Buffer and scriptBuffer.
- * 2. Determine the 2 patches required (transform to right gametype, transform to right language) for both scriptBuffer and section30Buffer.
- *    (4 patches total)
+ * 2. Determine the 3 patch sets required (transform to right gametype, transform to right language, transform to final version) for both scriptBuffer and section30Buffer.
  * 3. uncompress these patches from the filecontainer.
  * 4. Apply these patches.
  * 
@@ -578,6 +596,7 @@ static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* sectio
     const u32 patchContainerChunkSize = 4096; // defined by @chunkSize directive in the .containerdef files
     u8 decompressionBuffer[patchContainerChunkSize];
     u32 gamePatchFile;
+    u32 languagePatchFile;
     u32 specificPatchFile = (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_0;
 
     const u8* section30PatchesChunkList[] = {
@@ -592,7 +611,7 @@ static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* sectio
     FileContainerReader scriptPatchesReader(scriptPatchesChunkList, sizeof(scriptPatchesChunkList) / sizeof(scriptPatchesChunkList[0]));
 
     // first determine the patch indexes needed to convert the base payloads to the specific game.
-    pickPatchFiles(gamePatchFile, specificPatchFile);
+    pickPatchFiles(gamePatchFile, languagePatchFile, specificPatchFile);
 
     // assume we found the entry.
     memset(section30Buffer, 0, 0x1000);
@@ -602,11 +621,11 @@ static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* sectio
 
     // patch section30
     section30PatchesReader.init(decompressionBuffer, patchContainerChunkSize);
-    patchBuffer(section30PatchesReader, section30Buffer, 0x1000, gamePatchFile, specificPatchFile);
+    patchBuffer(section30PatchesReader, section30Buffer, 0x1000, gamePatchFile, languagePatchFile, specificPatchFile);
 
     // patch script
     scriptPatchesReader.init(decompressionBuffer, patchContainerChunkSize);
-    patchBuffer(scriptPatchesReader, scriptBuffer, MG_SCRIPT_SIZE, gamePatchFile, specificPatchFile);
+    patchBuffer(scriptPatchesReader, scriptBuffer, MG_SCRIPT_SIZE, gamePatchFile, languagePatchFile, specificPatchFile);
 }
 
 
