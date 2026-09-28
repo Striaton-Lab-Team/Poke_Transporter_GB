@@ -27,13 +27,7 @@
 #include "gb_rom_values_spa_lz10_bin.h"
 #include "gb_rom_values_kor_lz10_bin.h"
 
-#include "GB_Payloads_chunk0_lz10_bin.h"
-#include "GB_Payloads_chunk1_lz10_bin.h"
-#include "GB_Payloads_chunk2_lz10_bin.h"
-#include "GB_Payloads_chunk3_lz10_bin.h"
-#include "GB_Payloads_chunk4_lz10_bin.h"
-#include "GB_Payloads_chunk5_lz10_bin.h"
-#include "GB_Payloads_chunk6_lz10_bin.h"
+#include "compression_chunks.h"
 
 #include "GB_Payloads.h"
 
@@ -634,7 +628,7 @@ void LinkConnection::handleStateLogic()
     else if (inData == 0xFD && dataOutBufferCurrIndex > 0)
     {
       loadCurrGameFromChecksum();
-      if (currROM == GB_ROM_ERROR || currROM == GOLD_KOR || currROM == SILVER_KOR)
+      if (currROM == GB_ROM_ERROR)
       {
         while(true){}
         // Add in an error message thrown here once we, ya know, rewrite the text engine to make that possible

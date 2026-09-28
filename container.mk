@@ -256,6 +256,8 @@ $(GENERATE_STAMP): compress_lz10.sh | data to_compress generated_dir
 	@echo -n "["
 	@find to_compress -name "*.bin" -print0 | xargs -0 -n1 $(SRCDIR)/compress_lz10.sh
 	@echo "]"
+	@echo "Creating global compression header!" 
+	@$(SRCDIR)/compression_header.sh
 	@echo "Compressing finished!"
 	@echo
 	@echo "----------------------------------------------------------------"
