@@ -41,6 +41,7 @@ struct ROM_DATA
     int32_t gamecode;
     int32_t version;
     int32_t language;
+    int32_t entrypoint;
 
     int32_t loc_copyMonToPC;
     int32_t loc_getSetPokedexFlag;

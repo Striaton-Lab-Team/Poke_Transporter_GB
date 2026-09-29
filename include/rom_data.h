@@ -36,6 +36,7 @@ public:
     int gamecode;
     int version;
     int language;
+    u32 entrypoint;
 
     int loc_gMonIconPalettes;
     int loc_gMonFrontPicTable;

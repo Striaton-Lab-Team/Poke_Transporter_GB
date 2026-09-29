@@ -43,7 +43,7 @@ LinkSPI *linkSPI = &linkSPIInstance;
 // Here's a compilation check to ensure that the size of these structs match our expectations.
 // Just update it if you changed the struct members. The data-generator process prints their actual sizes.
 static_assert(sizeof(struct GB_ROM) == 140);
-static_assert(sizeof(struct ROM_DATA) == 160);
+static_assert(sizeof(struct ROM_DATA) == 164);
 
 LinkConnection globalLinkCable;
 
