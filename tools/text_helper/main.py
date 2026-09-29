@@ -458,16 +458,12 @@ def split_sentence_into_lines(sentence, offset, pixelsPerChar, pixelsInLine, cen
         else:
             wordLength = 0
 
-            # Figure out the length of the word in pixels
-            for char in word:
-                if (char == PURPOSEFUL_SPACE_CHAR):
-                    char = " "
-                if (pixelsPerChar == -1):
-                    wordLength += language_char_array["font"].charWidthTable[convert_char_to_byte(ord(char), language_char_array["array"], lang, entry_id)]
-                    spaceLength = language_char_array["font"].charWidthTable[0]
-                else:
-                    wordLength += pixelsPerChar
-                    spaceLength = pixelsPerChar
+            # Use the same command-aware measurement for wrapping and diagnostics.
+            wordLength = get_text_pixel_length(
+                word, pixelsPerChar, language_char_array, lang, entry_id, context
+            )
+            spaceLength = (language_char_array["font"].charWidthTable[0]
+                           if pixelsPerChar == -1 else pixelsPerChar)
 
             # Test if the word is too long in general
             if (wordLength > pixelsInLine):
@@ -510,13 +506,25 @@ def get_text_pixel_length(text, pixelsPerChar, language_char_array, lang, entry_
         return 0
 
     total = 0
-    for char in text:
+    index = 0
+    spacing_char = language_char_array["array"][0xFC]
+    widths = language_char_array["font"].charWidthTable
+    while index < len(text):
+        char = text[index]
+        if char == spacing_char and text[index + 1:index + 2] == "[":
+            end = text.find("]", index + 2)
+            count = text[index + 2:end] if end != -1 else ""
+            if count.isascii() and count.isdecimal():
+                total += widths[0xFC] * int(count)
+                index = end + 1
+                continue
         if char == PURPOSEFUL_SPACE_CHAR:
             char = " "
         if pixelsPerChar == -1:
-            total += language_char_array["font"].charWidthTable[convert_char_to_byte(ord(char), language_char_array["array"], lang, entry_id, context)]
+            total += widths[convert_char_to_byte(ord(char), language_char_array["array"], lang, entry_id, context)]
         else:
             total += pixelsPerChar
+        index += 1
     return total
 
 def convert_char_to_byte(incoming, array, lang, entry_id=None, context=None):
