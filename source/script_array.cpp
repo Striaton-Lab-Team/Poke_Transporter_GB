@@ -14,6 +14,7 @@
 #include "text_engine.h"
 #include "text_tables.h"
 #include "translated_text.h"
+#include "dbg/debug_mode.h"
 #include <tonc.h>
 
 int last_error;
