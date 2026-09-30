@@ -11,6 +11,7 @@
 #include "translated_text.h"
 #include "FileContainerReader.h"
 #include "text_tables.h"
+#include "dbg/debug_mode.h"
 
 Box_Menu::Box_Menu() {};
 
@@ -27,7 +28,16 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
     FileContainerReader namesReader(chunkList, numChunks, chunkSize);
 
     tte_erase_screen();
-    load_flex_background((FlexBackground)((int)FBG_Box_Green + (int)vers), 2); // This is kinda gross, but it works
+    
+    if (vers == VERSION_UNKNOWN)
+    {
+        load_flex_background(FBG_Box_Green, 2);
+    }
+    else
+    {
+        load_flex_background((FlexBackground)((int)FBG_Box_Green + (int)vers), 2); // This is kinda gross, but it works
+    }
+
     REG_BG1VOFS = 0;
     REG_BG1HOFS = 0;
     load_temp_box_sprites(box);
@@ -144,8 +154,11 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
                 u32 nameEntryIndex = curr_pkmn->getSpeciesIndexNumber();
 
                 tte_set_pos(6, 88);
-                curr_pkmn->externalConvertNickname(&pkmnTables, val);
-                ptgb_write_simple(val, true);
+                if ((curr_GBA_rom.language == LANG_JPN) != (PTGB_BUILD_LANGUAGE == JPN_ID))
+                {
+                    curr_pkmn->externalConvertNickname(&pkmnTables, val);
+                    ptgb_write_simple(val, true);
+                }
                 if (curr_pkmn->getIsShiny())
                 {
                     tte_set_pos(64, 16);

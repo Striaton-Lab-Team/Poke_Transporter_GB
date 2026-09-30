@@ -27,13 +27,7 @@
 #include "gb_rom_values_spa_lz10_bin.h"
 #include "gb_rom_values_kor_lz10_bin.h"
 
-#include "GB_Payloads_chunk0_lz10_bin.h"
-#include "GB_Payloads_chunk1_lz10_bin.h"
-#include "GB_Payloads_chunk2_lz10_bin.h"
-#include "GB_Payloads_chunk3_lz10_bin.h"
-#include "GB_Payloads_chunk4_lz10_bin.h"
-#include "GB_Payloads_chunk5_lz10_bin.h"
-#include "GB_Payloads_chunk6_lz10_bin.h"
+#include "compression_chunks.h"
 
 #include "GB_Payloads.h"
 
@@ -49,7 +43,7 @@ LinkSPI *linkSPI = &linkSPIInstance;
 // Here's a compilation check to ensure that the size of these structs match our expectations.
 // Just update it if you changed the struct members. The data-generator process prints their actual sizes.
 static_assert(sizeof(struct GB_ROM) == 140);
-static_assert(sizeof(struct ROM_DATA) == 160);
+static_assert(sizeof(struct ROM_DATA) == 164);
 
 LinkConnection globalLinkCable;
 

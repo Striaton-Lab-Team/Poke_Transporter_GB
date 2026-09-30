@@ -12,16 +12,8 @@
 #include "script_patches.h"
 #include "section30_patches.h"
 #include "script_ruby_english_1_0_lz10_bin.h"
-#include "script_patches_chunk0_lz10_bin.h"
 #include "section30_ruby_english_1_0_lz10_bin.h"
-#include "section30_patches_chunk0_lz10_bin.h"
-#include "RSEFRLG_english_chunk0_lz10_bin.h"
-#include "RSEFRLG_japanese_chunk0_lz10_bin.h"
-#include "RSEFRLG_french_chunk0_lz10_bin.h"
-#include "RSEFRLG_german_chunk0_lz10_bin.h"
-#include "RSEFRLG_italian_chunk0_lz10_bin.h"
-#include "RSEFRLG_spanishEU_chunk0_lz10_bin.h"
-#include "RSEFRLG_spanishLA_chunk0_lz10_bin.h"
+#include "compression_chunks.h"
 #include <cstdlib>
 #include <cstring>
 #include <array>
@@ -139,16 +131,10 @@ static constexpr std::pair<u16, u16> firstTimeTextEntryPairs[] = {
     {RSEFRLG_dia_textYouMustBe_first, RSEFRLG_dia_textYouMustBe_second}
 };
 
-static const u8 *RSEFRLG_japanese_chunklist[] = { RSEFRLG_japanese_chunk0_lz10_bin };
-static const u8 *RSEFRLG_english_chunklist[] = { RSEFRLG_english_chunk0_lz10_bin };
-static const u8 *RSEFRLG_french_chunklist[] = { RSEFRLG_french_chunk0_lz10_bin };
-static const u8 *RSEFRLG_german_chunklist[] = { RSEFRLG_german_chunk0_lz10_bin };
-static const u8 *RSEFRLG_italian_chunklist[] = { RSEFRLG_italian_chunk0_lz10_bin };
-
 #if BUILD_LANG == 7
-static const u8 *RSEFRLG_spanish_chunklist[] = { RSEFRLG_spanishLA_chunk0_lz10_bin };
+static const u8 **RSEFRLG_spanish_chunk_list = RSEFRLG_spanishLA_chunk_list;
 #else
-static const u8 *RSEFRLG_spanish_chunklist[] = { RSEFRLG_spanishEU_chunk0_lz10_bin };
+static const u8 **RSEFRLG_spanish_chunk_list = RSEFRLG_spanishEU_chunk_list;
 #endif
 
 // This will need to be modified for the JP releases
@@ -221,22 +207,22 @@ static void pickRSEFRLGChunks(Language lang, const u8 **&chunkList, u32 &size)
     switch(lang)
     {
         case JAPANESE:
-            chunkList = RSEFRLG_japanese_chunklist;
+            chunkList = RSEFRLG_japanese_chunk_list;
             break;
         case FRENCH:
-            chunkList = RSEFRLG_french_chunklist;
+            chunkList = RSEFRLG_french_chunk_list;
             break;
         case ITALIAN:
-            chunkList = RSEFRLG_italian_chunklist;
+            chunkList = RSEFRLG_italian_chunk_list;
             break;
         case GERMAN:
-            chunkList = RSEFRLG_german_chunklist;
+            chunkList = RSEFRLG_german_chunk_list;
             break;
         case SPANISH:
-            chunkList = RSEFRLG_spanish_chunklist;
+            chunkList = RSEFRLG_spanish_chunk_list;
             break;
         default:
-            chunkList = RSEFRLG_english_chunklist;
+            chunkList = RSEFRLG_english_chunk_list;
             break;
     }
 }
@@ -599,16 +585,8 @@ static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* sectio
     u32 languagePatchFile;
     u32 specificPatchFile = (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_0;
 
-    const u8* section30PatchesChunkList[] = {
-        section30_patches_chunk0_lz10_bin
-    };
-
-    const u8* scriptPatchesChunkList[] = {
-        script_patches_chunk0_lz10_bin
-    };
-
-    FileContainerReader section30PatchesReader(section30PatchesChunkList, sizeof(section30PatchesChunkList) / sizeof(section30PatchesChunkList[0]));
-    FileContainerReader scriptPatchesReader(scriptPatchesChunkList, sizeof(scriptPatchesChunkList) / sizeof(scriptPatchesChunkList[0]));
+    FileContainerReader section30PatchesReader(section30_patches_chunk_list, sizeof(section30_patches_chunk_list) / sizeof(section30_patches_chunk_list[0]));
+    FileContainerReader scriptPatchesReader(script_patches_chunk_list, sizeof(script_patches_chunk_list) / sizeof(script_patches_chunk_list[0]));
 
     // first determine the patch indexes needed to convert the base payloads to the specific game.
     pickPatchFiles(gamePatchFile, languagePatchFile, specificPatchFile);

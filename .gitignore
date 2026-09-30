@@ -19,3 +19,5 @@ loader/data
 options.json
 loader/data/
 .venv/
+tools/gba-payload-generator/gba-payload-generator
+tools/bps-patch-trim/bps-patch-trim

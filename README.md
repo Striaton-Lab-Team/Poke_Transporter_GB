@@ -9,10 +9,6 @@ _**Poké Transporter GB is also NOT compatible with bootleg versions of any Pok�
 ## Notes
 Pokémon Transfered using Poké Transporter GB *will* be removed from Red, Blue, Yellow, Gold, Silver, or Crystal.
 
-Currently the only release is in English. Releases supporting other languages is planned for the near future.
-
-English, French, German, Italian and Spanish games are supported.
-
 Poke Transporter GB supports original gen III cartridges AND the gen III games in mode B on the [EZ Flash Omega Definitive Edition flashcart](docs/EZ_Flash_Omega_DE.md).
 
 ## Usage
@@ -39,7 +35,7 @@ If you have this problem, you could:
 
 ## Modifications to Transfered Pokémon
 
-Poké Transporter GB utilizes the Pokémon Community Conversion Standard for converting Pokémon from Generation 1 and 2 to Generation 3. You can view the documentation for the PCCS [here](https://github.com/GearsProgress/Pokemon-Community-Conversion-Standard)!
+Poké Transporter GB utilizes the LEGAL method of the Pokémon Community Conversion Standard for converting Pokémon from Generation 1 and 2 to Generation 3. You can view the documentation for the PCCS [here](https://github.com/GearsProgress/Pokemon-Community-Conversion-Standard)!
 
 ## Screenshots and Video
 
