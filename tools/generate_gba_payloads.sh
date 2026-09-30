@@ -7,9 +7,11 @@
 # This is all done to keep the file sizes as small as possible
 # The script requires 2 arguments: 
 # 1.) the path to the build dir.
-# 2.) the path to the uncompressed RSEFRLG text table bin file
+# 2.) the gba cart language name
+# 3.) the path to the uncompressed RSEFRLG text table bin file
 BUILD_DIR=$1
-RSEFRLG_BIN_PATH=$2
+LANG=$2
+RSEFRLG_BIN_PATH=$3
 RAW_PAYLOAD_DIR=$1/gba-payloads
 BPS_PATCH_DIR=$1/bps-patches
 
@@ -27,13 +29,13 @@ create_patch(){
 determine_base_section30(){
 	case "$1" in
 		*ruby*|*sapphire*)
-			printf '%s\n' "section30_ruby_english_1_0.bin"
+			printf '%s\n' "section30_ruby_${LANG}_1_0.bin"
 			;;
 		*emerald*)
-			printf '%s\n' "section30_emerald_english_1_0.bin"
+			printf '%s\n' "section30_emerald_${LANG}_1_0.bin"
 			;;
 		*firered*|*leafgreen*)
-			printf '%s\n' "section30_firered_english_1_0.bin"
+			printf '%s\n' "section30_firered_${LANG}_1_0.bin"
 			;;
 		*)
 			return 1
@@ -44,13 +46,13 @@ determine_base_section30(){
 determine_base_script(){
 	case "$1" in
 		*ruby*|*sapphire*)
-			printf '%s\n' "script_ruby_english_1_0.bin"
+			printf '%s\n' "script_ruby_${LANG}_1_0.bin"
 			;;
 		*emerald*)
-			printf '%s\n' "script_emerald_english_1_0.bin"
+			printf '%s\n' "script_emerald_${LANG}_1_0.bin"
 			;;
 		*firered*|*leafgreen*)
-			printf '%s\n' "script_firered_english_1_0.bin"
+			printf '%s\n' "script_firered_${LANG}_1_0.bin"
 			;;
 		*)
 			return 1
@@ -63,7 +65,7 @@ set -e
 
 mkdir -p $RAW_PAYLOAD_DIR
 mkdir -p $BPS_PATCH_DIR
-tools/gba-payload-generator/gba-payload-generator $RSEFRLG_BIN_PATH $RAW_PAYLOAD_DIR
+tools/gba-payload-generator/gba-payload-generator $RSEFRLG_BIN_PATH $LANG $RAW_PAYLOAD_DIR
 
 # first copy our absolute base payload to to_compress
 cp $RAW_PAYLOAD_DIR/script_$ABSOLUTE_BASE_VARIANT to_compress/
@@ -74,50 +76,57 @@ cp $RAW_PAYLOAD_DIR/section30_$ABSOLUTE_BASE_VARIANT to_compress/
 # Convert from Ruby to Emerald
 # Convert from Ruby to FireRed
 #
-# All the language specific ones can be based on those 3 variants (english included)
-create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_emerald_english_1_0.bin" "$BPS_PATCH_DIR/script_emerald_english_1_0.bps"
-create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_firered_english_1_0.bin" "$BPS_PATCH_DIR/script_firered_english_1_0.bps"
-create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_emerald_english_1_0.bin" "$BPS_PATCH_DIR/section30_emerald_english_1_0.bps"
-create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_firered_english_1_0.bin" "$BPS_PATCH_DIR/section30_firered_english_1_0.bps"
+
+# Now create all the language specific ones can be based on those 3 variants (ruby, emerald, firered)
+if [[ $LANG != "english" ]]; then
+	create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_ruby_${LANG}_1_0.bin" "$BPS_PATCH_DIR/script_ruby_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/script_firered_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_firered_${LANG}_1_0.bin" "$BPS_PATCH_DIR/script_firered_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/script_emerald_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_emerald_${LANG}_1_0.bin" "$BPS_PATCH_DIR/script_emerald_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_ruby_${LANG}_1_0.bin" "$BPS_PATCH_DIR/section30_ruby_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_firered_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_firered_${LANG}_1_0.bin" "$BPS_PATCH_DIR/section30_firered_${LANG}_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_emerald_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_emerald_${LANG}_1_0.bin" "$BPS_PATCH_DIR/section30_emerald_${LANG}_1_0.bps"
+else
+	create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_emerald_english_1_0.bin" "$BPS_PATCH_DIR/script_emerald_english_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/script_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/script_firered_english_1_0.bin" "$BPS_PATCH_DIR/script_firered_english_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_emerald_english_1_0.bin" "$BPS_PATCH_DIR/section30_emerald_english_1_0.bps"
+	create_patch "$RAW_PAYLOAD_DIR/section30_ruby_english_1_0.bin" "$RAW_PAYLOAD_DIR/section30_firered_english_1_0.bin" "$BPS_PATCH_DIR/section30_firered_english_1_0.bps"
+fi
 
 # Generate patches for every game and language variant. Each variant is based on
 # the smallest appropriate English game-family payload.
 for i in "${games[@]}"
 do
-	for j in "${langs[@]}"
-	do
-		specific_script_identifier="script_${i}_${j}*"
-		specific_section30_identifier="section30_${i}_${j}*"
+	specific_script_identifier="script_${i}_${LANG}*"
+	specific_section30_identifier="section30_${i}_${LANG}*"
 
-		find $RAW_PAYLOAD_DIR -name $specific_script_identifier | while read filename; do
-			file_basename=$(basename $filename)
-			patch_file=${file_basename%.*}.bps
-			base_filename=$(determine_base_script "$filename") || exit 1
-			base_path="$RAW_PAYLOAD_DIR/$base_filename"
+	find $RAW_PAYLOAD_DIR -name $specific_script_identifier | while read filename; do
+		file_basename=$(basename $filename)
+		patch_file=${file_basename%.*}.bps
+		base_filename=$(determine_base_script "$filename") || exit 1
+		base_path="$RAW_PAYLOAD_DIR/$base_filename"
 
-			# avoid replacing base payload patch files created above.
-			if [[ -f "$BPS_PATCH_DIR/$patch_file" ]]; then
-				continue
-			fi
-			
-			echo "Creating patch for $filename based on $base_path"
-			create_patch "$base_path" "$filename" "$BPS_PATCH_DIR/$patch_file"
-		done
-		
-		find $RAW_PAYLOAD_DIR -name $specific_section30_identifier | while read filename; do
-			file_basename=$(basename $filename)
-			patch_file=${file_basename%.*}.bps
-			base_filename=$(determine_base_section30 "$filename") || exit 1
-			base_path="$RAW_PAYLOAD_DIR/$base_filename"
+		# avoid replacing base payload patch files created above.
+		if [[ -f "$BPS_PATCH_DIR/$patch_file" ]]; then
+			continue
+		fi
 
-			# avoid replacing base payload patch files created above.
-			if [[ -f "$BPS_PATCH_DIR/$patch_file" ]]; then
-				continue
-			fi
-			
-			echo "Creating patch for $filename based on $base_path"
-			create_patch "$base_path" "$filename" "$BPS_PATCH_DIR/$patch_file"
-		done
+		echo "Creating patch for $filename based on $base_path"
+		create_patch "$base_path" "$filename" "$BPS_PATCH_DIR/$patch_file"
+	done
+
+	find $RAW_PAYLOAD_DIR -name $specific_section30_identifier | while read filename; do
+		file_basename=$(basename $filename)
+		patch_file=${file_basename%.*}.bps
+		base_filename=$(determine_base_section30 "$filename") || exit 1
+		base_path="$RAW_PAYLOAD_DIR/$base_filename"
+
+		# avoid replacing base payload patch files created above.
+		if [[ -f "$BPS_PATCH_DIR/$patch_file" ]]; then
+			continue
+		fi
+
+		echo "Creating patch for $filename based on $base_path"
+		create_patch "$base_path" "$filename" "$BPS_PATCH_DIR/$patch_file"
 	done
 done
 
@@ -127,19 +136,21 @@ done
 # Note: we use a 4096 byte chunk size in order to maximize compression. (this way all patches fit in a single chunk)
 # The other function peers (for instance for text insertion) in mystery_gift_injector.cpp are also
 # using a 4096 byte IWRAM buffer, so it shouldn't be a problem.
-echo "@chunkSize=4096" >> $BPS_PATCH_DIR/script_patches.containerdef
-echo "@chunkSize=4096" >> $BPS_PATCH_DIR/section30_patches.containerdef
-for j in "${langs[@]}"
+if [ ! -f "$BPS_PATCH_DIR/script_patches.containerdef" ]; then
+    echo "@chunkSize=4096" >> $BPS_PATCH_DIR/script_patches.containerdef
+fi
+if [ ! -f "$BPS_PATCH_DIR/section30_patches.containerdef" ]; then
+    echo "@chunkSize=4096" >> $BPS_PATCH_DIR/section30_patches.containerdef
+fi
+
+for i in "${games[@]}"
 do
-	for i in "${games[@]}"
-	do
-		script_identifier="script_${i}_${j}*"
-		section30_identifier="section30_${i}_${j}*"
-		find $BPS_PATCH_DIR -name $script_identifier | LC_ALL=C sort | while read filename; do
-			echo $filename >> $BPS_PATCH_DIR/script_patches.containerdef
-		done
-		find $BPS_PATCH_DIR -name $section30_identifier | LC_ALL=C sort | while read filename; do
-			echo $filename >> $BPS_PATCH_DIR/section30_patches.containerdef
-		done
+	script_identifier="script_${i}_${LANG}*"
+	section30_identifier="section30_${i}_${LANG}*"
+	find $BPS_PATCH_DIR -name $script_identifier | LC_ALL=C sort | while read filename; do
+		echo $filename >> $BPS_PATCH_DIR/script_patches.containerdef
+	done
+	find $BPS_PATCH_DIR -name $section30_identifier | LC_ALL=C sort | while read filename; do
+		echo $filename >> $BPS_PATCH_DIR/section30_patches.containerdef
 	done
 done

@@ -6,6 +6,10 @@ BUILD_LANG ?= $(shell jq -r '.selected.lang' < $(SRCDIR)/options.json)
 BUILD_TYPE ?= $(shell jq -r '.selected.type' < $(SRCDIR)/options.json)
 BUILD_XLSX ?= $(shell jq -r '.selected.xlsx' < $(SRCDIR)/options.json)
 
+# resolve_lang,<lang>: maps "spanish" to spanishEU/spanishLA per BUILD_LANG (defaults to spanishEU), passes other langs through unchanged.
+# can be called like this: $(call select_rsefrlg_table_lang,spanish)
+select_rsefrlg_table_lang = $(if $(filter spanish,$(1)),$(if $(filter spanishLA,$(BUILD_LANG)),spanishLA,spanishEU),$(1))
+
 GIT_SUFFIX := $(shell git describe --tags --long --dirty | sed -E 's/^[^-]+-([0-9]+)-g[0-9a-f]+(-dirty)?$$/\1/')
 GIT_FULL := $(shell git describe --tags --always --dirty 2>/dev/null)
 
@@ -249,7 +253,12 @@ $(GENERATE_STAMP): compress_lz10.sh | data to_compress generated_dir
 	@echo "----------------------------------------------------------------"
 	@echo
 	@find tools/text_helper/build -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container to_compress
-	tools/generate_gba_payloads.sh build/ to_compress/RSEFRLG.chunk0.bin
+	tools/generate_gba_payloads.sh build/ english to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,english).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ japanese to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,japanese).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ french to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,french).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ german to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,german).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ italian to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,italian).chunk0.bin && \
+	tools/generate_gba_payloads.sh build/ spanish to_compress/RSEFRLG_$(call select_rsefrlg_table_lang,spanish).chunk0.bin
 	@find build/bps-patches -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress
 	@find $(FILE_CONTAINERS) -name "*.containerdef" -print0 | xargs -0 -n1 tools/make-file-container/make-file-container -H $(BUILD) to_compress
 	@echo "Compressing bin files!" 

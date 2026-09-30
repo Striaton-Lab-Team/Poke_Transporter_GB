@@ -180,7 +180,9 @@ MenuInputHandleState vertical_menu::handle_input()
             ++viewport_start_index_;
             viewport_changed = true;
         }
-        if (focused_index_ > items_.size() - 1) {
+        if (focused_index_ >= items_.size())
+        {
+            // reached the end, so wrap around to the beginning.
             viewport_start_index_ = 0;
             focused_index_ = 0;
             viewport_changed = true;
@@ -189,16 +191,19 @@ MenuInputHandleState vertical_menu::handle_input()
     }
     else if (key_hit(KEY_UP))
     {
-        --focused_index_;
-        if (focused_index_ < 0)
+        if (focused_index_ == 0)
         {
+            // currently the first item was selected, so do wrap around to the end.
             const unsigned num_visible_items = get_num_visible_items(settings_.height, settings_.margin_top, settings_.margin_bottom, settings_.item_height);
-            const unsigned current_viewport_end_index = get_viewport_end_index(viewport_start_index_, num_visible_items, items_.size());
             const unsigned max_index = items_.size() - 1;
             
             viewport_start_index_ = (max_index - num_visible_items) + 1;
             focused_index_ = max_index;
             viewport_changed = true;
+        }
+        else
+        {
+            --focused_index_;
         }
         did_navigate = true;
     }

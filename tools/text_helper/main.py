@@ -860,10 +860,21 @@ def format_text_entry(ogDict, lang, context=None):
     )
 
 def convert_item(ogDict, lang, context=None):
+    # convert_item replaces ogDict["bytes"] (the source text) with the encoded hex string,
+    # so re-running it on an already converted entry would encode that hex string as text.
+    # This is a destructive operation, so we need to make sure it's not run more than once.
+    # This is relevant because generate_text_tables() runs through all tables (including RSEFRLG)
+    # and generate_rsefrlg_tables_for_all_langs() does it again for the RSEFRLG section multiple times.
+    # Note however that ogDict being passed here is a specific entry for a specific language.
+    # however, because both generate_text_tables() and generate_rsefrlg_tables_for_all_langs() 
+    # are getting called, BUILD_LANG is being converted twice for the RSEFRLG section!
+    if ogDict.get("converted"):
+        return ogDict
     normalized_text = format_text_entry(ogDict, lang, context)
     arr = get_language_config(lang).char_array["array"]
     entry_id = ogDict.get("entryId")
     ogDict["bytes"] = encode_formatted_text(normalized_text, arr, lang, entry_id, context)
+    ogDict["converted"] = True
     return ogDict
 
 # in order to safely use getPointerToFileInDecompressionBuffer() in FileContainerReader
@@ -874,7 +885,6 @@ def get_file_container_chunk_size(section):
     else:
         return 2048
 
-
 def write_text_file_container(filename, dictionary, lang, section, context=None):
     buildpath = str(BUILD_DIR) + "/"
     Path(buildpath).mkdir(parents=True, exist_ok=True)
@@ -884,13 +894,14 @@ def write_text_file_container(filename, dictionary, lang, section, context=None)
         defFile.write(defLine.encode("utf-8"))
         
         for key, line in dictionary.items():
-            with open(buildpath + str(key), 'wb') as lineFile:
+            entryFilename = str(key) + "_" + lang.name
+            with open(buildpath + entryFilename, 'wb') as lineFile:
                 dictionary[key] = convert_item(line, lang, context)
                 linedata = bytes.fromhex(dictionary[key]['bytes'])
                 lineFile.write(linedata)
                 lineFile.close()
             
-            defLine = buildpath + str(key) + "\n"
+            defLine = buildpath + entryFilename + ":" + str(key) + "\n"
             defFile.write(defLine.encode("utf-8"))
         defFile.close()
 
@@ -1204,6 +1215,24 @@ def generate_text_tables(lang):
     print("\tGenerating text tables")
     for section in textSections:
         table_name = section
+        write_text_file_container(table_name, mainDict[lang.name][section], lang, section, build_context)
+    generate_rsefrlg_tables_for_all_langs()
+
+# To make the output filenames consistent with the BUILD_LANG values in our options.json file
+# we need to turn the language name into camelcase
+def first_lower(s):
+   if len(s) == 0:
+      return s
+   else:
+      return s[0].lower() + s[1:]
+
+# the RSEFRLG table is special. We want to be able to generate the mystery gift payload
+# in the inserted cartridge language regardless of the PTGB build lang.
+# To accomplish that, we must generate all variants, regardless of BUILD_LANG
+def generate_rsefrlg_tables_for_all_langs():
+    for lang in Languages:
+        section = "RSEFRLG"
+        table_name = section + "_" + first_lower(lang.name)
         write_text_file_container(table_name, mainDict[lang.name][section], lang, section, build_context)
 
 def generate_cpp_file():

@@ -137,8 +137,9 @@ static void generateOutputPath(char *outputPathBuffer, const char *outputDir, co
 
 static void printUsage()
 {
-    printf("Usage: mystery_gift_builder path/to/RSEFRLG_text_table.bin outputPath\n");
+    printf("Usage: gba-payload-generator path/to/RSEFRLG_text_table.bin language outputPath\n");
     printf("  path/to/RSEFRLG_text_table.bin: Path to the input RSEFRLG text table file.\n");
+    printf("  language: Language code for the payloads to generate (english, japanese, french, german, italian or spanish).\n");
     printf("  outputPath: Path to a directory to output our language-specific payloads to.\n\n");
     printf("gba-payload-generator will generate all payloads for the specified language.\n");
 }
@@ -207,6 +208,40 @@ static void generatePayloadsForLanguage(const char* outputPath, char languageCod
     }
 }
 
+static char selectLanguage(const char* argument)
+{
+    if(!strcmp(argument, "english"))
+    {
+        return LANG_ENG;
+    }
+    else if(!strcmp(argument, "japanese"))
+    {
+        return LANG_JPN;
+    }
+    else if(!strcmp(argument, "french"))
+    {
+        return LANG_FRE;
+    }
+    else if(!strcmp(argument, "german"))
+    {
+        return LANG_GER;
+    }
+    else if(!strcmp(argument, "italian"))
+    {
+        return LANG_ITA;
+    }
+    else if(!strcmp(argument, "spanish"))
+    {
+        return LANG_SPA;
+    }
+    else
+    {
+        fprintf(stderr, "[gba-payload-generator]: Error: Unknown language argument %s!\n", argument);
+        printUsage();
+        exit(1);
+    }
+}
+
 int main(int argc, char **argv)
 {
     // disable stdout buffering, to ensure asserts don't
@@ -217,8 +252,9 @@ int main(int argc, char **argv)
     uint32_t textTableSize = 0;
     char languageCode;
 
-    if(argc != 3)
+    if(argc != 4)
     {
+        fprintf(stderr, "Error: Insufficient arguments: %d provided, 3 expected.\n", argc - 1);
         printUsage();
         return 1;
     }
@@ -253,12 +289,8 @@ int main(int argc, char **argv)
     }
     fclose(text_table_file);
 
-    const char langCodes[] = { LANG_ENG, LANG_FRE, LANG_SPA, LANG_ITA, LANG_GER, LANG_JPN };
-
-    for(char langCode : langCodes)
-    {
-        generatePayloadsForLanguage(argv[2], langCode, textTableBuffer, textTableSize);
-    }
+    languageCode = selectLanguage(argv[2]);
+    generatePayloadsForLanguage(argv[3], languageCode, textTableBuffer, textTableSize);
 
     delete[] textTableBuffer;
     textTableBuffer = nullptr;

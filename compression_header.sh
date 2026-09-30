@@ -24,7 +24,7 @@ do
   fi
 
   if [ "$currArray" = "" ]; then
-    currArray="static const unsigned char *${currChunk}_chunk_list[] = {"
+    currArray="__attribute__((unused))\nstatic const unsigned char *${currChunk}_chunk_list[] = {"
   fi
 
   fullName=$(printf '%s' "$underscoreEntryName" | sed 's/_bin$/_lz10_bin/')

@@ -235,7 +235,7 @@ private:
     vertical_menu_settings settings_;
     i_vertical_menu_state_changed_handler *state_changed_handler_;
     i_run_cycle_handler *run_cycle_handler_;
-    int focused_index_;
+    unsigned focused_index_;
     unsigned viewport_start_index_;
     ptgb::vector<i_item_widget*> items_;
     bool is_focused_;

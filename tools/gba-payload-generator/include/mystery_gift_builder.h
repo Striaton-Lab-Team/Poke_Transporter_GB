@@ -396,6 +396,8 @@ private:
      * @return u32 Number of bytes removed from the payload buffer
      */
     u32 stripText(u8 *payloadBuffer, TextBoxVarInsertionPoint *insertionPoint, u32 payloadSize, u32 accumulatedOffsetCorrection);
+    void printScriptTextLengths(const char *prefix);
+    void printSection30TextLengths(const char *prefix);
 };
 
 #endif

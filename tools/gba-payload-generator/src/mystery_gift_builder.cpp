@@ -861,14 +861,16 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
     {
         fprintf(stderr, "[gba-payload-generator]: Error: Mystery Gift Script is too large for %s, lang %c, revision %d!\n", getGameName(curr_GBA_rom.gamecode), curr_GBA_rom.language, curr_GBA_rom.version);
         fprintf(stderr, "\tScript size: %d bytes, max size: %d bytes\n", mg_script_size, MG_SCRIPT_SIZE);
-        exit(1);
+        printScriptTextLengths("\t");
+//      exit(1);
     }
 
     if(section30_size > 4096)
     {
         fprintf(stderr, "[gba-payload-generator]: Error: Section30 is too large for %s, lang %c, revision %d!\n", getGameName(curr_GBA_rom.gamecode), curr_GBA_rom.language, curr_GBA_rom.version);
         fprintf(stderr, "\tSection30 size: %d bytes, max size: %d bytes\n", section30_size, 4096);
-        exit(1);
+        printSection30TextLengths("\t");
+//      exit(1);
     }
 };
 
@@ -1517,4 +1519,29 @@ u32 mystery_gift_script::stripText(u8 *payloadBuffer, TextBoxVarInsertionPoint *
     memmove(payloadBuffer + realOffset, payloadBuffer + realOffset + insertionPoint->size, bytesToMove);
 
     return insertionPoint->size;
+}
+
+void mystery_gift_script::printScriptTextLengths(const char *prefix)
+{
+    const u32 baseSize = mg_script_size - textGreetInsertionPoint.size - textYouMustBeInsertionPoint.size - textIAmInsertionPoint.size;
+
+    fprintf(stderr, "%sBase script: %u bytes\n", prefix, baseSize);
+    fprintf(stderr, "%stextGreet: %u bytes\n", prefix, textGreetInsertionPoint.size);
+    fprintf(stderr, "%stextYouMustBe: %u bytes\n", prefix, textYouMustBeInsertionPoint.size);
+    fprintf(stderr, "%stextIAm: %u bytes\n", prefix, textIAmInsertionPoint.size);
+}
+
+void mystery_gift_script::printSection30TextLengths(const char *prefix)
+{
+    const u32 baseSize = section30_size - textThankInsertionPoint.size - textPCFullInsertionPoint.size - textWeHereInsertionPoint.size - textPCConvoInsertionPoint.size - textPCThanksInsertionPoint.size - textLookerFullInsertionPoint.size - textMoveBoxInsertionPoint.size - textReceivedInsertionPoint.size;
+
+    fprintf(stderr, "%sBase section30: %u bytes\n", prefix, baseSize);
+    fprintf(stderr, "%stextThank: %u bytes\n", prefix, textThankInsertionPoint.size);
+    fprintf(stderr, "%stextPCFull: %u bytes\n", prefix, textPCFullInsertionPoint.size);
+    fprintf(stderr, "%stextWeHere: %u bytes\n", prefix, textWeHereInsertionPoint.size);
+    fprintf(stderr, "%stextPCConvo: %u bytes\n", prefix, textPCConvoInsertionPoint.size);
+    fprintf(stderr, "%stextPCThanks: %u bytes\n", prefix, textPCThanksInsertionPoint.size);
+    fprintf(stderr, "%stextLookerFull: %u bytes\n", prefix, textLookerFullInsertionPoint.size);
+    fprintf(stderr, "%stextMoveBox: %u bytes\n", prefix, textMoveBoxInsertionPoint.size);
+    fprintf(stderr, "%stextReceived: %u bytes\n", prefix, textReceivedInsertionPoint.size);
 }
