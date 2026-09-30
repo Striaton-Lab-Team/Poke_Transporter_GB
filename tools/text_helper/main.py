@@ -261,7 +261,7 @@ charArrays = {
 }
 
 LANGUAGE_CONFIGS = {
-    Languages.Japanese: LanguageConfig(Languages.Japanese, ("Japanese",), charArrays["Japanese"]),
+    Languages.Japanese: LanguageConfig(Languages.Japanese, ("Japanese",), charArrays["Japanese"], (0x7A, 0x99, 0x79)),
     Languages.English: LanguageConfig(Languages.English, ("English",), charArrays["International"], (0x30, 0x60, 0x70)),
     Languages.French: LanguageConfig(Languages.French, ("French",), charArrays["International"], (0x31, 0x60, 0x71)),
     Languages.German: LanguageConfig(Languages.German, ("German",), charArrays["International"], (0x32, 0x61, 0x72)),
