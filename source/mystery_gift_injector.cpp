@@ -24,6 +24,7 @@ extern "C"
 }
 
 #define MG_SCRIPT_SIZE 0x3E8
+#define BPS_PATCH_FILECONTAINER_CHUNK_SIZE 0x1000
 
 // These defines are there because rom_data defines values that
 // occupy more bytes/bits than needed.
@@ -585,8 +586,8 @@ static void __attribute__((noinline)) reconstructPregeneratedPayloads(u8* sectio
     u32 languagePatchFile;
     u32 specificPatchFile = (u8)Script_patchesFiles::SCRIPT_RUBY_ENGLISH_1_0;
 
-    FileContainerReader section30PatchesReader(section30_patches_chunk_list, sizeof(section30_patches_chunk_list) / sizeof(section30_patches_chunk_list[0]));
-    FileContainerReader scriptPatchesReader(script_patches_chunk_list, sizeof(script_patches_chunk_list) / sizeof(script_patches_chunk_list[0]));
+    FileContainerReader section30PatchesReader(section30_patches_chunk_list, sizeof(section30_patches_chunk_list) / sizeof(section30_patches_chunk_list[0]), BPS_PATCH_FILECONTAINER_CHUNK_SIZE);
+    FileContainerReader scriptPatchesReader(script_patches_chunk_list, sizeof(script_patches_chunk_list) / sizeof(script_patches_chunk_list[0]), BPS_PATCH_FILECONTAINER_CHUNK_SIZE);
 
     // first determine the patch indexes needed to convert the base payloads to the specific game.
     pickPatchFiles(gamePatchFile, languagePatchFile, specificPatchFile);
