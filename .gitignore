@@ -10,6 +10,11 @@ to_compress/
 *.exe
 .vscode/
 .venv/
+source/test_payload.txt
+include/translated_text.h
+source/translated_text.cpp
+text_helper/output.json
+text_helper/text.xlsx
 tools/rom-value-generator/payload-generator
 text_errors.txt
 terminal_output.txt
@@ -18,6 +23,5 @@ tools/make-file-container/make-file-container
 loader/data
 options.json
 loader/data/
-.venv/
 tools/gba-payload-generator/gba-payload-generator
 tools/bps-patch-trim/bps-patch-trim
