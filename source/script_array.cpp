@@ -603,7 +603,7 @@ bool run_conditional(int index)
 
     case CMD_START_LINK:
         load_flex_background(FBG_Fennel, 3);
-        link_animation_state(STATE_CONNECTION);
+        link_animation_state(state_connection);
         box.reset();
         if (g_debug_options.ignore_link_cable)
         {
@@ -706,7 +706,7 @@ bool run_conditional(int index)
         }
         reload_textbox_background();
         load_flex_background(FBG_Fennel, 2);
-        link_animation_state(0);
+        link_animation_state(state_off);
 
         return true;
 

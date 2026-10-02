@@ -621,7 +621,7 @@ void LinkConnection::handleStateLogic()
   case GET_CHECKSUM:
     if (inData != 0xFD)
     {
-      dataOutBuffer[dataOutBufferCurrIndex % 16] = inData;
+      dataOutBuffer[dataOutBufferCurrIndex % DATA_OUT_BUFFER_SIZE] = inData;
       dataOutBufferCurrIndex++;
       nextOutData = 0x01;
     }
@@ -1250,7 +1250,7 @@ void LinkConnection::resetLinkPackets()
   // And set the incoming packet to nullptr since we don't know what that is yet.
   currIncomingPacket = nullptr;
 
-  for (int i = 0; i < 16; i++)
+  for (int i = 0; i < DATA_OUT_BUFFER_SIZE; i++)
   {
     dataOutBuffer[i] = 0;
   }

@@ -3,9 +3,13 @@
 
 #include <cstring>
 
-#define STATE_CONNECTION 1
-#define STATE_TRANSFER 2
-#define STATE_NO_ANIM 3
+enum LinkAnimationState
+{
+    state_off,
+    state_connection,
+    state_transfer,
+    state_no_animation,
+};
 
 // TODO: This is kinda a silly spot for this
 // make sure outBuffer is large enough! Should be at least hex_len + 1
@@ -23,7 +27,7 @@ void global_next_frame();
 int get_frame_count();
 void set_menu_sprite_pal(int frame);
 void run_link_cable_animation(int frame);
-void link_animation_state(int state);
+void link_animation_state(LinkAnimationState state);
 void determine_fennel_blink();
 void set_missingno(bool val);
 bool get_missingno_enabled();

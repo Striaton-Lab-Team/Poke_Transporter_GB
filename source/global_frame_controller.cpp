@@ -15,7 +15,7 @@
 int global_frame_count = 0;
 bool rand_enabled = true;
 int cable_frame = 0;
-int curr_link_animation_state = 0;
+LinkAnimationState curr_link_animation_state = state_off;
 int fennel_blink_timer = 0;
 int fennel_blink_state = 0;
 bool missingno_enabled = false;
@@ -74,10 +74,11 @@ void global_next_frame()
         set_menu_sprite_pal(1);
     }
 
-    if (curr_link_animation_state != 0 && global_frame_count % (40 / curr_link_animation_state) == 0)
+    // This way of determining the animation speed is stupid and will be changed, but leaving it for now since the whole animation will be changing.
+    if (curr_link_animation_state != state_off && global_frame_count % (40 / curr_link_animation_state) == 0)
     {
         cable_frame = (cable_frame + 1) % 12;
-        if (curr_link_animation_state > 0)
+        if (curr_link_animation_state != state_off)
         {
             run_link_cable_animation(cable_frame);
         }
@@ -142,12 +143,12 @@ void run_link_cable_animation(int frame)
 {
     switch (curr_link_animation_state)
     {
-    case STATE_CONNECTION:
+    case state_connection:
         frame %= 4;
         obj_hide_multi(link_frame1, 4);
         obj_unhide_multi(link_frame1, 0, frame);
         break;
-    case STATE_TRANSFER:
+    case state_transfer:
         obj_set_pos(link_blob1, path[frame][0] * 8, path[frame][1] * 8);
         obj_set_pos(link_blob2, path[frame][0] * 8, path[frame][1] * 8);
         obj_set_pos(link_blob3, path[frame][0] * 8, path[frame][1] * 8);
@@ -169,12 +170,12 @@ void run_link_cable_animation(int frame)
     }
 }
 
-void link_animation_state(int state)
+void link_animation_state(LinkAnimationState state)
 {
     cable_frame = 0;
     switch (state)
     {
-    case STATE_CONNECTION:
+    case state_connection:
         obj_unhide(gba_cart, 0);
         obj_set_pos(gba_cart, 17 * 8, 14 * 8);
 
@@ -187,9 +188,9 @@ void link_animation_state(int state)
         obj_set_pos(link_frame2, 13 * 8, 19 * 8);
         obj_set_pos(link_frame3, 9 * 8, 18 * 8);
         break;
-    case STATE_TRANSFER:
+    case state_transfer:
         obj_unhide_multi(link_blob1, 0, 3);
-    case STATE_NO_ANIM:
+    case state_no_animation:
         obj_unhide(gba_cart, 0);
         obj_set_pos(gba_cart, 17 * 8, 14 * 8);
 

@@ -396,7 +396,8 @@ public:
 
     byte payloadBuffer[0x2A0];
     int curr_payload_size = 0;
-    byte dataOutBuffer[16];
+    #define DATA_OUT_BUFFER_SIZE 16
+    byte dataOutBuffer[DATA_OUT_BUFFER_SIZE];
     int dataOutBufferCurrIndex = 0;
 
     // This MUST be a power of 2!

@@ -154,7 +154,11 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
                 u32 nameEntryIndex = curr_pkmn->getSpeciesIndexNumber();
 
                 tte_set_pos(6, 88);
-                if (!(curr_GBA_rom.language == LANG_JPN) != (PTGB_BUILD_LANGUAGE == JPN_ID))
+                if (
+                    // Only the name if the language is either both Japanese or neither is Japanese
+                    ((curr_pkmn->getLanguage() == JAPANESE) && (PTGB_BUILD_LANGUAGE == JPN_ID)) || 
+                    ((curr_pkmn->getLanguage() != JAPANESE) && (PTGB_BUILD_LANGUAGE != JPN_ID))
+                    )
                 {
                     curr_pkmn->externalConvertNickname(&pkmnTables, val);
                     ptgb_write_simple(val, true);

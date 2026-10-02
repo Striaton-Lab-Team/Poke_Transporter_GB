@@ -865,7 +865,7 @@ void mystery_gift_script::build_script(UncompressedFileContainerReader &text_tab
         exit(1);
     }
 
-    if(section30_size > 4086) // A little shorter than 0x1000 since the checksum starts at 0xFF6
+    if(section30_size > 0xFF6) // A little shorter than 0x1000 since the checksum starts at 0xFF6
     {
         fprintf(stderr, "[gba-payload-generator]: Error: Section30 is too large for %s, lang %c, revision %d!\n", getGameName(curr_GBA_rom.gamecode), curr_GBA_rom.language, curr_GBA_rom.version);
         fprintf(stderr, "\tSection30 size: %d bytes, max size: %d bytes\n", section30_size, 4086);

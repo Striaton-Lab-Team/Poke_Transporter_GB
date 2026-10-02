@@ -454,12 +454,15 @@ int main(void)
 		}
 	}
 
+	/*
+	// This isn't needed anymore
 	if ((curr_GBA_rom.language == LANG_JPN) != (PTGB_BUILD_LANGUAGE == JPN_ID))
 	{			
 		obj_hide_multi(ptgb_logo_l, 2);
 		VBlankIntrWait();
 		lang_mismatch_error();
 	}
+	*/
 
 	// Initialize memory and save data after loading the game
 	BG_TEXTBOX = BG_TEXTBOX | BG_PRIO(3);

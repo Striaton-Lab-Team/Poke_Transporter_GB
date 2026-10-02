@@ -94,14 +94,14 @@ int __attribute__((noinline)) pokedex_loop()
     u8 kanto_name[12];
     u8 johto_name[12];
     u8 decompression_buffer[2048];
-    u16 charset[512];
+    //u16 charset[512];
     u8 name_buffer[16];
     const u8 **namesChunkList;
     u32 namesNumChunks;
     u32 namesChunkSize;
 
     LZ77UnCompWram(TYPES_lz10_bin, (u8*)TYPES);
-    LZ77UnCompWram(gen_3_charsets_lz10_bin, (u8*)charset);
+    //LZ77UnCompWram(gen_3_charsets_lz10_bin, (u8*)charset);
 
     load_general_table_text_entries(decompression_buffer, sizeof(decompression_buffer), kanto_name, johto_name);
 
