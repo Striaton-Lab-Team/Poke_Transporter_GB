@@ -94,7 +94,7 @@ int __attribute__((noinline)) pokedex_loop()
     u8 kanto_name[12];
     u8 johto_name[12];
     u8 decompression_buffer[2048];
-    u16 charset[256];
+    u16 charset[512];
     u8 name_buffer[16];
     const u8 **namesChunkList;
     u32 namesNumChunks;

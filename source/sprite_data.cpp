@@ -101,7 +101,7 @@ void set_background_pal(int curr_rom_id, bool dark, bool fade)
                     ((((NUM_CYCLES - n) * INV_NUM_CYCLES) * old_pal[1]) + ((n * INV_NUM_CYCLES) * new_pal[1])) >> 16,
                     ((((NUM_CYCLES - n) * INV_NUM_CYCLES) * old_pal[2]) + ((n * INV_NUM_CYCLES) * new_pal[2])) >> 16);
             }
-            // global_next_frame();
+            VBlankIntrWait();
         }
     }
     else

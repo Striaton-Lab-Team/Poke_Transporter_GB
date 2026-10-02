@@ -621,7 +621,7 @@ void LinkConnection::handleStateLogic()
   case GET_CHECKSUM:
     if (inData != 0xFD)
     {
-      dataOutBuffer[dataOutBufferCurrIndex] = inData;
+      dataOutBuffer[dataOutBufferCurrIndex % 16] = inData;
       dataOutBufferCurrIndex++;
       nextOutData = 0x01;
     }

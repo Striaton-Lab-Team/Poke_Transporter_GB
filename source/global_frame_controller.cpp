@@ -74,7 +74,7 @@ void global_next_frame()
         set_menu_sprite_pal(1);
     }
 
-    if (global_frame_count % (40 / curr_link_animation_state) == 0)
+    if (curr_link_animation_state != 0 && global_frame_count % (40 / curr_link_animation_state) == 0)
     {
         cable_frame = (cable_frame + 1) % 12;
         if (curr_link_animation_state > 0)
