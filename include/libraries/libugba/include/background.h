@@ -2,8 +2,8 @@
 //
 // Copyright (c) 2020 Antonio Niño Díaz
 
-#ifndef BACKGROUND_H__
-#define BACKGROUND_H__
+#ifndef BG_H__
+#define BG_H__
 
 #include "bios.h"
 #include "hardware.h"
@@ -87,4 +87,4 @@ EXPORT_API void BG_FramebufferSwap(void);
 // Set backdrop color (background palette 0 color).
 EXPORT_API void BG_BackdropColorSet(uint16_t color);
 
-#endif // BACKGROUND_H__
+#endif // BG_H__

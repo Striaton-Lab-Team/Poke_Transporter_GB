@@ -2,9 +2,9 @@
 #define SPRITE_DATA_H
 
 #include <tonc.h>
-#include "pokemon_party.h"
 #include "rom_data.h"
 #include "box_menu.h"
+#include "link_handler.h"
 
 #define FENNEL_SHIFT 4
 
@@ -28,7 +28,8 @@ extern OBJ_ATTR *type_sprites[14];
 #include "flag_ger.h"
 #include "flag_spa.h"
 #include "flag_kor.h"
-extern OBJ_ATTR *flag;
+extern OBJ_ATTR *gb_flag;
+extern OBJ_ATTR *gba_flag;
 #include "Label_Green.h"
 #include "Label_Red.h"
 #include "Label_Blue.h"
@@ -36,6 +37,7 @@ extern OBJ_ATTR *flag;
 #include "Label_Gold.h"
 #include "Label_Silver.h"
 #include "Label_Crystal.h"
+#include "Label_Unknown.h"
 extern OBJ_ATTR *cart_label;
 #include "GB_Shell.h"
 #include "GBC_Shell.h"
@@ -46,6 +48,8 @@ extern OBJ_ATTR *cart_shell;
 #include "arrows.h"
 extern OBJ_ATTR *up_arrow;
 extern OBJ_ATTR *down_arrow;
+extern OBJ_ATTR *toggle_arrow_left;
+extern OBJ_ATTR *toggle_arrow_right;
 extern OBJ_ATTR *point_arrow;
 
 #include "unique_duel_frame_menu_sprites.h"
@@ -93,22 +97,61 @@ extern OBJ_ATTR *grabbed_front_sprite;
 #define TYPES_PAL1 3
 #define TYPES_PAL2 4
 #define GB_CART_PAL 5
-#define FLAG_PAL 6
-#define MENU_PAL_RED 7
-#define MENU_PAL_BLU 8
-#define MENU_PAL_GRN 9
-#define MENU_PAL_BRN 10
-#define MENU_PAL_PNK 11
+#define GB_FLAG_PAL 6
+#define GBA_FLAG_PAL 7
+#define MENU_PAL_RED 8
+#define MENU_PAL_BLU 9
+#define MENU_PAL_GRN 10
+#define MENU_PAL_BRN 11
+#define MENU_PAL_PNK 12
 #define MENU_PAL_START MENU_PAL_RED
-#define GBA_CART_PAL 12
-#define LINK_CABLE_PAL 13
-#define PULLED_SPRITE_PAL 14
+#define GBA_CART_PAL 13
+#define LINK_CABLE_PAL 14
+#define PULLED_SPRITE_PAL 15
 
-#define BG_OPENING 0
-#define BG_FENNEL 1
-#define BG_DEX 2
-#define BG_MAIN_MENU 3
-#define BG_BOX 4
+enum FlexBackground
+{
+    FBG_None = -1,
+    FBG_Opening,
+    FBG_Fennel,
+    FBG_Dex,
+    FBG_Main_Menu,
+    FBG_Box_Green,
+    FBG_Box_Red,
+    FBG_Box_Blue,
+    FBG_Box_Yellow,
+    FBG_Box_Gold,
+    FBG_Box_Silver,
+    FBG_Box_Crystal,
+};
+
+//
+// VRAM usage is heavily optimized so the rest of it can be used
+// as additional work RAM in the future.
+//
+// VRAM Map
+//   06000000 - 06000800 ( 2K): Eternal backdrop and textbox tileset
+//   06000800 - 06002000 ( 6K): Flex BG tileset
+//   06002000 - 06002400 ( 2K): BG0: Backdrop tilemap
+//   06002800 - 06003000 ( 2K): BG1: Flex BG tilemap
+//   06003000 - 06003800 ( 2K): BG2: Textbox tilemap
+//   06003800 - 06004000 ( 2K): BG3: Text tilemap
+//   06004000 -~06009000 (20K): Text rendering bitmap
+//   06009000 - 06010000 (28K): Free work RAM (watch the 16-bit bus!)
+//   06010000 - 06018000 (32K): Sprite tileset
+//
+
+#define TILESET_PTGB 0
+#define TILESET_TEXT 1
+
+#define TILESET_OFFSET_BACKDROP  0
+#define TILESET_OFFSET_TEXTBOX  38
+#define TILESET_OFFSET_FLEXBG   64
+
+#define TILEMAP_BACKDROP 4
+#define TILEMAP_FLEXBG   5
+#define TILEMAP_TEXTBOX  6
+#define TILEMAP_TEXT     7
 
 extern rom_data curr_GBA_rom;
 
@@ -120,19 +163,19 @@ void load_sprite_compressed(OBJ_ATTR *sprite, const unsigned int objTiles[],
 void load_background();
 void set_background_pal(int curr_rom_id, bool dark, bool fade);
 void load_textbox_background();
-void load_flex_background(int background_id, int layer);
+void load_flex_background(FlexBackground background_id, int layer);
 void load_eternal_sprites();
 void load_temp_box_sprites(PokeBox* box);
 void load_type_sprites(const u8* pkmn_type_table, int pkmn_index, int dex_offset, bool is_caught);
 void add_menu_box(int options, int startTileX, int startTileY);
 void add_menu_box(int startTileX, int startTileY, int width, int height);
 void reload_textbox_background();
-void load_select_sprites(u8 game_id, u8 lang);
+void load_select_sprites(GameBoyROM currROM);
 void fennel_blink(int frame);
 void fennel_speak(int frame);
 int get_curr_flex_background();
 void update_y_offset();
 void erase_textbox_tiles();
-void update_front_box_sprite(GBPokemon *curr_pkmn);
+void update_front_box_sprite(Pokemon *curr_pkmn, bool make_greyscale);
 void update_menu_sprite(PokeBox* box, int index, int frame);
 #endif

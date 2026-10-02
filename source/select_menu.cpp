@@ -1,7 +1,6 @@
 #include "select_menu.h"
 #include "sprite_data.h"
 #include "translated_text.h"
-#include "text_data_table.h"
 #include "global_frame_controller.h"
 
 #define TEXT_HEIGHT 10
@@ -9,145 +8,130 @@
 #define TILE_HEIGHT 8
 #define TILE_WIDTH 8
 
-Select_Menu::Select_Menu(bool enable_cancel, u8 nMenu_type, int nStartTileX, int nStartTileY)
+Select_Menu::Select_Menu(bool enable_cancel, u8 nMenu_type, unsigned nStartTileX, unsigned nStartTileY)
+    : vertical_menu_cursor_handler(TEXT_WIDTH, 3)
+    , menu_widget_(vertical_menu_settings{
+        .x = static_cast<unsigned>(nStartTileX * TILE_WIDTH),
+        .y = static_cast<unsigned>(nStartTileY * TILE_HEIGHT),
+        .width = 10 * TEXT_WIDTH,
+        .height = TILE_HEIGHT * 2, // to account for the margins
+        .margin_top = TILE_HEIGHT,
+        .margin_bottom = TILE_HEIGHT,
+        .initial_focus_index = 0,
+        .item_height = TEXT_HEIGHT,
+        .text_table_index = GENERAL_INDEX,
+        .allow_cancel = enable_cancel,
+        .should_delete_item_widgets_on_destruct = true,
+        .should_hide_state_changed_handler_on_not_focused = false
+    })
+    , menu_type(nMenu_type)
+    , lang(0)
 {
-    cancel_enabled = enable_cancel;
-    menu_type = nMenu_type;
-    startTileX = nStartTileX;
-    startTileY = nStartTileY;
+    menu_widget_.set_state_changed_handler(this);
+    menu_widget_.set_run_cycle_handler(this);
 }
 
 void Select_Menu::add_option(const u8 option, u8 return_value)
 {
-    menu_options.push_back(option);
-    return_values.push_back(return_value);
-}
+    const simple_item_widget_data item_data = {
+        .text = {
+            .text_table_index = option,
+            .margin_left = 2 * TILE_WIDTH,
+            .margin_top = 0
+        },
+        .value = return_value,
+        .on_execute_callback = nullptr
+    };
+    menu_widget_.add_item_widget(new simple_item_renderer(item_data));
 
-int Select_Menu::select_menu_main()
-{
-    show_menu();
-    curr_selection = 0;
-
-    key_poll(); // Reset the buttons
-
-    bool update;
-    bool first = true;
-    while (true)
-    {
-        update = false;
-        if (key_hit(KEY_DOWN))
-        {
-            curr_selection = ((curr_selection + 1) % menu_options.size());
-            update = true;
-        }
-        else if (key_hit(KEY_UP))
-        {
-            curr_selection = ((curr_selection + (menu_options.size() - 1)) % menu_options.size());
-            update = true;
-        }
-        else if (key_hit(KEY_A))
-        {
-            hide_menu();
-            return return_values[curr_selection];
-        }
-        else if (cancel_enabled && key_hit(KEY_B))
-        {
-            hide_menu();
-            return -1;
-        }
-        else if (first)
-        {
-            update = true;
-            first = false;
-        }
-        update_y_offset();
-        obj_set_pos(
-            point_arrow,
-            (startTileX + 1) * TEXT_WIDTH,
-            (startTileY + 1) * TILE_HEIGHT + (curr_selection * TEXT_HEIGHT) + 2);
-        global_next_frame();
-
-        if (update)
-        {
-            if (return_values[curr_selection] == UINT8_MAX)
-            {
-                switch (menu_type)
-                {
-                case CART_MENU:
-                    obj_hide(cart_shell);
-                    obj_hide(cart_label);
-                    break;
-                case LANG_MENU:
-                    obj_hide(flag);
-                    break;
-                }
-            }
-            else
-            {
-                switch (menu_type)
-                {
-                case CART_MENU:
-                    load_select_sprites(return_values[curr_selection], lang);
-                    obj_unhide(cart_shell, 0);
-                    obj_unhide(cart_label, 0);
-                    break;
-                case LANG_MENU:
-                    load_select_sprites(0, return_values[curr_selection]);
-                    obj_unhide(flag, 0);
-                    break;
-                }
-            }
-        }
-    }
-    return 0;
-}
-
-void Select_Menu::show_menu()
-{
-    u8 decompression_buffer[2048];
-    text_data_table text_data(decompression_buffer);
-    text_data.decompress(get_compressed_general_table());
-
-    add_menu_box(menu_options.size(), startTileX, startTileY);
-    for (unsigned int i = 0; i < menu_options.size(); i++)
-    {
-        tte_set_pos((startTileX + 2) * TEXT_WIDTH, (startTileY + 1) * TILE_HEIGHT + (i * TEXT_HEIGHT));
-        ptgb_write(text_data.get_text_entry(menu_options[i]), true);
-    }
-    obj_unhide(point_arrow, 0);
-    // obj_set_pos(point_arrow, startTileX + (2 * TEXT_WIDTH), (1 + i) * TEXT_HEIGHT);
-}
-
-void Select_Menu::hide_menu()
-{
-    obj_hide(point_arrow);
-    tte_erase_rect(
-        startTileX * TILE_WIDTH,
-        startTileY * TILE_HEIGHT,
-        (startTileX + 10 + 1) * TEXT_WIDTH,
-        ((startTileY + 2) * TILE_HEIGHT) + (menu_options.size() * TEXT_HEIGHT));
-    reload_textbox_background();
-    clear_options();
-    obj_hide(point_arrow);
-    switch (menu_type)
-    {
-    case CART_MENU:
-        obj_hide(cart_shell);
-        obj_hide(cart_label);
-        break;
-    case LANG_MENU:
-        obj_hide(flag);
-        break;
-    }
+    vertical_menu_settings settings = menu_widget_.get_settings();
+    settings.height += TEXT_HEIGHT + (item_data.text.margin_top * 2);
+    menu_widget_.set_settings(settings);
 }
 
 void Select_Menu::clear_options()
 {
-    menu_options.clear();
-    return_values.clear();
+    menu_widget_.clear_item_widgets();
+
+    vertical_menu_settings settings = menu_widget_.get_settings();
+    settings.height = TILE_HEIGHT * 3; // reset to just the margins
+    menu_widget_.set_settings(settings);
+}
+
+int Select_Menu::select_menu_main()
+{
+    unsigned choice_index;
+    unsigned item_value;
+    simple_item_renderer* widget = nullptr;
+
+    menu_widget_.show();
+    choice_index = menu_widget_.run();
+
+    if(choice_index != UINT32_MAX)
+    {
+        widget = static_cast<simple_item_renderer*>(menu_widget_.get_item_widget_at(choice_index));
+    }
+    item_value = (widget) ? widget->get_data().value : UINT8_MAX;
+
+    menu_widget_.hide();
+
+    //global_next_frame();
+    return item_value;
 }
 
 void Select_Menu::set_lang(u8 nLang)
 {
     lang = nLang;
+}
+
+void Select_Menu::on_hide()
+{
+    // call the base implementation to hide the cursor
+    vertical_menu_cursor_handler::on_hide();
+    obj_hide(cart_shell);
+    obj_hide(cart_label);
+    obj_hide(gb_flag);
+}
+
+void Select_Menu::on_selection_changed(unsigned new_index, unsigned x, unsigned y)
+{
+    // call the base implementation to move the cursor
+    vertical_menu_cursor_handler::on_selection_changed(new_index, x, y);
+
+    simple_item_renderer* widget = static_cast<simple_item_renderer*>(menu_widget_.get_item_widget_at(new_index));
+    const unsigned item_value = (widget) ? widget->get_data().value : UINT8_MAX;
+
+    if (item_value == UINT8_MAX)
+    {
+        switch (menu_type)
+        {
+        case CART_MENU:
+            obj_hide(cart_shell);
+            obj_hide(cart_label);
+            break;
+        case LANG_MENU:
+            obj_hide(gb_flag);
+            break;
+        }
+    }
+    else
+    {
+        switch (menu_type)
+        {
+        case CART_MENU:
+            //load_select_sprites(item_value, lang);
+            obj_unhide(cart_shell, 0);
+            obj_unhide(cart_label, 0);
+            break;
+        case LANG_MENU:
+            //load_select_sprites(0, item_value);
+            obj_unhide(gb_flag, 0);
+            break;
+        }
+    }
+}
+
+void Select_Menu::on_run_cycle()
+{
+    update_y_offset();
 }

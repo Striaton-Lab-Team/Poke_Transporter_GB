@@ -1,7 +1,7 @@
 #include <tonc.h>
 #include "button_menu.h"
 #include "button_handler.h"
-#include "save_data_manager.h"
+#include "ptgb_save_data_manager.h"
 #include "global_frame_controller.h"
 #include "string"
 
@@ -30,14 +30,13 @@ void Button_Menu::set_xy_min_max(int nX_min, int nX_max, int nY_min, int nY_max)
 
 int Button_Menu::button_main()
 {
-    tte_set_pos(0, 0);
     organize_buttons();
     show_buttons();
     button_vector.at(curr_position).set_highlight(true);
     int curr_x = 0;
     int curr_y = 0;
 
-    key_poll(); // Reset the buttons
+    VBlankIntrWait(); // Reset the buttons
 
     while (true)
     {
@@ -97,7 +96,7 @@ int Button_Menu::button_main()
             curr_position = get_pos_from_xy(curr_x, curr_y);
             button_vector.at(curr_position).set_highlight(true);
         }
-        global_next_frame();
+        VBlankIntrWait();
     }
     return 0;
 }

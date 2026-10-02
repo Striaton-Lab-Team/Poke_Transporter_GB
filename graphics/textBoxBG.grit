@@ -2,5 +2,5 @@
 # Text Box (Background) : 64x64t, 4bpp, SBB-layout, LZ77 compressed. 
 # Pallet bank 1, copy from 16 to 32.
 #
--gt -gB4 -gzl -mR4 -mLs -mp1 -mzl -ps0 -pe16
+-gt -gB4 -gzl -mR4 -mLs -mp1 -ma38 -mzl -ps0 -pe16
 

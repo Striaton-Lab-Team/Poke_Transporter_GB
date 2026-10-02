@@ -50,8 +50,27 @@ void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
     return malloc(size);
 }
 
+// regular array operator new
+void* operator new[](std::size_t size) {
+    void* ptr = malloc(size);
+    if (!ptr) {
+        return NULL;
+    }
+    return ptr;
+}
+
+// nothrow array operator new
+void* operator new[](std::size_t size, const std::nothrow_t&) noexcept {
+    return malloc(size);
+}
+
 // operator delete
 void operator delete(void* ptr) noexcept {
+    free(ptr);
+}
+
+// array operator delete
+void operator delete[](void* ptr) noexcept {
     free(ptr);
 }
 
@@ -60,8 +79,19 @@ void operator delete(void* ptr, const std::nothrow_t&) noexcept {
     free(ptr);
 }
 
-// sized delete (optional, for C++14 and newer)
+// nothrow array delete
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept {
+    free(ptr);
+}
+
+// sized delete
 void operator delete(void* ptr, std::size_t size) noexcept {
+    (void)size;
+    free(ptr);
+}
+
+// sized array delete
+void operator delete[](void* ptr, std::size_t size) noexcept {
     (void)size;
     free(ptr);
 }

@@ -1,0 +1,33 @@
+Gold EN			4b 68 2d
+Gold DE			4c dc 97
+Gold FR			4a 6f c6
+Gold IT			47 ce 0c
+Gold SP			3d 93 53
+Gold JP rev0	48 8a 70
+Gold JP revA	47 84 60
+Gold KOR		08 77 8a
+Silver EN		2a 0d ae
+Silver DE		2b cd 6e
+Silver FR		29 fb 8c
+Silver IT		26 73 50
+Silver SP		1c 06 4b
+Silver JP rev0	27 76 91
+Silver JP revA	26 1d 34
+Silver KOR		e7 98 5b
+Crystal EN		26 18 d2
+Crystal DE		28 49 82
+Crystal FR		26 f2 e2
+Crystal IT		23 db ba
+Crystal SP		19 42 f4
+Crystal JP		22 9a 40
+
+Serial_ExchangeBytes
+
+gs en     06aa 0710 = 66
+gs jp     06a9 070f = 66
+kor gs    0698 06fe = 66
+c         06ef 075F = 70
+
+PlaceWaitingText
+
+all       01:4000

@@ -1,0 +1,6 @@
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+AlignAfterOpenBracket: DontAlign # Ensure a tabulation first inside a bracket
+BreakBeforeBraces: Allman # Ensure opening bracket goes to newline for a statement

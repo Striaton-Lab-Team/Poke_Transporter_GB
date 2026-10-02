@@ -8,6 +8,8 @@
 #define SECTOR_SIZE_BITS 12
 #define SECTOR_SIZE (1<<SECTOR_SIZE_BITS)
 
+volatile uint8_t *const SRAM_PTR = (volatile uint8_t*)(0x0E000000);
+
 u32 read_int_save(uintptr_t);
 u16 read_short_save(uintptr_t);
 u8 read_byte_save(uintptr_t);

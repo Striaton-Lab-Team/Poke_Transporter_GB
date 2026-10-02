@@ -1,9 +1,8 @@
 #include "rom_data.h"
-#include "mystery_gift_builder.h"
-#include "pokemon_party.h"
+#include "dbg/debug_mode.h"
 #include "pokemon_data.h"
 #include "text_engine.h"
-#include "save_data_manager.h"
+#include "ptgb_save_data_manager.h"
 #include "gba_rom_values/gba_rom_values.h"
 #include "libraries/nanoprintf/nanoprintf.h"
 #include "gba_rom_values_eng_lz10_bin.h"
@@ -16,14 +15,14 @@
 extern rom_data curr_GBA_rom;
 
 rom_data::rom_data() {}
-bool rom_data::load_rom()
+bool rom_data::load_rom(bool debug)
 {
     u8 rom_list_buffer[2048];
     u32 rom_list_size;
     const u8 *compressed_rom_list;
     const u8 *cur;
 
-    if (IGNORE_GAME_PAK)
+    if (debug)
     {
         gamecode = DEBUG_GAME;
         version = DEBUG_VERS;
@@ -36,6 +35,7 @@ bool rom_data::load_rom()
                    (*(vu8 *)(0x80000AE)) << 0x00;
         language = (*(vu8 *)(0x80000AF));
         version = (*(vu8 *)(0x80000BC));
+        entrypoint = (*(vu32 *)(0x8000000));
     }
 
     switch (language)
@@ -78,7 +78,7 @@ bool rom_data::load_rom()
     {
         const ROM_DATA *rom_values = reinterpret_cast<const ROM_DATA *>(cur);
         if (rom_values->is_valid && rom_values->gamecode == gamecode &&
-            rom_values->version == version)
+            rom_values->version == version && (rom_values->entrypoint == entrypoint || debug))
         {
             fill_values(rom_values);
             rom_loaded = true;
@@ -92,37 +92,16 @@ bool rom_data::load_rom()
 
 void rom_data::fill_values(const ROM_DATA *rom_values)
 {
-    loc_sendMonToPC = rom_values->loc_copyMonToPC;
-    loc_gSpecialVar_0x8000 = rom_values->loc_gSpecialVar_0x8000;
-    loc_gSaveBlock1 = rom_values->loc_gSaveBlock1;
-    loc_setPokedexFlag = rom_values->loc_getSetPokedexFlag;
-    loc_gSaveDataBuffer = rom_values->loc_gSaveDataBuffer;
-    loc_readFlashSector = rom_values->loc_readFlashSector;
-    loc_loadSaveSection30 = rom_values->loc_loadSaveSection30;
-    loc_m4aMPlayStop = rom_values->loc_m4aMPlayStop;
-    loc_gMPlayInfo_BGM = rom_values->loc_gMPlayInfo_BGM;
-    loc_gMPlayInfo_SE2 = rom_values->loc_gMPlayInfo_SE2;
-    loc_MPlayStart = rom_values->loc_MPlayStart;
-    loc_CreateFanfareTask = rom_values->loc_CreateFanfareTask;
-    loc_sFanfareCounter = rom_values->loc_sFanfareCounter;
-    loc_gPlttBufferFaded = rom_values->loc_gPlttBufferFaded;
-    loc_gSprites = rom_values->loc_gSprites;
-    loc_voicegroup = rom_values->loc_voicegroup;
-    loc_sPicTable_NPC = rom_values->loc_sPicTable_NPC;
-
+    loc_gMonIconPalettes = rom_values->loc_gMonIconPalettes;
     loc_gMonFrontPicTable = rom_values->loc_gMonFrontPicTable;
     loc_gMonPaletteTable = rom_values->loc_gMonPaletteTable;
     loc_gMonShinyPaletteTable = rom_values->loc_gMonShinyPaletteTable;
     loc_gMonIconTable = rom_values->loc_gMonIconTable;
     loc_gMonIconPaletteIndices = rom_values->loc_gMonIconPaletteIndices;
-    loc_gMonIconPalettes = rom_values->loc_gMonIconPalettes;
 
-    offset_ramscript = rom_values->offset_ramscript;
     offset_flags = rom_values->offset_flags;
     offset_wondercard = rom_values->offset_wondercard;
     offset_script = rom_values->offset_script;
-    text_region = rom_values->text_region;
-    special_DrawWholeMapView = rom_values->special_DrawWholeMapView;
 
     e4_flag = rom_values->e4_flag;                                 // The flag that is set when you become champion. Often listed as "GAME_CLEAR"
     mg_flag = rom_values->mg_flag;                                 // The flag that is set when you enable Mystery Gift. Known as "EXDATA_ENABLE" in RS
@@ -133,13 +112,10 @@ void rom_data::fill_values(const ROM_DATA *rom_values)
     map_bank = rom_values->map_bank;
     map_id = rom_values->map_id;
     npc_id = rom_values->npc_id;
-    npc_palette = rom_values->npc_palette;
 
     def_map_bank = rom_values->def_map_bank;
     def_map_id = rom_values->def_map_id;
     def_npc_id = rom_values->def_npc_id;
-
-    loc_gSaveBlock1PTR = rom_values->loc_gSaveBlock1PTR; // TODO: Only used for old script, can be removed later
 }
 
 bool rom_data::is_hoenn()
@@ -180,15 +156,15 @@ void rom_data::print_rom_info()
 
     npf_snprintf(buffer, sizeof(buffer), "%c-%d-%c", gameTypeChar, version, language);
 
-    tte_set_pos(0, 8);
-    ptgb_write(buffer);
+    ptgb_write_simple(reinterpret_cast<const byte *>(buffer), true);
 }
 
 bool rom_data::verify_rom()
 {
+    // This should really be replaced with a "cart pulled" interrupt
     return !rom_loaded ||
-           IGNORE_GAME_PAK ||
+           g_debug_options.ignore_game_pak ||
            ((gamecode == ((*(vu8 *)(0x80000AC)) << 0x10 | (*(vu8 *)(0x80000AD)) << 0x08 | (*(vu8 *)(0x80000AE)) << 0x00)) &&
             (language == (*(vu8 *)(0x80000AF))) &&
-            (version == (*(vu8 *)(0x80000BC))));
+            (version == (*(vu8 *)(0x80000BC)))); 
 }

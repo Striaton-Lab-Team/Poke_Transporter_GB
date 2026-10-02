@@ -95,11 +95,10 @@ IWRAM_CODE void erase_sector(uintptr_t address) {
         delay_cycles_until(ERASE_TIMEOUT_CYCLES, &save_data[address], 0xFF, SRAM_ACCESS_CYCLES);
 
         failed = 0;
-        for(size_t j = 0; j < SECTOR_SIZE; j++)
-            if(read_direct_single_byte_save(address+j) != ERASED_BYTE) {
-                failed = 1;
-                break;
-            }
+        if(read_direct_single_byte_save(address + SECTOR_SIZE - 1) != ERASED_BYTE)
+        {
+            failed = 1;
+        }
        if(is_macronix && failed)
             FLASH_TERM_CMD
     }

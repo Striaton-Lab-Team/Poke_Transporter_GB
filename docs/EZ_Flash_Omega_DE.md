@@ -43,10 +43,10 @@ Requirements:
 - Gameboy Color link cable
 
 Steps:
-- Make sure the loader.gba is stored on the microSD card of the EZ Flash Omega DE
+- Make sure the Poke_Transporter_GB_standalone.gba is stored on the microSD card of the EZ Flash Omega DE
 - Make sure the pokémon game is stored on your EZ Flash' NOR flash.
 - Make sure the physical switch on the EZ Flash is set to mode A (the menu should show)
-- Insert the EZ Flash in GBA 1 and launch loader.gba.
+- Insert the EZ Flash in GBA 1 and launch Poke_Transporter_GB_standalone.gba
 - Press START on the splash screen. This popup should show:
 ![multiboot popup 1](images/multiboot_popup_1.png)
 - Press SELECT. This popup should show:

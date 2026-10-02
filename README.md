@@ -9,33 +9,33 @@ _**Poké Transporter GB is also NOT compatible with bootleg versions of any Pok�
 ## Notes
 Pokémon Transfered using Poké Transporter GB *will* be removed from Red, Blue, Yellow, Gold, Silver, or Crystal.
 
-Currently the only release is in English. Releases supporting other languages is planned for the near future.
-
-Currently English versions of Red, Blue, Yellow, Gold, Silver, Crystal are supported- plus English, Spanish, German, Italian, French versions of Ruby, Sapphire, FireRed, LeafGreen, and Emerald. Compatibility for other languages is currently in development and will be added in the near future.
-
 Poke Transporter GB supports original gen III cartridges AND the gen III games in mode B on the [EZ Flash Omega Definitive Edition flashcart](docs/EZ_Flash_Omega_DE.md).
 
 ## Usage
 Poké Transporter GB is a Multiboot program for the Game Boy Advance.
 
 There are 3 main ways to run the Poké Transporter GB ROM on a Game Boy Advance:
-- Use a program such as FIX94's [GBA Link Cable ROM Sender](https://github.com/FIX94/gba-link-cable-rom-sender) on a GameCube or Wii running Homebrew along with a GBA GameCube Link Cable
-- Upload the Multiboot ROM to a GBA Flash Cart, launch the game in Multiboot mode (often by holding L when selecting the ROM), and swap\* the Game Pak after the program loads.
-- Copy the loader.gba file to a GBA Flash Cart and swap\* the Game Pak after the program loads. This is useful for flashcarts that don't support launching multiboot roms directly (SuperCard SD for example), although it should work on any flashcart.
+- Use a program such as FIX94's [GBA Link Cable ROM Sender](https://github.com/FIX94/gba-link-cable-rom-sender) on a GameCube or Wii running Homebrew along with a GBA GameCube Link Cable to send the Multiboot rom (Poke_Transporter_GB_mb.gba) to the gba over the link cable.
+
+- Upload the Multiboot ROM (Poke_Transporter_GB_mb.gba) to a GBA Flash Cart, launch the game in Multiboot mode (often by holding L when selecting the ROM), and swap the Game Pak after the program loads.
+
+- Copy the Loader ROM (Poke_Transporter_GB_standalone.gba) to a GBA Flash Cart and swap the Game Pak after the program loads. This is useful for flashcarts that don't support launching multiboot roms directly (SuperCard SD for example), although it should work on any flashcart.
 
 EZ Flash Omega DE users, read [this](docs/EZ_Flash_Omega_DE.md)!
 
 Please note that transfering Pokémon will only work with a Game Boy Color Link Cable. Game Boy Advance Link Cables will not work.
 
-*Due to Poké Transporter GB being built off of a niche intereaction between the GameBoy and Game Boy Advance, there is currently **no** emulator that supports it. The code is expected to run correctly, but there is no way to communicate between the GameBoy and Game Boy Advanced within an emulator context at this time. Please check back in the future for other options if you do not have the physcial hardware needed to run it!*
+NOTE: If you're using the Loader ROM (Poke_Transporter_GB_standalone.gba) instead of the Multiboot ROM (Poke_Transporter_GB_mb.gba),
+you could run into trouble when swapping in the gen3 cartridge: Some cartridges cause the GBA to reset when inserted.
 
-\* Swapping to certain cartridges sometimes lead to the GBA resetting. (see [this issue ticket](https://github.com/Striaton-Lab-Team/Poke_Transporter_GB/issues/41)) Try it again with fresh/fully charged batteries. If that doesn't work, you can use PTGB using one of the methods listed [here](https://github.com/Striaton-Lab-Team/Poke_Transporter_GB/blob/latest-release/docs/EZ_Flash_Omega_DE.md#method-1-wiigamecube)
+If you have this problem, you could:
+- Use the Multiboot ROM (Poke_Transporter_GB_mb.gba) instead (as described above)
 
-### 
+- Use the 2 GBA method as described [here](docs/EZ_Flash_Omega_DE.md#method-2-2-gbas)
 
 ## Modifications to Transfered Pokémon
 
-Poké Transporter GB utilizes the Pokémon Community Conversion Standard for converting Pokémon from Generation 1 and 2 to Generation 3. You can view the documentation for the PCCS [here](https://github.com/GearsProgress/Pokemon-Community-Conversion-Standard)!
+Poké Transporter GB utilizes the LEGAL method of the Pokémon Community Conversion Standard for converting Pokémon from Generation 1 and 2 to Generation 3. You can view the documentation for the PCCS [here](https://github.com/GearsProgress/Pokemon-Community-Conversion-Standard)!
 
 ## Screenshots and Video
 
@@ -52,6 +52,9 @@ A video showcasing Poké Transporter GB can be found [here](https://www.youtube.
 
 ## Why?
 One of my favorite aspects of the Pokémon franchise is the ability to send Pokémon forward into the most recent generation. Of course, this isn't possible from the Gameboy games into the Gameboy Advance era- and I wanted to fix that. A handful of people have bridged the gap before, but Poké Transporter GB is the first tool designed to transfer Pokémon like the Pal Park, PokéTransport Lab, and PokéTransporter for Generation 1 and 2 to Generation 3. Documentation detailing the design process of Poké Transporter GB can be found [here](https://www.austinthomasweber.com/poke-transporter-gb)!
+
+## Building
+See [BUILDING.md](BUILDING.md).
 
 # Credits
 ## Inspired by the works of:
@@ -80,20 +83,16 @@ One of my favorite aspects of the Pokémon franchise is the ability to send Pok�
 - [Smogon's Practical Guides to RNG Abuse](https://www.smogon.com/ingame/rng/)
 
 ## ROM Data:
-- [PokeRuby](https://github.com/pret/pokeruby)
-- [PokeFireRed](https://github.com/pret/pokefirered)
-- [PokeEmerald](https://github.com/pret/pokeemerald)
-- [PokeRed](https://github.com/pret/pokered)
-- [PokeYellow](https://github.com/pret/pokeyellow)
-- [PokeGold](https://github.com/pret/pokegold)
-- [PokeCrystal](https://github.com/pret/pokecrystal)
+- [PRET](https://github.com/pret)
+- [Narishma-gb](https://github.com/Narishma-gb)
+- [Hatena Blogのvs_prof_oak] (https://vs-prof-oak.hatenablog.com/entry/2024/03/02/134741)
 
 ## Pokémon Data:
 - [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)
 - [Serebii](https://www.serebii.net/)
 - [PokeAPI](https://pokeapi.co/)
 - [Glitch City Wiki](https://glitchcity.wiki/wiki/Main_Page)
-  
+
 # Discord Community Assistance:
 - [Hex Maniac Advance Development](https://discord.com/invite/x9eQuBg)
 - [GBAdev](https://discord.gg/ctGSNxRkg2)

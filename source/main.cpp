@@ -1,35 +1,35 @@
 #include <tonc.h>
 #include <cstdlib>
-// #include <maxmod.h> //Music
 #include "libstd_replacements.h"
 #include "flash_mem.h"
 #include "interrupt.h"
 #include "gb_link.h"
-#include "gameboy_colour.h"
+#include "link_handler.h"
 #include "random.h"
 #include "text_engine.h"
 #include "background_engine.h"
-#include "pokemon_party.h"
 #include "pokemon_data.h"
 #include "script_array.h"
 #include "sprite_data.h"
 #include "button_handler.h"
 #include "button_menu.h"
-#include "debug_mode.h"
-// #include "soundbank.h"
-// #include "soundbank_bin.h"
+#include "dbg/debug_mode.h"
+#include "dbg/debug_menu.h"
+#include "dbg/ptgb_mgba_print.h"
 #include "dex_handler.h"
 #include "pokedex.h"
 #include "global_frame_controller.h"
 #include "pkmn_font.h"
-#include "save_data_manager.h"
+#include "ptgb_save_data_manager.h"
 #include "mystery_gift_injector.h"
-#include "mystery_gift_builder.h"
 #include "multiboot_upload.h"
 #include "rom_data.h"
 #include "libraries/Pokemon-Gen3-to-Gen-X/include/save.h"
-#include "text_data_table.h"
+#include "FileContainerReader.h"
+#include "translated_text.h"
+#include "text_tables.h"
 #include "custom_malloc.h"
+#include "sound.h"
 
 /*
 
@@ -53,45 +53,13 @@ bool skip = true;
 rom_data curr_GBA_rom;
 Button_Menu yes_no_menu(1, 2, 40, 24, false);
 
-/*
-int test_main(void) Music
-{
-
-	irq_init(NULL);
-	// Initialize maxmod with default settings
-	// pass soundbank address, and allocate 8 channels.
-
-	irq_set(II_VBLANK, mmVBlank, 0);
-	irq_enable(II_VBLANK);
-
-	mmInitDefault((mm_addr)soundbank_bin, 8);
-
-	mmStart(MOD_FLATOUTLIES, MM_PLAY_LOOP);
-	// Song is playing now (well... almost)
-	while (1)
-	{
-		// ..process game logic..
-
-		// Update Maxmod
-		mmFrame();
-
-		// Wait for new frame (SWI 5)
-		VBlankIntrWait();
-
-		// ..update graphical data..
-	}
-}
-*/
-
 // (R + G*32 + B*1024)
 #define RGB(r, g, b) (r + (g * 32) + (b * 1024))
 
 void load_graphics()
 {
-
-	tte_erase_rect(0, 0, H_MAX, V_MAX);
-	// Load opening background first so it hides everything else
-	load_flex_background(BG_OPENING, 1);
+	//  Load opening background first so it hides everything else
+	load_flex_background(FBG_Opening, 1);
 	load_background();
 	load_textbox_background();
 	load_eternal_sprites();
@@ -102,62 +70,73 @@ void load_graphics()
 	yes_no_menu.add_button(Button(button_no), false);
 }
 
-void initalization_script(void)
+void initialization_script(void)
 {
-	// Initalizations
+	// Initializations
 	REG_DISPCNT = DCNT_BLANK | DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_BG3 | DCNT_OBJ | DCNT_OBJ_1D;
-	irq_init(NULL);
-	irq_enable(II_VBLANK);
 
 	// Disable for save data read/write
 	REG_IME = 0;
 	REG_IE = 0;
 
+	irq_init(&isr_master_nest);
+
 	// Sound bank init
-	irq_init(NULL);
-	irq_enable(II_VBLANK);
-	// irq_set(II_VBLANK, mmVBlank, 0); //Music
-	// mmInitDefault((mm_addr)soundbank_bin, 8); //Music
-	// mmStart(MOD_FLATOUTLIES, MM_PLAY_LOOP); //Music
+	// irq_init(NULL);
+	// irq_enable(II_VBLANK);
+	// This currently crashes when you try to transfer a Pokemon:
+	// sound_init();
+
+	// Link Cable init
+  	irq_add(II_TIMER3, linkCableIRQ);
 
 	// Graphics init
+	irq_add(II_VBLANK, global_next_frame);
+	irq_enable(II_VBLANK);
 	oam_init(obj_buffer, 128);
 	load_graphics();
 
 	// Prepare text engine for dialogue
 	init_text_engine();
+	ptgb_mgba_init();
 
 	// Set the random seed
 	rand_set_seed(0x1216);
 
 	// Clean up the main screen quick
-	tte_erase_rect(0, 0, 240, 160);
 
 	VBlankIntrWait();
 	REG_DISPCNT &= ~DCNT_BLANK;
+
+	PTGB_MGBA_INFO("Hello from PTGB!");
 };
 
-void game_load_error(void)
+// attribute noinline is used to make sure it doesn't get inlined and permanently use IWRAM for the decompression_buffer
+void __attribute__((noinline)) game_load_error(void)
 {
-	REG_BG2CNT = (REG_BG2CNT & ~BG_PRIO_MASK) | BG_PRIO(1);
+	u8 general_text_buffer[2048];
+	u8 lineBuffer[1024];
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
 
-	create_textbox(4, 1, 152, 100, true);
+	get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader text_reader(chunkList, numChunks, chunkSize);
 
-	{
-		u8 general_text_table_buffer[2048];
-		text_data_table general_text(general_text_table_buffer);
+	text_reader.init(general_text_buffer, sizeof(general_text_buffer));
 
-		general_text.decompress(get_compressed_general_table());
-		ptgb_write(general_text.get_text_entry(GENERAL_cart_load_error), true);
-	}
+	BG_TEXTBOX = (BG_TEXTBOX & ~BG_PRIO_MASK) | BG_PRIO(1);
+	text_reader.readFile(GENERAL_cart_load_error, lineBuffer);
+	ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX, GENERAL_cart_load_error, false);
 
-	key_poll();
+	// key_poll();
 	do
 	{
-		global_next_frame();
+		VBlankIntrWait();
 	} while (!key_hit(KEY_A) && !key_hit(KEY_SELECT));
 
 	tte_erase_rect(0, 0, H_MAX, V_MAX);
+	erase_textbox_tiles();
 
 	if (key_hit(KEY_SELECT))
 	{
@@ -175,55 +154,68 @@ void game_load_error(void)
 	while (delay_counter < 60)
 	{
 		delay_counter++;
-		global_next_frame();
+		VBlankIntrWait();
 	}
-}
+};
 
-void first_load_message(void)
+// attribute noinline is used to make sure it doesn't get inlined and permanently use IWRAM for the decompression_buffer
+void __attribute__((noinline)) lang_mismatch_error(void)
 {
-	tte_set_margins(8, 8, H_MAX - 8, V_MAX);
-	tte_set_pos(8, 8);
-	tte_set_ink(INK_ROM_COLOR);
+	u8 general_text_buffer[2048];
+	u8 lineBuffer[1024];
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
 
+	get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader text_reader(chunkList, numChunks, chunkSize);
+
+	text_reader.init(general_text_buffer, sizeof(general_text_buffer));
+
+	BG_TEXTBOX = (BG_TEXTBOX & ~BG_PRIO_MASK) | BG_PRIO(1);
+	text_reader.readFile(GENERAL_lang_mismatch_warning, lineBuffer);
+	ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX, GENERAL_lang_mismatch_warning, false);
+
+	// key_poll();
+	do
 	{
-		u8 general_text_table_buffer[2048];
-		text_data_table general_text(general_text_table_buffer);
+		VBlankIntrWait();
+	} while (!key_hit(KEY_A) && !key_hit(KEY_SELECT));
 
-		general_text.decompress(get_compressed_general_table());
-		ptgb_write(general_text.get_text_entry(GENERAL_intro_first), true);
-	}
-
-	while (!key_hit(KEY_A))
-	{
-		global_next_frame();
-	}
 	tte_erase_rect(0, 0, H_MAX, V_MAX);
-}
+	erase_textbox_tiles();
+};
 
-int credits()
+// avoid inlining to avoid permanently storing the credits_decompression_buffer in IWRAM
+int __attribute__((noinline)) credits()
 {
-	u8 text_decompression_buffer[2048];
-	text_data_table credits_text_table(text_decompression_buffer);
-	int curr_credits_num = 0;
+	u8 credits_decompression_buffer[2048];
+	u8 lineBuffer[1024];
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
 
-	credits_text_table.decompress(get_compressed_credits_table());
+	get_text_table_chunks(CREDITS_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader creditsReader(chunkList, numChunks, chunkSize);
+	u32 curr_credits_num = 0;
+
+	creditsReader.init(credits_decompression_buffer, sizeof(credits_decompression_buffer));
 	bool update = true;
 
-	global_next_frame();
 	while (true)
 	{
 		if (update)
 		{
-			create_textbox(4, 1, 160, 80, true);
-			show_text_box();
-			ptgb_write(credits_text_table.get_text_entry(curr_credits_num), true);
+			creditsReader.readFile(curr_credits_num, lineBuffer);
+			ptgb_write_textbox(lineBuffer, true, false, CREDITS_INDEX, curr_credits_num, false);
 			update = false;
 		}
 
 		if (key_hit(KEY_B))
 		{
-			hide_text_box();
-			reset_textbox();
+			tte_erase_rect(0, 0, H_MAX, V_MAX);
+			hide_textbox();
+			erase_textbox_tiles();
 			return 0;
 		}
 		if (key_hit(KEY_LEFT) && curr_credits_num > 0)
@@ -231,118 +223,93 @@ int credits()
 			curr_credits_num--;
 			update = true;
 		}
-		if (key_hit(KEY_RIGHT) && curr_credits_num < (credits_text_table.get_number_of_text_entries() - 1))
+		if (key_hit(KEY_RIGHT) && curr_credits_num < (creditsReader.getNumberOfFiles() - 1))
 		{
 			curr_credits_num++;
 			update = true;
 		}
-		if (ENABLE_DEBUG_SCREEN && key_hit(KEY_SELECT))
-		{
-			char hexBuffer[16];
-			uint16_t charset[256];
-			load_localized_charset(charset, 3, ENGLISH);
-			if (key_held(KEY_UP) && key_held(KEY_L) && key_held(KEY_R))
-			{
-				set_treecko(true);
-			}
-			u32 pkmn_flags = 0;
-			bool e4_flag = read_flag(curr_GBA_rom.e4_flag);
-			bool mg_flag = read_flag(curr_GBA_rom.mg_flag);
-			bool all_collected_flag = read_flag(curr_GBA_rom.all_collected_flag);
-			for (int i = 0; i < 30; i++)
-			{
-				pkmn_flags |= (read_flag(curr_GBA_rom.pkmn_collected_flag_start + i) << i);
-			}
 
-			bool tutorial = get_tutorial_flag();
-			int def_lang = get_def_lang_num();
-
-			create_textbox(4, 1, 160, 80, true);
-			ptgb_write_debug(charset, "Debug info:\n\nG: ", true);
-			ptgb_write_debug(charset, ptgb::to_string(curr_GBA_rom.language), true);
-			switch (curr_GBA_rom.gamecode)
-			{
-			case RUBY_ID:
-				ptgb_write_debug(charset, "-R-", true);
-				break;
-			case SAPPHIRE_ID:
-				ptgb_write_debug(charset, "-S-", true);
-				break;
-			case FIRERED_ID:
-				ptgb_write_debug(charset, "-F-", true);
-				break;
-			case LEAFGREEN_ID:
-				ptgb_write_debug(charset, "-L-", true);
-				break;
-			case EMERALD_ID:
-				ptgb_write_debug(charset, "-E-", true);
-				break;
-			}
-
-			ptgb_write_debug(charset, ptgb::to_string(curr_GBA_rom.version), true);
-
-			ptgb_write_debug(charset, "\nF: ", true);
-			ptgb_write_debug(charset, ptgb::to_string(e4_flag), true);
-			ptgb_write_debug(charset, ptgb::to_string(mg_flag), true);
-			ptgb_write_debug(charset, ptgb::to_string(all_collected_flag), true);
-			ptgb_write_debug(charset, "-", true);
-
-			n2hexstr(hexBuffer, pkmn_flags);
-			ptgb_write_debug(charset, hexBuffer, true);
-			ptgb_write_debug(charset, "\nS:   ", true);
-			ptgb_write_debug(charset, ptgb::to_string(tutorial), true);
-			ptgb_write_debug(charset, "-", true);
-			n2hexstr(hexBuffer, def_lang);
-			ptgb_write_debug(charset, hexBuffer, true);
-
-			ptgb_write_debug(charset, "\n", true);
-			ptgb_write_debug(charset, VERSION, true);
-			if (get_treecko_enabled())
-			{
-				ptgb_write_debug(charset, ".T", true);
-			}
-			while (true)
-			{
-				if (key_hit(KEY_B))
-				{
-					hide_text_box();
-					reset_textbox();
-					return 0;
-				}
-				global_next_frame();
-			}
-		}
-
-		global_next_frame();
+		VBlankIntrWait();
 	}
 };
 
-#define NUM_MENU_OPTIONS 3
-
-int main_menu_loop()
+// avoid inlining to avoid permanently storing the tutorial_decompression_buffer in IWRAM
+int __attribute__((noinline)) tutorial()
 {
-	uint8_t general_text_table_buffer[2048];
-	text_data_table general_text(general_text_table_buffer);
-	bool update = true;
-	const uint8_t menu_options[NUM_MENU_OPTIONS] = {GENERAL_option_transfer, GENERAL_option_dreamdex, GENERAL_option_credits};
-	const uint8_t *text_entry;
-	int return_values[NUM_MENU_OPTIONS] = {BTN_TRANSFER, BTN_POKEDEX, BTN_CREDITS};
-	u16 test = 0;
 
-	general_text.decompress(get_compressed_general_table());
+	u8 tutorial_decompression_buffer[2048];
+	u8 lineBuffer[1024];
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
+
+	get_text_table_chunks(TUTORIAL_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader tutorialReader(chunkList, numChunks, chunkSize);
+	u32 curr_tutorial_num = 0;
+
+	tutorialReader.init(tutorial_decompression_buffer, sizeof(tutorial_decompression_buffer));
+	bool update = true;
 
 	while (true)
 	{
 		if (update)
 		{
-			tte_erase_rect(0, 80, 240, 160);
+			tutorialReader.readFile(curr_tutorial_num, lineBuffer);
+			ptgb_write_textbox(lineBuffer, true, false, TUTORIAL_INDEX, curr_tutorial_num, false);
+			update = false;
+		}
+
+		if (key_hit(KEY_B))
+		{
+			tte_erase_rect(0, 0, H_MAX, V_MAX);
+			hide_textbox();
+			erase_textbox_tiles();
+			return 0;
+		}
+		if (key_hit(KEY_LEFT) && curr_tutorial_num > 0)
+		{
+			curr_tutorial_num--;
+			update = true;
+		}
+		if (key_hit(KEY_RIGHT) && curr_tutorial_num < (tutorialReader.getNumberOfFiles() - 1))
+		{
+			curr_tutorial_num++;
+			update = true;
+		}
+
+		VBlankIntrWait();
+	}
+};
+
+// attribute noinline is used to avoid permanently storing the general_text_table_buffer in IWRAM
+int __attribute__((noinline)) main_menu_loop()
+{
+	uint8_t general_text_table_buffer[2048];
+	u8 lineBuffer[1024];
+#define NUM_MENU_OPTIONS 4
+	const uint8_t menu_options[NUM_MENU_OPTIONS] = {GENERAL_option_transfer, GENERAL_option_dreamdex, GENERAL_option_credits, GENERAL_option_tutorial};
+	int return_values[NUM_MENU_OPTIONS] = {BTN_TRANSFER, BTN_POKEDEX, BTN_CREDITS, BTN_TUTORIAL};
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
+
+	get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader text_reader(chunkList, numChunks, chunkSize);
+	bool update = true;
+	u16 test = 0;
+
+	text_reader.init(general_text_table_buffer, sizeof(general_text_table_buffer));
+
+	while (true)
+	{
+		if (update)
+		{
 			for (int i = 0; i < NUM_MENU_OPTIONS; i++)
 			{
-				text_entry = general_text.get_text_entry(menu_options[i]);
-				int size = get_string_length(text_entry);
-				int char_width = (PTGB_BUILD_LANGUAGE == JPN_ID ? 8 : 6);
-				int x = ((240 - (size * char_width)) / 2);
-				tte_set_pos(x, ((i * 17) + 80));
+				text_reader.readFile(menu_options[i], lineBuffer);
+				int string_length = get_string_length(lineBuffer);
+				int x = ((240 - string_length) / 2);
+				tte_set_pos(x, ((i * (16 + 6)) + 70));
 				if (i == curr_selection)
 				{
 					tte_set_ink(INK_WHITE);
@@ -351,7 +318,7 @@ int main_menu_loop()
 				{
 					tte_set_ink(INK_ROM_COLOR);
 				}
-				ptgb_write(text_entry, true);
+				ptgb_write_simple(lineBuffer, true);
 				test++;
 			}
 		}
@@ -363,50 +330,38 @@ int main_menu_loop()
 		}
 		else if (key_hit(KEY_UP))
 		{
-			curr_selection = ((curr_selection + (NUM_MENU_OPTIONS - 1)) % NUM_MENU_OPTIONS);
+			if (curr_selection == 0) {
+				curr_selection = NUM_MENU_OPTIONS - 1;
+			}
+			else {
+				curr_selection = ((curr_selection + (NUM_MENU_OPTIONS - 1)) % NUM_MENU_OPTIONS);
+			}
 		}
 		else if (key_hit(KEY_A))
 		{
 			tte_erase_rect(0, test, H_MAX, V_MAX);
-			ptgb_write("#{cx:0xF000}");
 			return return_values[curr_selection];
+		}
+		else if ((key_held(KEY_L) && key_held(KEY_R)))
+		{
+			return BTN_DEBUG_MENU;
 		}
 		else
 		{
 			update = false;
 		}
-
-		global_next_frame();
-	}
-}
-
-// Legal mumbo jumbo
-static void show_legal_text(const u8* intro_text)
-{
-	tte_set_margins(8, 8, H_MAX - 8, V_MAX - 8);
-	tte_set_pos(8, 8);
-	tte_set_ink(INK_ROM_COLOR);
-	ptgb_write(intro_text, true);
-	bool wait = true;
-	while (wait)
-	{
-		global_next_frame();
-		if (key_hit(KEY_A))
-		{
-			wait = false;
-		}
+		VBlankIntrWait();
 	}
 }
 
 // Gears of Progress
 static void show_gears_of_progress()
 {
-	tte_erase_rect(0, 0, 240, 160);
 	REG_BG1VOFS = 0;
 	delay_counter = 0;
 	while (delay_counter < (15 * 60))
 	{
-		global_next_frame();
+		VBlankIntrWait();
 		delay_counter++;
 		if (key_hit(KEY_A))
 		{
@@ -421,28 +376,28 @@ static void show_gears_of_progress()
 // this decision was based on the output of build/main.su after adding the -fstack-usage compile flag
 static void __attribute__((noinline)) show_intro()
 {
-	bool start_pressed = false;
 	u8 general_text_table_buffer[2048];
-	u8 press_start_text[32];
-	u8 press_start_text_length;
+	u8 lineBuffer[1024];
+	const u8 **chunkList;
+	u32 numChunks;
+	u32 chunkSize;
 
-	text_data_table general_text(general_text_table_buffer);
-	const u8 *text_entry;
+	get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
+	FileContainerReader general_text_reader(chunkList, numChunks, chunkSize);
+	bool start_pressed = false;
 
-	general_text.decompress(get_compressed_general_table());
+	general_text_reader.init(general_text_table_buffer, sizeof(general_text_table_buffer));
 
-	text_entry = general_text.get_text_entry(GENERAL_press_start);
-	press_start_text_length = get_string_length(text_entry);
-	memcpy(press_start_text, text_entry, press_start_text_length + 1);
-	text_entry = general_text.get_text_entry(GENERAL_intro_legal);
+	tte_set_ink(INK_ROM_COLOR);
+	general_text_reader.readFile(GENERAL_intro_legal, lineBuffer);
+	ptgb_write_textbox(lineBuffer, true, true, GENERAL_INDEX, GENERAL_intro_legal, true);
 
-	show_legal_text(text_entry);
 	show_gears_of_progress();
 
-	REG_BG1CNT = REG_BG1CNT | BG_PRIO(3);
+	BG_FLEX = BG_FLEX | BG_PRIO(3);
 
-	key_poll(); // Reset the keys
-	curr_GBA_rom.load_rom();
+	// key_poll(); // Reset the keys
+	curr_GBA_rom.load_rom(false);
 
 	obj_set_pos(ptgb_logo_l, 56, 12);
 	obj_set_pos(ptgb_logo_r, 56 + 64, 12);
@@ -450,66 +405,79 @@ static void __attribute__((noinline)) show_intro()
 
 	REG_BLDCNT = BLD_BUILD(BLD_BG3, BLD_BG0, 1);
 
-	int char_width = (PTGB_BUILD_LANGUAGE == JPN_ID ? 8 : 6);
-	int x = ((240 - (press_start_text_length * char_width)) / 2);
-	tte_set_pos(x, 12 * 8);
+	general_text_reader.readFile(GENERAL_press_start, lineBuffer);
 
+	tte_set_pos(0, 12 * 8);
 	tte_set_ink(INK_DARK_GREY);
-	ptgb_write(press_start_text, true);
+	ptgb_write_simple(lineBuffer, true);
 
 	int fade = 0;
 	while (!start_pressed)
 	{
 		fade = abs(((get_frame_count() / 6) % 24) - 12);
-		global_next_frame();
+		VBlankIntrWait();
 		start_pressed = key_hit(KEY_START) | key_hit(KEY_A);
 		REG_BLDALPHA = BLDA_BUILD(0b10000, fade);
-	};
+	}
 }
 
 int main(void)
 {
+	// Clear VRAM. We use it as extra BSS.
+	RegisterRamReset(RESET_VRAM);
 	malloc_init_default_pool();
-	initalization_script();
+	initialization_script();
 
 	// Set colors based on current ROM
 	set_background_pal(0, false, false);
 
-	/* First load message doesn't really make sense anymore, since you have to load the ROM first.
-	if (!get_tutorial_flag())
-	{
-		first_load_message();
-	}*/
-
 	show_intro();
 
-	key_poll();
+	// key_poll();
 	tte_erase_rect(0, 0, H_MAX, V_MAX);
 	REG_BLDALPHA = BLDA_BUILD(0b10000, 0); // Reset fade
 
 	//  Check if the game has been loaded correctly.
-	while (!curr_GBA_rom.load_rom())
+	bool debug = false;
+	while (!curr_GBA_rom.load_rom(debug))
 	{
-		obj_hide_multi(ptgb_logo_l, 2);
-		global_next_frame();
-		game_load_error();
-		// initalization_script();
+		if (g_debug_options.ignore_game_pak)
+		{
+			debug = true;
+		}
+		else
+		{
+			obj_hide_multi(ptgb_logo_l, 2);
+			VBlankIntrWait();
+			game_load_error();
+			// initialization_script();
+		}
 	}
 
-	// Initalize memory and save data after loading the game
-	reset_textbox();
-	REG_BG2CNT = REG_BG2CNT | BG_PRIO(3);
+	/*
+	// This isn't needed anymore
+	if ((curr_GBA_rom.language == LANG_JPN) != (PTGB_BUILD_LANGUAGE == JPN_ID))
+	{			
+		obj_hide_multi(ptgb_logo_l, 2);
+		VBlankIntrWait();
+		lang_mismatch_error();
+	}
+	*/
+
+	// Initialize memory and save data after loading the game
+	BG_TEXTBOX = BG_TEXTBOX | BG_PRIO(3);
 	init_bank();
-	initalize_memory_locations();
+	initialize_memory_locations();
 	load_custom_save_data();
 
 	set_background_pal(curr_GBA_rom.gamecode, false, true);
 
-	if (!IGNORE_MG_E4_FLAGS && (!get_tutorial_flag() || FORCE_TUTORIAL))
+	if (!get_tutorial_flag() || g_debug_options.force_tutorial)
 	{
 		obj_hide_multi(ptgb_logo_l, 2);
+		load_flex_background(FBG_Fennel, 2);
 		text_loop(BTN_TRANSFER);
-		initalize_save_data();
+		initialize_save_data();
 		// TODO: We should be able to test for a Bootleg rom in here- if the save data isn't written, then it is bootleg.
 	}
 
@@ -523,7 +491,7 @@ int main(void)
 			print_mem_section();
 			curr_GBA_rom.print_rom_info();
 		}
-		load_flex_background(BG_MAIN_MENU, 2);
+		load_flex_background(FBG_Main_Menu, 2);
 
 		obj_unhide_multi(ptgb_logo_l, 1, 2);
 		obj_set_pos(ptgb_logo_l, 56, 12);
@@ -534,36 +502,46 @@ int main(void)
 		case (BTN_TRANSFER):
 			tte_set_ink(INK_DARK_GREY);
 			obj_hide_multi(ptgb_logo_l, 2);
-			load_flex_background(BG_FENNEL, 3);
-			text_loop(BTN_TRANSFER);
+			load_flex_background(FBG_Fennel, 3);
+			text_loop(SCRIPT_TRANSFER);
 			break;
 		case (BTN_POKEDEX):
 			if (get_tutorial_flag())
 			{
 				obj_hide_multi(ptgb_logo_l, 2);
-				global_next_frame();
-				load_flex_background(BG_DEX, 2);
+				// global_next_frame();
+				load_flex_background(FBG_Dex, 2);
 				set_background_pal(curr_GBA_rom.gamecode, true, false);
 				pokedex_loop();
-				load_flex_background(BG_DEX, 3);
+				load_flex_background(FBG_Dex, 3);
 				set_background_pal(curr_GBA_rom.gamecode, false, false);
 			}
 			break;
 		case (BTN_CREDITS):
 			tte_set_ink(INK_DARK_GREY);
-			// create_textbox(0, 0, 160, 80, true);
-			// show_text_box();
-			REG_BG1CNT = (REG_BG1CNT & ~BG_PRIO_MASK) | BG_PRIO(3);
-			obj_set_pos(ptgb_logo_l, 56, 108);
-			obj_set_pos(ptgb_logo_r, 56 + 64, 108);
+			BG_FLEX = (BG_FLEX & ~BG_PRIO_MASK) | BG_PRIO(3);
+			obj_hide_multi(ptgb_logo_l, 2);
 			credits();
+			break;
+		case (BTN_TUTORIAL):
+			tte_set_ink(INK_DARK_GREY);
+			BG_FLEX = (BG_FLEX & ~BG_PRIO_MASK) | BG_PRIO(3);
+			obj_hide_multi(ptgb_logo_l, 2);
+			tutorial();
 			break;
 		case (BTN_EVENTS):
 			obj_hide_multi(ptgb_logo_l, 2);
-			text_loop(BTN_EVENTS);
+			text_loop(SCRIPT_EVENT);
 			break;
+#if ENABLE_DEBUG_MENU
+		case (BTN_DEBUG_MENU):
+			obj_hide_multi(ptgb_logo_l, 2);
+			load_flex_background(FBG_Fennel, 3);
+			show_debug_menu();
+			break;
+#endif
 		default:
-			global_next_frame();
+			VBlankIntrWait();
 		}
 	}
 }

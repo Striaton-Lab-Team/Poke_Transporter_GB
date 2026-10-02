@@ -201,6 +201,9 @@ void malloc_init_default_pool(void)
 	memset(g_alloc_map, 0, sizeof(g_alloc_map));  // Clear bitmap
 }
 
+extern "C"
+{
+
 /// @brief The custom implementation of the bitmap allocator described at the top of this module.
 void* malloc(size_t size)
 {
@@ -331,6 +334,8 @@ void* _malloc_r(struct _reent *r, size_t size)
 void _free_r(struct _reent *r, void* ptr) {
     (void)r;
     return free(ptr);
+}
+
 }
 
 #else

@@ -7,13 +7,15 @@
 #include "text_engine.h"
 #include "sprite_data.h"
 #include "string.h"
-#include "text_data_table.h"
 #include "translated_text.h"
+#include "dbg/debug_mode.h"
+#include "FileContainerReader.h"
+#include "text_tables.h"
 
 int global_frame_count = 0;
 bool rand_enabled = true;
 int cable_frame = 0;
-int curr_link_animation_state = 0;
+LinkAnimationState curr_link_animation_state = state_off;
 int fennel_blink_timer = 0;
 int fennel_blink_state = 0;
 bool missingno_enabled = false;
@@ -24,19 +26,24 @@ bool treecko_enabled = false;
 // the noinline attribute prevents the compiler from inlining this function back into the global_next_frame function
 static void __attribute__((noinline)) show_pulled_cart_error()
 {
-    u8 general_text_table_buffer[2048];
-    text_data_table general_text(general_text_table_buffer);
+    u8 decompression_buffer[2048];
+    const u8 **chunkList;
+    u32 numChunks;
+    u32 chunkSize;
 
-    general_text.decompress(get_compressed_general_table());
-    ptgb_write(general_text.get_text_entry(GENERAL_pulled_cart_error), true);
+    get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
+
+    FileContainerReader general_text_reader(chunkList, numChunks, chunkSize);
+    general_text_reader.init(decompression_buffer, sizeof(decompression_buffer));
+
+    ptgb_write_textbox(general_text_reader.getPointerToFileInDecompressionBuffer(GENERAL_pulled_cart_error), true, true,
+                       GENERAL_INDEX, GENERAL_pulled_cart_error, true);
 }
 
 void global_next_frame()
 {
     key_poll();
     rand_next_frame();
-    // tte_set_pos(0, 0);
-    // tte_write(ptgb::to_string(get_rand_u32()));
     background_frame(global_frame_count);
     determine_fennel_blink();
     if (missingno_enabled)
@@ -50,10 +57,8 @@ void global_next_frame()
         set_menu_sprite_pal(0);
         if (!curr_GBA_rom.verify_rom())
         {
-            REG_BG0CNT = (REG_BG0CNT & ~BG_PRIO_MASK) | BG_PRIO(2);
-            REG_BG2CNT = (REG_BG2CNT & ~BG_PRIO_MASK) | BG_PRIO(1);
-            tte_set_pos(40, 24);
-            create_textbox(4, 1, 160, 80, true);
+            BG_BACKDROP = (BG_BACKDROP & ~BG_PRIO_MASK) | BG_PRIO(2);
+            BG_TEXTBOX = (BG_TEXTBOX & ~BG_PRIO_MASK) | BG_PRIO(1);
             obj_hide_multi(ptgb_logo_l, num_sprites);
 
             show_pulled_cart_error();
@@ -69,16 +74,16 @@ void global_next_frame()
         set_menu_sprite_pal(1);
     }
 
-    if (global_frame_count % (40 / curr_link_animation_state) == 0)
+    // This way of determining the animation speed is stupid and will be changed, but leaving it for now since the whole animation will be changing.
+    if (curr_link_animation_state != state_off && global_frame_count % (40 / curr_link_animation_state) == 0)
     {
         cable_frame = (cable_frame + 1) % 12;
-        if (curr_link_animation_state > 0)
+        if (curr_link_animation_state != state_off)
         {
             run_link_cable_animation(cable_frame);
         }
     }
     global_frame_count++;
-    VBlankIntrWait();
 };
 
 int get_frame_count()
@@ -138,12 +143,12 @@ void run_link_cable_animation(int frame)
 {
     switch (curr_link_animation_state)
     {
-    case STATE_CONNECTION:
+    case state_connection:
         frame %= 4;
         obj_hide_multi(link_frame1, 4);
         obj_unhide_multi(link_frame1, 0, frame);
         break;
-    case STATE_TRANSFER:
+    case state_transfer:
         obj_set_pos(link_blob1, path[frame][0] * 8, path[frame][1] * 8);
         obj_set_pos(link_blob2, path[frame][0] * 8, path[frame][1] * 8);
         obj_set_pos(link_blob3, path[frame][0] * 8, path[frame][1] * 8);
@@ -165,12 +170,12 @@ void run_link_cable_animation(int frame)
     }
 }
 
-void link_animation_state(int state)
+void link_animation_state(LinkAnimationState state)
 {
     cable_frame = 0;
     switch (state)
     {
-    case STATE_CONNECTION:
+    case state_connection:
         obj_unhide(gba_cart, 0);
         obj_set_pos(gba_cart, 17 * 8, 14 * 8);
 
@@ -183,9 +188,9 @@ void link_animation_state(int state)
         obj_set_pos(link_frame2, 13 * 8, 19 * 8);
         obj_set_pos(link_frame3, 9 * 8, 18 * 8);
         break;
-    case STATE_TRANSFER:
+    case state_transfer:
         obj_unhide_multi(link_blob1, 0, 3);
-    case STATE_NO_ANIM:
+    case state_no_animation:
         obj_unhide(gba_cart, 0);
         obj_set_pos(gba_cart, 17 * 8, 14 * 8);
 
@@ -208,14 +213,22 @@ void link_animation_state(int state)
         obj_hide(gba_cart);
         obj_hide(cart_shell);
         obj_hide(cart_label);
+        obj_hide(gb_flag);
+        obj_hide(gba_flag);
         break;
     }
     curr_link_animation_state = state;
+
+    if (g_debug_options.print_link_data)
+    {
+        obj_hide(cart_shell);
+        obj_hide(cart_label);
+    }
 }
 
 void determine_fennel_blink()
 {
-    if (get_curr_flex_background() == BG_FENNEL)
+    if (get_curr_flex_background() == FBG_Fennel)
     {
         if (fennel_blink_timer == 0)
         {
@@ -267,7 +280,7 @@ bool get_treecko_enabled()
     return treecko_enabled;
 }
 
-int get_string_length(const byte *str)
+int get_string_char_count(const byte *str)
 {
     int size = 0;
     while (str[size] != 0xFF)
@@ -275,6 +288,18 @@ int get_string_length(const byte *str)
         size++;
     }
     return size;
+}
+
+int get_string_length(const byte *str)
+{
+    int size = 0;
+    int length = 0;
+    while (str[size] != 0xFF)
+    {
+        length += tte_get_glyph_width(str[size]);
+        size++;
+    }
+    return length;
 }
 
 void convert_int_to_ptgb_str(int val, byte str[], int min_length)
@@ -312,7 +337,9 @@ void convert_int_to_ptgb_str(int val, byte str[], int min_length)
             {
                 str[count] = 0xA1; // 0xA1 is 0 in the chart
                 count++;
-            } else {
+            }
+            else
+            {
                 first = false;
             }
         }

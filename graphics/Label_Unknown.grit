@@ -1,0 +1,3 @@
+#
+# label sprites : 4bpp, LZ77 compressed. Pallet 8, copy from 0 to 16.
+-gB4 -ps0 -gzl -pe16

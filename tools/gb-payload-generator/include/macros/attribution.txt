@@ -1,0 +1,1 @@
+const.asm and its contents were taken from the pokered pret disassembly: https://github.com/pret/pokered

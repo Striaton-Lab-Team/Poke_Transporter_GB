@@ -1,3 +1,4 @@
 [submodule "PCCS"]
 	path = PCCS
-	url = https://github.com/GearsProgress/Pokemon-Community-Conversion-Standard.git
+	url = https://github.com/Striaton-Lab-Team/Pokemon-Community-Conversion-Standard.git
+	branch = release-candidate

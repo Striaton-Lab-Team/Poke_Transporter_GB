@@ -5,8 +5,8 @@
 #include "string.h"
 #include "button_handler.h"
 #include "string_view"
-#include "pokemon_party.h"
 #include "button_handler.h"
+#include "PokeBox.h"
 
 #define CANCEL_BUTTON 1
 #define CONFIRM_BUTTON 2
@@ -26,7 +26,7 @@ class Box_Menu
 {
 public:
     Box_Menu();
-    int box_main(PokeBox* box);
+    int box_main(PokeBox* box, Version vers);
 private:
     int curr_button;
     int x;

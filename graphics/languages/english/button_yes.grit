@@ -1,0 +1,3 @@
+#
+# Button : 4bpp, LZ77 compressed.
+-gB4 -gzl -ps0 -pe8

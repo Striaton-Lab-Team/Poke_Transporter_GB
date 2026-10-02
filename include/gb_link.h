@@ -14,7 +14,7 @@ typedef enum {
     FINAL_DESTINATION,
     SEND_POKEMON_DATA
 } connection_state;
-*/
+
 
 typedef enum
 {
@@ -79,5 +79,5 @@ void wait(u32 verticalLines);
 inline void VBLANK() {}
 void init();
 int start_link();
-
+*/
 #endif

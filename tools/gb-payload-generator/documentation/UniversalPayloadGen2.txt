@@ -1,0 +1,127 @@
+	Full party data to be sent:
+
+4E 4E 85 84 8D 8D 84 8B 4E 4E 4E 4E 4E 4E 4E 4E
+01 4F 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 80 80 80
+80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80
+80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 D8
+C6 4E 80 80 80 80 80 80 80 80 80 80 D8 C5 01 50
+5A 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 1E 80 80 80 80 80 80 80 80 80
+80 80 80 80 80 D8 C5 50
+
+	Components of the setup
+	
+Patch List (placed at 0xC5D0 on G/S, 0xC6D0 on C)
+
+FD FD FD FD FD FF FF
+
+RNG seed
+
+// any value works
+
+Trainer ID ; content chosen to display as little graphic corruption as possible
+
+4E 4E
+
+Trainer name ; limited to 6 chars due to JP character limits
+
+85 84 8D 8D 84 8B
+
+non JP trainer name ; additional bytes sent as part of the non-JP trainer names
+
+4E 4E 4E 4E 4E
+
+Party Data
+
+4E 4E 4E                                         ; gen 2 does some strange copying involving names, these assure that we're not encountering any accidental errors because of that.
+01 4F                                            ; 0x4F sets the current write pointer to 0xC4E1 (G/S) or 0xC5E1 (C). This ensures consistency between languages. Using 0x4F like this on KOR would cause a crash, 0x01 is used to effectively hide it by forming a 2-byte text character.
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E
+4E 4E 4E 4E 4E 4E 4E 4E 4E 4E 4E                ; moves write pointer to 0xDF99 (G/S) or 0xE099 (C)
+80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80
+80 80 80 80 80 80 80 80 80 80 80 80 80 80 80 80
+80 80 D8 C6                                     ; stack smashes Crystal and redirects to Patch List once the next text terminator is read.
+4E
+80 80 80 80 80 80 80 80 80 80 D8 C5             ; stack smashes Gold/Silver (non-KOR) and redirects to Patch List once the next text terminator is read.
+01 50                                           ; on KOR, 01 50 forms a 2-byte text character, causing it to keep printing. On non-KOR, the 0x50 is read separately and acts as a text terminator. Everything past this is only used by KOR.
+5A                                              ; 0x5A sets the current write pointer to 0xC4E1
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59 59 59 59 59 59 59 59 59 59 59 59
+59 59 59 59 59                                  ; moves write pointer to 0xCFA9
+1E                                              ; moves write pointer to 0xCFBD
+80 80 80 80 80 80 80 80 80 80 80 80 80 80 D8 C5 ; stack smashes Gold/Silver (KOR) and redirects to Patch List once the next text terminator is read.
+50                                              ; acts as text terminator.
+
+
+0x4F (non-KOR) and 0x5F (KOR) place the current character at 0xC4E1.
+
+Each use of 0x4E (non-KOR) and 0x59 (kor) starts writing 40 bytes after the start of the current line.
+
+The location of the stack smash is not always constant:
+	- For Gold/Silver (non-KOR), we aim to overwrite 0xDFCB and 0xDFCC
+	- For Crystal, we aim to overwrite 0xE0BB and 0xE0BC
+	- For Gold/Silver (KOR), we aim to overwrite 0xCFCB and 0x CDCC
+
+	Notes on the addresses of Korean control code characters:
+
+KOR TEXT: 0F7E
+
+below 0C - 1229
+5A - 118B
+59 - 1179
+00 - 1218?
+57 - 11D4
+56 - 11BC
+5C - 1193
+5B - 1066
+51 - 106D
+52 - 1074
+35 - 10C8
+36 - 10CF
+37 - 10D6
+4D - 107B
+4E - 1082
+47 - 10A5
+49 - 1097
+4B - 109E
+4A - 1090
+55 - 1089
+1F - 10AC
+1E - 1182
+5D - 11E2
+48 - 10B3
+5E - 1211
+5F - 11F7
+46 - 10BA
+33 - 10C1
+34 - 0F7A
+1D - space
+4C - 11F3
+53 - 10DD
+54 - 10E3
+4F - 10FB
+E4 - 1030
+E5 - 1037

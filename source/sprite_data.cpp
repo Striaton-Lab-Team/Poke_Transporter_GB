@@ -1,15 +1,16 @@
 #include <tonc.h>
 #include <cstring>
 #include "sprite_data.h"
-#include "debug_mode.h"
+#include "dbg/debug_mode.h"
 #include "gba_rom_values/base_gba_rom_struct.h"
 #include "global_frame_controller.h"
+#include "background_engine.h"
 
 #define SPRITE_CHAR_BLOCK 4
 
 OBJ_ATTR obj_buffer[128];
 OBJ_AFFINE *obj_aff_buffer = (OBJ_AFFINE *)obj_buffer;
-int curr_flex_background;
+FlexBackground curr_flex_background = FBG_None;
 int y_offset = 0;
 int y_offset_timer = 0;
 int y_offset_direction = 1;
@@ -19,15 +20,13 @@ int y_offset_direction = 1;
 #include "background.h"
 void load_background()
 {
-    int CBB = 2;
-    int SBB = 12;
     // Load palette
     tonccpy(pal_bg_mem, backgroundPal, backgroundPalLen);
     // Load tiles into CBB 0
-    LZ77UnCompVram(backgroundTiles, &tile_mem[CBB][0]);
+    LZ77UnCompVram(backgroundTiles, &tile_mem[TILESET_PTGB][TILESET_OFFSET_BACKDROP]);
     // Load map into SBB 0
-    LZ77UnCompVram(backgroundMap, &se_mem[SBB][0]);
-    REG_BG0CNT = BG_CBB(CBB) | BG_SBB(SBB) | BG_4BPP | BG_REG_32x32 | BG_PRIO(3);
+    LZ77UnCompVram(backgroundMap, &se_mem[TILEMAP_BACKDROP][0]);
+    BG_BACKDROP = BG_CBB(TILESET_PTGB) | BG_SBB(TILEMAP_BACKDROP) | BG_4BPP | BG_REG_32x32 | BG_PRIO(3);
 }
 
 void set_background_pal(int curr_rom_id, bool dark, bool fade)
@@ -102,7 +101,7 @@ void set_background_pal(int curr_rom_id, bool dark, bool fade)
                     ((((NUM_CYCLES - n) * INV_NUM_CYCLES) * old_pal[1]) + ((n * INV_NUM_CYCLES) * new_pal[1])) >> 16,
                     ((((NUM_CYCLES - n) * INV_NUM_CYCLES) * old_pal[2]) + ((n * INV_NUM_CYCLES) * new_pal[2])) >> 16);
             }
-            global_next_frame();
+            VBlankIntrWait();
         }
     }
     else
@@ -121,106 +120,152 @@ void set_background_pal(int curr_rom_id, bool dark, bool fade)
 #include "fennelBG.h"
 #include "dexBG.h"
 #include "menu_bars.h"
-#include "boxBG.h"
 
-void load_flex_background(int background_id, int layer)
+#include "boxBG_Green.h"
+#include "boxBG_Red.h"
+#include "boxBG_Blue.h"
+#include "boxBG_Yellow.h"
+#include "boxBG_Gold.h"
+#include "boxBG_Silver.h"
+#include "boxBG_Crystal.h"
+
+struct flex_background {
+    const unsigned short *palette;
+    u16 palette_len;
+    u16 voffset;
+    const unsigned int *tileset;
+    const unsigned short *tilemap;
+};
+
+static const flex_background FLEX_BACKGROUNDS[] = {
+    [FBG_Opening] = {
+        openingBGPal,
+        openingBGPalLen,
+        96,
+        openingBGTiles,
+        openingBGMap,
+    },
+    [FBG_Fennel] = {
+        fennelBGPal,
+        fennelBGPalLen,
+        FENNEL_SHIFT,
+        fennelBGTiles,
+        fennelBGMap,
+    },
+    [FBG_Dex] = {
+        dexBGPal,
+        dexBGPalLen,
+        0,
+        dexBGTiles,
+        dexBGMap,
+    },
+    [FBG_Main_Menu] = {
+        pal_bg_mem,
+        backgroundPalLen,
+        0,
+        menu_barsTiles,
+        menu_barsMap,
+    },
+    [FBG_Box_Green] = {
+        boxBG_GreenPal,
+        boxBG_GreenPalLen,
+        0,
+        boxBG_GreenTiles,
+        boxBG_GreenMap,
+    },
+    [FBG_Box_Red] = {
+        boxBG_RedPal,
+        boxBG_RedPalLen,
+        0,
+        boxBG_RedTiles,
+        boxBG_RedMap,
+    },
+    [FBG_Box_Blue] = {
+        boxBG_BluePal,
+        boxBG_BluePalLen,
+        0,
+        boxBG_BlueTiles,
+        boxBG_BlueMap,
+    },
+    [FBG_Box_Yellow] = {
+        boxBG_YellowPal,
+        boxBG_YellowPalLen,
+        0,
+        boxBG_YellowTiles,
+        boxBG_YellowMap,
+    },
+    [FBG_Box_Gold] = {
+        boxBG_GoldPal,
+        boxBG_GoldPalLen,
+        0,
+        boxBG_GoldTiles,
+        boxBG_GoldMap,
+    },
+    [FBG_Box_Silver] = {
+        boxBG_SilverPal,
+        boxBG_SilverPalLen,
+        0,
+        boxBG_SilverTiles,
+        boxBG_SilverMap,
+    },
+    [FBG_Box_Crystal] = {
+        boxBG_CrystalPal,
+        boxBG_CrystalPalLen,
+        0,
+        boxBG_CrystalTiles,
+        boxBG_CrystalMap,
+    },
+};
+
+void load_flex_background(FlexBackground background_id, int layer)
 {
-    // This prevents screen tearing on this frame
-    global_next_frame();
-    REG_BG1CNT = (REG_BG1CNT && !BG_PRIO_MASK) | BG_PRIO(3);
-
-    int CBB = 3;  // CBB is the tiles that make up the sprite
-    int SBB = 31; // SSB is the array of which tile goes where
-    switch (background_id)
+    if (curr_flex_background != background_id) // Only load the background if it isn't already loaded
     {
-    case (BG_OPENING):
-        // Load palette
-        tonccpy(pal_bg_mem + 32, openingBGPal, openingBGPalLen);
-        // Load tiles into CBB 0
-        LZ77UnCompVram(openingBGTiles, &tile_mem[CBB][0]);
+        // This prevents screen tearing on this frame
+        // global_next_frame();
+        BG_FLEX = (BG_FLEX && !BG_PRIO_MASK) | BG_PRIO(3);
+        const flex_background *flex = &FLEX_BACKGROUNDS[background_id];
+#ifdef DEBUG
+        // Check to make sure we aren't overflowing tile memory
+        if ((flex->tileset[0] >> 8) > (6 * 1024)) {
+            for (;;) {}
+        }
+#endif
+        tonccpy(pal_bg_mem + 32, flex->palette, flex->palette_len);
+        // Load tiles
+        LZ77UnCompVram(flex->tileset, &tile_mem[TILESET_PTGB][TILESET_OFFSET_FLEXBG]);
         // Give it a frame to uncompress the data
         global_next_frame();
-        // Load map into SBB 0
-        LZ77UnCompVram(openingBGMap, &se_mem[SBB][0]);
-        REG_BG1VOFS = 96;
-        break;
-    case (BG_FENNEL):
-        // Load palette
-        tonccpy(pal_bg_mem + 32, fennelBGPal, fennelBGPalLen);
-        // Load tiles into CBB 0
-        LZ77UnCompVram(fennelBGTiles, &tile_mem[CBB][0]);
-        // Give it a frame to uncompress the data
-        global_next_frame();
-        // Load map into SBB 0
-        LZ77UnCompVram(fennelBGMap, &se_mem[SBB][0]);
-        REG_BG1VOFS = FENNEL_SHIFT;
-        break;
-    case (BG_DEX):
-        // Load palette
-        tonccpy(pal_bg_mem + 32, dexBGPal, dexBGPalLen);
-        // Load tiles into CBB 0
-        LZ77UnCompVram(dexBGTiles, &tile_mem[CBB][0]);
-        // Give it a frame to uncompress the data
-        global_next_frame();
-        // Load map into SBB 0
-        LZ77UnCompVram(dexBGMap, &se_mem[SBB][0]);
-        REG_BG1VOFS = 0;
-        break;
-    case (BG_MAIN_MENU):
-        // Load palette
-        tonccpy(pal_bg_mem + 32, pal_bg_mem, backgroundPalLen);
-        // Load tiles into CBB 0
-        LZ77UnCompVram(menu_barsTiles, &tile_mem[CBB][0]);
-        // Give it a frame to uncompress the data
-        global_next_frame();
-        // Load map into SBB 0
-        LZ77UnCompVram(menu_barsMap, &se_mem[SBB][0]);
-        REG_BG1VOFS = 0;
-        break;
-    case (BG_BOX):
-        // Load palette
-        tonccpy(pal_bg_mem + 32, boxBGPal, boxBGPalLen);
-        // Load tiles into CBB 0
-        LZ77UnCompVram(boxBGTiles, &tile_mem[CBB][0]);
-        // Give it a frame to uncompress the data
-        global_next_frame();
-        // Load map into SBB 0
-        LZ77UnCompVram(boxBGMap, &se_mem[SBB][0]);
-        REG_BG1VOFS = 0;
-        break;
+        // Load map into the tilemap
+        LZ77UnCompVram(flex->tilemap, &se_mem[TILEMAP_FLEXBG][0]);
+        // Set vertical offset
+        REG_BG1VOFS = flex->voffset;
     }
 
-    REG_BG1CNT = BG_CBB(CBB) | BG_SBB(SBB) | BG_4BPP | BG_REG_32x32 | BG_PRIO(layer);
+    BG_FLEX = BG_CBB(TILESET_PTGB) | BG_SBB(TILEMAP_FLEXBG) | BG_4BPP | BG_REG_32x32 | BG_PRIO(layer);
     curr_flex_background = background_id;
 }
 #include "textBoxBG.h"
 void load_textbox_background()
 {
-    int CBB = 2;
-    int SBB = 20;
     // Load palette
     tonccpy(pal_bg_mem + 16, textBoxBGPal, textBoxBGPalLen);
     // Load tiles into CBB 0
-    LZ77UnCompVram(textBoxBGTiles, &tile_mem[CBB][38]);
+    LZ77UnCompVram(textBoxBGTiles, &tile_mem[TILESET_PTGB][TILESET_OFFSET_TEXTBOX]);
     // Load map into SBB 0
     reload_textbox_background();
 
     REG_BG2VOFS = 96;
-    REG_BG2CNT = BG_CBB(CBB) | BG_SBB(SBB) | BG_4BPP | BG_REG_32x32 | BG_PRIO(3);
+    BG_TEXTBOX = BG_CBB(TILESET_PTGB) | BG_SBB(TILEMAP_TEXTBOX) | BG_4BPP | BG_REG_32x32 | BG_PRIO(3);
 }
 
 void reload_textbox_background()
 {
-    int SBB = 20;
-    LZ77UnCompVram(textBoxBGMap, &se_mem[SBB][0]);
-    for (int i = 0; i < 1024; i++)
-    {
-        se_mem[SBB][i] += 38; // This should be overflow protected, but if we're flipping back around we're already in trouble
-    }
+    LZ77UnCompVram(textBoxBGMap, &se_mem[TILEMAP_TEXTBOX][0]);
 }
 
 // tile ID, VH Flip, Palette Bank
-#define TILE_OFFSET 38
+#define TILE_OFFSET TILESET_OFFSET_TEXTBOX
 #define TILE_CLEAR ((0 + TILE_OFFSET) | (0b00 << 0xA) | (1 << 0xC))
 #define TILE_MID ((1 + TILE_OFFSET) | (0b00 << 0xA) | (1 << 0xC))
 #define TILE_N ((2 + TILE_OFFSET) | (0b00 << 0xA) | (1 << 0xC))
@@ -253,60 +298,59 @@ void reload_textbox_background()
 
 #define MENU_WIDTH 11 - 1 // Currently static
 
-static int TILE_SE_U_ARR[4] = {TILE_SE_0, TILE_SE_2, TILE_SE_4U, TILE_SE_6U};
-static int TILE_S_U_ARR[4] = {TILE_S_0, TILE_S_2, TILE_S_4U, TILE_S_6U};
-static int TILE_SW_U_ARR[4] = {TILE_SW_0, TILE_SW_2, TILE_SW_4U, TILE_SW_6U};
-static int TILE_SE_L_ARR[4] = {TILE_CLEAR, TILE_CLEAR, TILE_SE_4L, TILE_SE_6L};
-static int TILE_S_L_ARR[4] = {TILE_CLEAR, TILE_CLEAR, TILE_S_4L, TILE_S_6L};
-static int TILE_SW_L_ARR[4] = {TILE_CLEAR, TILE_CLEAR, TILE_SW_4L, TILE_SW_6L};
+static const u16 TILE_SE_U_ARR[4] = {TILE_SE_0, TILE_SE_2, TILE_SE_4U, TILE_SE_6U};
+static const u16 TILE_S_U_ARR[4] = {TILE_S_0, TILE_S_2, TILE_S_4U, TILE_S_6U};
+static const u16 TILE_SW_U_ARR[4] = {TILE_SW_0, TILE_SW_2, TILE_SW_4U, TILE_SW_6U};
+static const u16 TILE_SE_L_ARR[4] = {TILE_CLEAR, TILE_CLEAR, TILE_SE_4L, TILE_SE_6L};
+static const u16 TILE_S_L_ARR[4] = {TILE_CLEAR, TILE_CLEAR, TILE_S_4L, TILE_S_6L};
+static const u16 TILE_SW_L_ARR[4] = {TILE_CLEAR, TILE_CLEAR, TILE_SW_4L, TILE_SW_6L};
 
 void add_menu_box(int options, int startTileX, int startTileY)
 {
     add_menu_box(startTileX, startTileY, (MENU_WIDTH) * 8, (options * 10) + 16);
 }
 
+// TODO: clean this mess. manual masking used for now but there is a buffer overflow in how the bottom
+// row is calculated.
 void add_menu_box(int startTileX, int startTileY, int full_width, int full_height)
 {
-
     // We can't check the current offset very easily, so we'll just assume it's in the text box position.
     startTileY += 12;
 
-    int SBB = 20;
-
     int start = (32 * startTileY) + startTileX;
-    int tiles = (full_height / 8) - 2; // For the extra 2 tiles
-    int rem = full_height % 8;
-    full_width /= 8;
+    int tiles = (full_height / 8) - 1; // For the flex edge
+    int vert_rem = full_height % 8;
+    full_width = (full_width / 8) - 1; // For the right edge
 
     // Corners
-    se_mem[SBB][start] = TILE_NW;
-    se_mem[SBB][start + full_width] = TILE_NE;
-    se_mem[SBB][start + (32 * (tiles + 1))] = TILE_SW_U_ARR[rem / 2];
-    se_mem[SBB][start + (32 * (tiles + 2))] = TILE_SW_L_ARR[rem / 2];
-    se_mem[SBB][start + (32 * (tiles + 1)) + full_width] = TILE_SE_U_ARR[rem / 2];
-    se_mem[SBB][start + (32 * (tiles + 2)) + full_width] = TILE_SE_L_ARR[rem / 2];
+    se_mem[TILEMAP_TEXTBOX][start] = TILE_NW;
+    se_mem[TILEMAP_TEXTBOX][start + full_width] = TILE_NE;
+    se_mem[TILEMAP_TEXTBOX][(start + (32 * (tiles))) & 0x3ff] = TILE_SW_U_ARR[vert_rem / 2];
+    se_mem[TILEMAP_TEXTBOX][(start + (32 * (tiles + 1))) & 0x3ff] = TILE_SW_L_ARR[vert_rem / 2];
+    se_mem[TILEMAP_TEXTBOX][(start + (32 * (tiles)) + full_width) & 0x3ff] = TILE_SE_U_ARR[vert_rem / 2];
+    se_mem[TILEMAP_TEXTBOX][(start + (32 * (tiles + 1)) + full_width) & 0x3ff] = TILE_SE_L_ARR[vert_rem / 2];
 
     // Top and bottom edge
     for (int i = 1; i < full_width; i++)
     {
-        se_mem[SBB][start + i] = TILE_N;
-        se_mem[SBB][start + ((32 * (tiles + 1))) + i] = TILE_S_U_ARR[rem / 2];
-        se_mem[SBB][start + ((32 * (tiles + 2))) + i] = TILE_S_L_ARR[rem / 2];
+        se_mem[TILEMAP_TEXTBOX][start + i] = TILE_N;
+        se_mem[TILEMAP_TEXTBOX][(start + ((32 * (tiles))) + i) & 0x3ff] = TILE_S_U_ARR[vert_rem / 2];
+        se_mem[TILEMAP_TEXTBOX][(start + ((32 * (tiles + 1))) + i) & 0x3ff] = TILE_S_L_ARR[vert_rem / 2];
     }
 
     // Sides
-    for (int i = 0; i < tiles; i++)
+    for (int i = 1; i < tiles; i++)
     {
-        se_mem[SBB][start + (32 * (i + 1)) + full_width] = TILE_E;
-        se_mem[SBB][start + (32 * (i + 1))] = TILE_W;
+        se_mem[TILEMAP_TEXTBOX][(start + (32 * i) + full_width) & 0x3ff] = TILE_E;
+        se_mem[TILEMAP_TEXTBOX][(start + (32 * i)) & 0x3ff] = TILE_W;
     }
 
     // Middle
     for (int x = 1; x < full_width; x++)
     {
-        for (int y = 1; y < tiles + 1; y++)
+        for (int y = 1; y < tiles; y++)
         {
-            se_mem[SBB][start + (32 * y) + x] = TILE_MID;
+            se_mem[TILEMAP_TEXTBOX][(start + (32 * y) + x) & 0x3ff] = TILE_MID;
         }
     }
 }
@@ -318,13 +362,12 @@ void erase_textbox_tiles()
     int startTileY = 12;
 
     int start = (32 * startTileY);
-    int SBB = 20;
 
     for (int x = 0; x < 30; x++)
     {
         for (int y = 0; y < 20; y++)
         {
-            se_mem[SBB][start + (32 * y) + x] = TILE_CLEAR;
+            se_mem[TILEMAP_TEXTBOX][start + (32 * y) + x] = TILE_CLEAR;
         }
     }
 }
@@ -347,7 +390,9 @@ OBJ_ATTR *button_yes = &obj_buffer[num_sprites++];
 OBJ_ATTR *button_no = &obj_buffer[num_sprites++];
 OBJ_ATTR *cart_shell = &obj_buffer[num_sprites++];
 OBJ_ATTR *cart_label = &obj_buffer[num_sprites++];
-OBJ_ATTR *flag = &obj_buffer[num_sprites++];
+OBJ_ATTR *gb_flag = &obj_buffer[num_sprites++];
+OBJ_ATTR *gba_flag = &obj_buffer[num_sprites++];
+
 
 OBJ_ATTR *type_sprites[14] = {
     &obj_buffer[num_sprites++],
@@ -368,6 +413,8 @@ OBJ_ATTR *type_sprites[14] = {
 
 OBJ_ATTR *up_arrow = &obj_buffer[num_sprites++];
 OBJ_ATTR *down_arrow = &obj_buffer[num_sprites++];
+OBJ_ATTR *toggle_arrow_left = &obj_buffer[num_sprites++];
+OBJ_ATTR *toggle_arrow_right = &obj_buffer[num_sprites++];
 OBJ_ATTR *point_arrow = &obj_buffer[num_sprites++];
 
 OBJ_ATTR *box_select = &obj_buffer[num_sprites++];
@@ -446,11 +493,23 @@ void load_eternal_sprites()
     load_sprite_compressed(button_yes, button_yesTiles, curr_tile_id, BTN_PAL, ATTR0_WIDE, ATTR1_SIZE_64x32, 1);
     load_sprite_compressed(button_no, button_noTiles, curr_tile_id, BTN_PAL, ATTR0_WIDE, ATTR1_SIZE_64x32, 1);
     load_sprite_compressed(cart_label, Label_GreenTiles, curr_tile_id, GB_CART_PAL, ATTR0_SQUARE, ATTR1_SIZE_32x32, 1);
+
+    /**
+     * @brief Okay, the next lines to load the arrows are a bit confusing.
+     * Be aware that tempTileBuf is NOT a u8 array, but a u32 array!
+     * The incoming arrows image is 1bpp, but we convert it into 4bpp in tempTileBuf. So every pixel is a nibble.
+     *
+     * Still, every index of tempTileBuf is a full 32 bit integer, yet the third argument of load_sprite is a size_in_bytes.
+     * This is why those indexes look off. But they are correct.
+     */
     unsigned int tempTileBuf[48];
     BitUnPack(arrowsTiles, tempTileBuf, arrowsTilesLen, 1, 4);
     load_sprite(point_arrow, &tempTileBuf[32], 32, curr_tile_id, BTN_PAL, ATTR0_SQUARE, ATTR1_SIZE_8x8, 1);
+    load_sprite(toggle_arrow_right, &tempTileBuf[40], 32, curr_tile_id, BTN_PAL, ATTR0_SQUARE, ATTR1_SIZE_8x8, 1);
+    load_sprite(toggle_arrow_left, &tempTileBuf[40], 32, curr_tile_id, BTN_PAL, ATTR0_SQUARE, ATTR1_SIZE_8x8 | ATTR1_HFLIP, 1);
     load_sprite(down_arrow, &tempTileBuf[0], 64, curr_tile_id, BTN_PAL, ATTR0_WIDE, ATTR1_SIZE_16x8, 1);
     load_sprite(up_arrow, &tempTileBuf[16], 64, curr_tile_id, BTN_PAL, ATTR0_WIDE, ATTR1_SIZE_16x8, 1);
+
     load_sprite_compressed(link_frame1, link_frame1Tiles, curr_tile_id, LINK_CABLE_PAL, ATTR0_SQUARE, ATTR1_SIZE_32x32, 1);
     load_sprite_compressed(link_frame2, link_frame2Tiles, curr_tile_id, LINK_CABLE_PAL, ATTR0_WIDE, ATTR1_SIZE_8x32, 1);
     load_sprite_compressed(link_frame3, link_frame3Tiles, curr_tile_id, LINK_CABLE_PAL, ATTR0_WIDE, ATTR1_SIZE_16x32, 1);
@@ -469,12 +528,12 @@ void load_temp_box_sprites(PokeBox *box)
 {
     u32 curr_tile_id = global_tile_id_end;
 
-    if (!(IGNORE_GAME_PAK || IGNORE_GAME_PAK_SPRITES))
+    if (!(g_debug_options.ignore_game_pak || g_debug_options.ignore_game_pak_sprites))
     {
         for (int i = 0; i < 30; i++)
         {
             GBPokemon *curr_pkmn = box->getGBPokemon(i);
-            if (curr_pkmn->isValid || DONT_HIDE_INVALID_PKMN)
+            if (curr_pkmn->isValid || g_debug_options.dont_hide_invalid_pkmn)
             {
                 int dex_num = curr_pkmn->getSpeciesIndexNumber();
                 if (dex_num == 201)
@@ -561,7 +620,7 @@ void load_sprite_compressed(OBJ_ATTR *sprite, const unsigned int objTiles[],
     obj_hide(sprite);
 };
 
-void load_select_sprites(u8 game_id, u8 lang)
+void load_select_sprites(GameBoyROM currROM)
 {
     u32 curr_tile_id = global_tile_id_end;
     //                                    Alpha         Shadow          Main Color       Grey             Black         Mid
@@ -579,102 +638,145 @@ void load_select_sprites(u8 game_id, u8 lang)
     const unsigned short *label_palette = 0;
     const unsigned int *cart_tiles = 0;
     const unsigned short *cart_palette = 0;
-    switch (game_id)
+
+    switch (currROM)
     {
-    case (GREEN_ID):
+    case GREEN_JP_v0:
+    case GREEN_JP_v1:
         label_tiles = Label_GreenTiles;
         label_palette = Label_GreenPal;
         cart_tiles = GB_ShellTiles;
         cart_palette = jpn_gb_pal;
         break;
 
-    case (RED_ID):
+    case RED_JP_v0:
+    case RED_JP_v1:
         label_tiles = Label_RedTiles;
         label_palette = Label_RedPal;
         cart_tiles = GB_ShellTiles;
-        if (lang == JPN_ID)
-        {
-            cart_palette = jpn_gb_pal;
-        }
-        else
-        {
-            cart_palette = eng_red_pal;
-        }
+        cart_palette = jpn_gb_pal;
+        break;
+    case RED_EN:
+    case RED_FR:
+    case RED_IT:
+    case RED_DE:
+    case RED_SP:
+        label_tiles = Label_RedTiles;
+        label_palette = Label_RedPal;
+        cart_tiles = GB_ShellTiles;
+        cart_palette = eng_red_pal;
         break;
 
-    case (BLUE_ID):
+    case BLUE_JP:
         label_tiles = Label_BlueTiles;
         label_palette = Label_BluePal;
         cart_tiles = GB_ShellTiles;
-        if (lang == JPN_ID)
-        {
-            cart_palette = jpn_gb_pal;
-        }
-        else
-        {
-            cart_palette = eng_blue_pal;
-        }
+        cart_palette = jpn_gb_pal;
         break;
 
-    case (YELLOW_ID):
+    case BLUE_EN:
+    case BLUE_FR:
+    case BLUE_IT:
+    case BLUE_DE:
+    case BLUE_SP:
+        label_tiles = Label_BlueTiles;
+        label_palette = Label_BluePal;
+        cart_tiles = GB_ShellTiles;
+        cart_palette = eng_blue_pal;
+        break;
+
+    case YELLOW_JP_v0:
+    case YELLOW_JP_v1:
+    case YELLOW_JP_v2:
+    case YELLOW_JP_v3:
         label_tiles = Label_YellowTiles;
         label_palette = Label_YellowPal;
         cart_tiles = GB_ShellTiles;
-        if (lang == JPN_ID)
-        {
-            cart_palette = jpn_gb_pal;
-        }
-        else
-        {
-            cart_palette = eng_yellow_pal;
-        }
+        cart_palette = jpn_gb_pal;
         break;
 
-    case (GOLD_ID):
+    case YELLOW_EN:
+    case YELLOW_FR:
+    case YELLOW_IT:
+    case YELLOW_DE:
+    case YELLOW_SP:
+        label_tiles = Label_YellowTiles;
+        label_palette = Label_YellowPal;
+        cart_tiles = GB_ShellTiles;
+        cart_palette = eng_yellow_pal;
+        break;
+
+    case GOLD_JP_v0:
+    case GOLD_JP_v1:
         label_tiles = Label_GoldTiles;
         label_palette = Label_GoldPal;
-        if (lang == JPN_ID)
-        {
-            cart_tiles = GB_ShellTiles;
-            cart_palette = jpn_gold_pal;
-        }
-        else if (lang == KOR_ID)
-        {
-            cart_tiles = GBC_ShellTiles;
-            cart_palette = jpn_gold_pal;
-        }
-        else
-        {
-            cart_tiles = GBS_ShellTiles;
-            cart_palette = eng_gold_pal;
-        }
+        cart_tiles = GB_ShellTiles;
+        cart_palette = jpn_gold_pal;
         break;
 
-    case (SILVER_ID):
+    case GOLD_EN:
+    case GOLD_FR:
+    case GOLD_IT:
+    case GOLD_DE:
+    case GOLD_SP:
+        label_tiles = Label_GoldTiles;
+        label_palette = Label_GoldPal;
+        cart_tiles = GBS_ShellTiles;
+        cart_palette = eng_gold_pal;
+        break;
+
+    case GOLD_KOR:
+        label_tiles = Label_GoldTiles;
+        label_palette = Label_GoldPal;
+        cart_tiles = GBC_ShellTiles;
+        cart_palette = jpn_gold_pal;
+        break;
+
+    case SILVER_JP_v0:
+    case SILVER_JP_v1:
         label_tiles = Label_SilverTiles;
         label_palette = Label_SilverPal;
-        if (lang == JPN_ID)
-        {
-            cart_tiles = GB_ShellTiles;
-            cart_palette = jpn_silver_pal;
-        }
-        else if (lang == KOR_ID)
-        {
-            cart_tiles = GBC_ShellTiles;
-            cart_palette = jpn_silver_pal;
-        }
-        else
-        {
-            cart_tiles = GBS_ShellTiles;
-            cart_palette = eng_silver_pal;
-        }
+        cart_tiles = GB_ShellTiles;
+        cart_palette = jpn_silver_pal;
         break;
 
-    case (CRYSTAL_ID):
+    case SILVER_EN:
+    case SILVER_FR:
+    case SILVER_IT:
+    case SILVER_DE:
+    case SILVER_SP:
+        label_tiles = Label_SilverTiles;
+        label_palette = Label_SilverPal;
+        cart_tiles = GBS_ShellTiles;
+        cart_palette = eng_silver_pal;
+        break;
+
+    case SILVER_KOR:
+        label_tiles = Label_SilverTiles;
+        label_palette = Label_SilverPal;
+        cart_tiles = GBC_ShellTiles;
+        cart_palette = jpn_silver_pal;
+        break;
+
+    case CRYSTAL_JP:
+    case CRYSTAL_EN_v0:
+    case CRYSTAL_EN_v1:
+    case CRYSTAL_EN_vA:
+    case CRYSTAL_FR:
+    case CRYSTAL_IT:
+    case CRYSTAL_DE:
+    case CRYSTAL_SP:
         label_tiles = Label_CrystalTiles;
         label_palette = Label_CrystalPal;
         cart_tiles = GBCS_ShellTiles;
         cart_palette = crystal_pal;
+        break;
+
+    default:
+        label_tiles = Label_UnknownTiles;
+        label_palette = Label_UnknownPal;
+        cart_tiles = GB_ShellTiles;
+        cart_palette = jpn_gb_pal;
         break;
     }
 
@@ -683,42 +785,95 @@ void load_select_sprites(u8 game_id, u8 lang)
     load_sprite_compressed(cart_shell, cart_tiles, curr_tile_id, GB_CART_PAL, ATTR0_SQUARE, ATTR1_SIZE_64x64, 1);
     load_sprite_compressed(cart_label, label_tiles, curr_tile_id, GB_CART_PAL, ATTR0_SQUARE, ATTR1_SIZE_32x32, 1);
 
-    const unsigned int *flag_tiles = 0;
-    const unsigned short *flag_palette = 0;
-    switch (lang)
+    const unsigned int *gb_flag_tiles = 0;
+    const unsigned short *gb_flag_palette = 0;
+    switch (currROM)
     {
-    case JPN_ID:
-        flag_tiles = flag_jpnTiles;
-        flag_palette = flag_jpnPal;
+    case RED_JP_v0:
+    case RED_JP_v1:
+    case GREEN_JP_v0:
+    case GREEN_JP_v1:
+    case BLUE_JP:
+    case YELLOW_JP_v0:
+    case YELLOW_JP_v1:
+    case YELLOW_JP_v2:
+    case YELLOW_JP_v3:
+    case GOLD_JP_v0:
+    case GOLD_JP_v1:
+    case SILVER_JP_v0:
+    case SILVER_JP_v1:
+    case CRYSTAL_JP:
+        gb_flag_tiles = flag_jpnTiles;
+        gb_flag_palette = flag_jpnPal;
         break;
-    case ENG_ID:
-        flag_tiles = flag_engTiles;
-        flag_palette = flag_engPal;
+
+    case RED_EN:
+    case BLUE_EN:
+    case YELLOW_EN:
+    case GOLD_EN:
+    case SILVER_EN:
+    case CRYSTAL_EN_v0:
+    case CRYSTAL_EN_v1:
+    case CRYSTAL_EN_vA:
+        gb_flag_tiles = flag_engTiles;
+        gb_flag_palette = flag_engPal;
         break;
-    case FRE_ID:
-        flag_tiles = flag_freTiles;
-        flag_palette = flag_frePal;
+
+    case RED_FR:
+    case BLUE_FR:
+    case YELLOW_FR:
+    case GOLD_FR:
+    case SILVER_FR:
+    case CRYSTAL_FR:
+        gb_flag_tiles = flag_freTiles;
+        gb_flag_palette = flag_frePal;
         break;
-    case ITA_ID:
-        flag_tiles = flag_itaTiles;
-        flag_palette = flag_itaPal;
+
+    case RED_IT:
+    case BLUE_IT:
+    case YELLOW_IT:
+    case GOLD_IT:
+    case SILVER_IT:
+    case CRYSTAL_IT:
+        gb_flag_tiles = flag_itaTiles;
+        gb_flag_palette = flag_itaPal;
         break;
-    case GER_ID:
-        flag_tiles = flag_gerTiles;
-        flag_palette = flag_gerPal;
+
+    case RED_DE:
+    case BLUE_DE:
+    case YELLOW_DE:
+    case GOLD_DE:
+    case SILVER_DE:
+    case CRYSTAL_DE:
+        gb_flag_tiles = flag_gerTiles;
+        gb_flag_palette = flag_gerPal;
         break;
-    case SPA_ID:
-        flag_tiles = flag_spaTiles;
-        flag_palette = flag_spaPal;
+
+    case RED_SP:
+    case BLUE_SP:
+    case YELLOW_SP:
+    case GOLD_SP:
+    case SILVER_SP:
+    case CRYSTAL_SP:
+        gb_flag_tiles = flag_spaTiles;
+        gb_flag_palette = flag_spaPal;
         break;
-    case KOR_ID:
-        flag_tiles = flag_korTiles;
-        flag_palette = flag_korPal;
+
+    case GOLD_KOR:
+    case SILVER_KOR:
+        gb_flag_tiles = flag_korTiles;
+        gb_flag_palette = flag_korPal;
+        break;
+
+    default:
+        gb_flag_tiles = flag_korTiles;
+        gb_flag_palette = flag_jpnPal;
         break;
     }
 
-    load_sprite_compressed(flag, flag_tiles, curr_tile_id, FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
-    tonccpy(pal_obj_mem + (FLAG_PAL * 16), flag_palette, 16); // Grit is being stupid.
+    load_sprite_compressed(gb_flag, gb_flag_tiles, curr_tile_id, GB_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    load_sprite_compressed(gba_flag, gb_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    tonccpy(pal_obj_mem + (GB_FLAG_PAL * 16), gb_flag_palette, 16); // Grit is being stupid.
 
     const unsigned int *gba_cart_tiles = 0;
     const unsigned short *gba_cart_palette = 0;
@@ -749,49 +904,93 @@ void load_select_sprites(u8 game_id, u8 lang)
 
     load_sprite_compressed(gba_cart, gba_cart_tiles, curr_tile_id, GBA_CART_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
     tonccpy(pal_obj_mem + (GBA_CART_PAL * 16), gba_cart_palette, 32);
+
+    const unsigned int *gba_flag_tiles = 0;
+    const unsigned short *gba_flag_palette = 0;
+    switch (curr_GBA_rom.language)
+    {
+    case LANG_JPN:
+        gba_flag_tiles = flag_jpnTiles;
+        gba_flag_palette = flag_jpnPal;
+        break;
+
+    case LANG_ENG:
+        gba_flag_tiles = flag_engTiles;
+        gba_flag_palette = flag_engPal;
+        break;
+
+    case LANG_FRE:
+        gba_flag_tiles = flag_freTiles;
+        gba_flag_palette = flag_frePal;
+        break;
+
+    case LANG_ITA:
+        gba_flag_tiles = flag_itaTiles;
+        gba_flag_palette = flag_itaPal;
+        break;
+
+    case LANG_GER:
+        gba_flag_tiles = flag_gerTiles;
+        gba_flag_palette = flag_gerPal;
+        break;
+
+    case LANG_SPA:
+        gba_flag_tiles = flag_spaTiles;
+        gba_flag_palette = flag_spaPal;
+        break;
+
+    default:
+        gba_flag_tiles = flag_korTiles;
+        gba_flag_palette = flag_jpnPal;
+        break;
+    }
+
+    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    load_sprite_compressed(gba_flag, gba_flag_tiles, curr_tile_id, GBA_FLAG_PAL, ATTR0_WIDE, ATTR1_SIZE_32x64, 1);
+    tonccpy(pal_obj_mem + (GBA_FLAG_PAL * 16), gba_flag_palette, 16); // Grit is being stupid.
+
 }
 // tile ID, VH Flip, Palette Bank
-#define FEN_BLI_L00 (34 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_L01 (35 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_L10 (140 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_L11 (141 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_L20 (143 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_L21 (144 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_R0 (37 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_R1 (142 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_BLI_R2 (145 | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_L00 ((TILESET_OFFSET_FLEXBG + 34) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_L01 ((TILESET_OFFSET_FLEXBG + 35) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_L10 ((TILESET_OFFSET_FLEXBG + 140) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_L11 ((TILESET_OFFSET_FLEXBG + 141) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_L20 ((TILESET_OFFSET_FLEXBG + 143) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_L21 ((TILESET_OFFSET_FLEXBG + 144) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_R0 ((TILESET_OFFSET_FLEXBG + 37) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_R1 ((TILESET_OFFSET_FLEXBG + 142) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_BLI_R2 ((TILESET_OFFSET_FLEXBG + 145) | (0b00 << 0xA) | (2 << 0xC))
 
 // tile ID, VH Flip, Palette Bank
-#define FEN_SPE_00 (46 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_01 (56 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_10 (146 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_11 (56 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_20 (147 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_21 (149 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_30 (148 | (0b00 << 0xA) | (2 << 0xC))
-#define FEN_SPE_31 (150 | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_00 ((TILESET_OFFSET_FLEXBG + 46) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_01 ((TILESET_OFFSET_FLEXBG + 56) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_10 ((TILESET_OFFSET_FLEXBG + 146) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_11 ((TILESET_OFFSET_FLEXBG + 56) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_20 ((TILESET_OFFSET_FLEXBG + 147) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_21 ((TILESET_OFFSET_FLEXBG + 149) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_30 ((TILESET_OFFSET_FLEXBG + 148) | (0b00 << 0xA) | (2 << 0xC))
+#define FEN_SPE_31 ((TILESET_OFFSET_FLEXBG + 150) | (0b00 << 0xA) | (2 << 0xC))
 
 void fennel_blink(int frame)
 {
     bool missingno = get_missingno_enabled();
-    int SBB = 31; // SSB is the array of which tile goes where
     switch (frame)
     {
     case 0:
-        se_mem[SBB][12 + (5 * 32)] = missingno ? FEN_SPE_00 | FEN_BLI_L20 : FEN_BLI_L20;
-        se_mem[SBB][13 + (5 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_BLI_L21;
-        se_mem[SBB][15 + (5 * 32)] = missingno ? FEN_SPE_10 | FEN_BLI_R2 : FEN_BLI_R2;
+        se_mem[TILEMAP_FLEXBG][12 + (5 * 32)] = missingno ? FEN_SPE_00 | FEN_BLI_L20 : FEN_BLI_L20;
+        se_mem[TILEMAP_FLEXBG][13 + (5 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_BLI_L21;
+        se_mem[TILEMAP_FLEXBG][15 + (5 * 32)] = missingno ? FEN_SPE_10 | FEN_BLI_R2 : FEN_BLI_R2;
         break;
     case 1:
     case 3:
-        se_mem[SBB][12 + (5 * 32)] = missingno ? FEN_SPE_11 | FEN_BLI_L10 : FEN_BLI_L10;
-        se_mem[SBB][13 + (5 * 32)] = missingno ? FEN_SPE_20 | FEN_BLI_L11 : FEN_BLI_L11;
-        se_mem[SBB][15 + (5 * 32)] = missingno ? FEN_SPE_21 | FEN_BLI_R1 : FEN_BLI_R1;
+        se_mem[TILEMAP_FLEXBG][12 + (5 * 32)] = missingno ? FEN_SPE_11 | FEN_BLI_L10 : FEN_BLI_L10;
+        se_mem[TILEMAP_FLEXBG][13 + (5 * 32)] = missingno ? FEN_SPE_20 | FEN_BLI_L11 : FEN_BLI_L11;
+        se_mem[TILEMAP_FLEXBG][15 + (5 * 32)] = missingno ? FEN_SPE_21 | FEN_BLI_R1 : FEN_BLI_R1;
         break;
     case 2:
-        se_mem[SBB][12 + (5 * 32)] = missingno ? FEN_SPE_30 | FEN_BLI_L00 : FEN_BLI_L00;
-        se_mem[SBB][13 + (5 * 32)] = missingno ? FEN_SPE_31 | FEN_BLI_L01 : FEN_BLI_L01;
-        se_mem[SBB][15 + (5 * 32)] = missingno ? FEN_SPE_00 | FEN_BLI_R0 : FEN_BLI_R0;
+        se_mem[TILEMAP_FLEXBG][12 + (5 * 32)] = missingno ? FEN_SPE_30 | FEN_BLI_L00 : FEN_BLI_L00;
+        se_mem[TILEMAP_FLEXBG][13 + (5 * 32)] = missingno ? FEN_SPE_31 | FEN_BLI_L01 : FEN_BLI_L01;
+        se_mem[TILEMAP_FLEXBG][15 + (5 * 32)] = missingno ? FEN_SPE_00 | FEN_BLI_R0 : FEN_BLI_R0;
         break;
     }
 }
@@ -799,25 +998,24 @@ void fennel_blink(int frame)
 void fennel_speak(int frame)
 {
     bool missingno = get_missingno_enabled();
-    int SBB = 31; // SSB is the array of which tile goes where
     switch (frame)
     {
     case 0:
-        se_mem[SBB][14 + (6 * 32)] = missingno ? FEN_SPE_00 | FEN_BLI_L20 : FEN_SPE_00;
-        se_mem[SBB][14 + (7 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_SPE_01;
+        se_mem[TILEMAP_FLEXBG][14 + (6 * 32)] = missingno ? FEN_SPE_00 | FEN_BLI_L20 : FEN_SPE_00;
+        se_mem[TILEMAP_FLEXBG][14 + (7 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_SPE_01;
         break;
     case 1:
-        se_mem[SBB][14 + (6 * 32)] = missingno ? FEN_SPE_10 | FEN_BLI_R2 : FEN_SPE_10;
-        se_mem[SBB][14 + (7 * 32)] = missingno ? FEN_SPE_11 | FEN_BLI_L10 : FEN_SPE_11;
+        se_mem[TILEMAP_FLEXBG][14 + (6 * 32)] = missingno ? FEN_SPE_10 | FEN_BLI_R2 : FEN_SPE_10;
+        se_mem[TILEMAP_FLEXBG][14 + (7 * 32)] = missingno ? FEN_SPE_11 | FEN_BLI_L10 : FEN_SPE_11;
         break;
     case 2:
     case 4:
-        se_mem[SBB][14 + (6 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_SPE_20;
-        se_mem[SBB][14 + (7 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_SPE_21;
+        se_mem[TILEMAP_FLEXBG][14 + (6 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_SPE_20;
+        se_mem[TILEMAP_FLEXBG][14 + (7 * 32)] = missingno ? FEN_SPE_01 | FEN_BLI_L21 : FEN_SPE_21;
         break;
     case 3:
-        se_mem[SBB][14 + (6 * 32)] = missingno ? FEN_SPE_30 | FEN_BLI_L00 : FEN_SPE_30;
-        se_mem[SBB][14 + (7 * 32)] = missingno ? FEN_SPE_31 | FEN_BLI_L01 : FEN_SPE_31;
+        se_mem[TILEMAP_FLEXBG][14 + (6 * 32)] = missingno ? FEN_SPE_30 | FEN_BLI_L00 : FEN_SPE_30;
+        se_mem[TILEMAP_FLEXBG][14 + (7 * 32)] = missingno ? FEN_SPE_31 | FEN_BLI_L01 : FEN_SPE_31;
         break;
     }
 }
@@ -850,16 +1048,18 @@ void update_y_offset()
     y_offset_timer--;
     obj_set_pos(cart_shell, (8 * 11) + 4, (8 * 4) + 11 + y_offset);
     obj_set_pos(cart_label, (8 * 11) + 4 + 8, (8 * 4) + 11 + 13 + y_offset);
-    obj_set_pos(flag, (8 * 11) + 4, (8 * 4) + 19 + y_offset);
+    obj_set_pos(gb_flag, (8 * 11) + 4, (8 * 4) + 19 + y_offset);
 }
 
-void update_front_box_sprite(GBPokemon *curr_pkmn)
+void update_front_box_sprite(Pokemon *curr_pkmn, bool make_greyscale)
 {
-    if (IGNORE_GAME_PAK || IGNORE_GAME_PAK_SPRITES)
+    if (g_debug_options.ignore_game_pak || g_debug_options.ignore_game_pak_sprites)
     {
         return; // We don't want to look into garbage data, get out of here.
     }
 
+    // in load_temp_sprites(), we reserve 30 box sprite icons after global_tile_id_end. Each of them occupy 16 tiles.
+    // the grabbed_front_sprite comes right after it. And we load the pokémon front sprite directly into its tiles.
     u32 curr_tile_id = global_tile_id_end + (30 * 16);
 
     int dex_num = curr_pkmn->getSpeciesIndexNumber();
@@ -884,23 +1084,28 @@ void update_front_box_sprite(GBPokemon *curr_pkmn)
     unsigned short buffer[16];
 
     LZ77UnCompWram((const unsigned short *)palette_location, buffer); // This is a little silly, but it's being weird with bytes vs shorts when we copy it directly
-    for (int i = 0; i < 16; i++)
-    {
-        unsigned red = (buffer[i] >> 0) & 0b11111;
-        unsigned green = (buffer[i] >> 5) & 0b11111;
-        unsigned blue = (buffer[i] >> 10) & 0b11111;
-        unsigned grey = ((QF(0.299f) * red) + (QF(0.587f) * green) + (QF(0.114f) * blue)) >> 16;
 
-        // buffer[i] = RGB15_SAFE(red, ((int)green >> 1), 0);
-        buffer[i] = RGB15_SAFE(grey, (grey >> 1), 0);
+    if (make_greyscale)
+    {
+        for (int i = 0; i < 16; i++)
+        {
+            unsigned red = (buffer[i] >> 0) & 0b11111;
+            unsigned green = (buffer[i] >> 5) & 0b11111;
+            unsigned blue = (buffer[i] >> 10) & 0b11111;
+            unsigned grey = ((QF(0.299f) * red) + (QF(0.587f) * green) + (QF(0.114f) * blue)) >> 16;
+
+            // buffer[i] = RGB15_SAFE(red, ((int)green >> 1), 0);
+            buffer[i] = RGB15_SAFE(grey, (grey >> 1), 0);
+        }
     }
+
     tonccpy((pal_obj_mem + (PULLED_SPRITE_PAL * 16)), buffer, 32);
     LZ77UnCompVram((const unsigned int *)sprite_location, &tile_mem[SPRITE_CHAR_BLOCK][curr_tile_id]);
 }
 
 void update_menu_sprite(PokeBox *box, int index, int frame)
 {
-    if (IGNORE_GAME_PAK || IGNORE_GAME_PAK_SPRITES)
+    if (g_debug_options.ignore_game_pak || g_debug_options.ignore_game_pak_sprites)
     {
         return; // We don't want to look into garbage data, get out of here.
     }

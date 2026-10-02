@@ -1,0 +1,25 @@
+Yellow			97 04 7C
+Yellow FR		61 66 FB
+Yellow DE		5F B7 C1
+Yellow IT		5C 4E 8F
+Yellow SP		52 56 37
+Yellow JP 1.0	20 9C 29
+Yellow JP 1.1	1F 88 58
+Yellow JP 1.2	1E ED D9
+Yellow JP 1.3	1D D9 84
+
+Red EN			20 91 E6
+Blue EN			D3 9D 0A
+Red FR			18 7A FC
+Blue FR			CB 56 A4
+Red DE			18 5C DC
+Blue DE			CB 2E BC
+Red IT			18 89 D2
+Blue IT			CB 5E 9C
+Red SP			18 38 4A
+Blue SP			CB 14 D7
+Red JP v1.0		32 A2 C1
+Green JP v1.0	9C DD D5
+Red JP v1.1		31 B8 66
+Green JP v1.1	9B F5 47
+Blue JP			E5 DC 36

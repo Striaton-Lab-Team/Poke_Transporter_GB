@@ -1,0 +1,102 @@
+Summary
+
+The specific payload exchanges packets with PTGB.
+
+PTGB can influence the behavior of the GB by sending packets with specific commands.
+The GB can read data and send it to PTGB. Within this data, the GB is able to insert specific data in packets to communicate back to PTGB.
+
+A packet sent from PTGB is structured as follows:
+
+	1 preamble byte   - 0xFD
+	1 counter byte    - between 0x00 and 0x7F
+	1 command byte    - any value except 0xFD or 0xFE.
+	2 argument bytes  - any value, passed along to the command.
+	1 16-bit pointer  - any value, low endian. If passing along a valid command, this pointer should be set to 0xC5DC, so the GB can resend the original packet to PTGB.
+	6 filler bytes    - any value
+
+	total size			13 bytes
+	
+	The command byte determines the exact way the incoming packet is interpretes.
+	
+	- If the command byte value is between 0x00 and 0x04, the command is valid. If this is the case, argument bytes should be set to the appropriate value of the used command, the 16-bit pointer should point to the address where the incoming packet is stored.
+	- Else, the command byte is not valid, and this packet is interpreted as a request to read data starting from the address defined by the 16-bit pointer.
+	
+	Argument bytes need to be present even if the command is invalid or if the command doesn't make use of them.
+
+A packet sent to PTGB is structured as follows:
+
+	1 counter byte    - between 0x00 and 0x7F
+	2 LSB bytes       - first byte is between 0x00 and 0xF0 (4 LSB blank), second byte is between 0x00 and 0x0F. The first byte contains LSB info on the first 4 data bytes, the second contains LSB info on the last 4 bytes.
+	1 checksum byte   - between 0x00 and 0x7F. This checksum consists of the sum of various components:
+												- sum of all data bytes
+												- first LSB byte and second LSB byte
+												- counter byte
+												- high byte and low byte of read pointer (8 byte after the original 16-bit read pointer)
+	8 data bytes      - between 0x00 and 0x7F. Data bytes are shifted right once before being sent. The LSB is captured and stores within the LSB bytes.
+	
+	total size			12 bytes
+	
+	!! If the GB detects an error in the execution of a command, the first data byte's MSB will be set to 1 (resulting data value between 0x80 and 0xFF)
+	
+	The counter byte exactly matches the counter byte that was in the original packet received from PTGB.
+
+Exact behavior of command bytes
+
+	0x00 CMD_ReloadCurrentBox, no arguments used
+	
+		Reloads the current box from SRAM. Use this as the first command byte before performing other commands.
+		
+		Closes SRAM access after use.
+	
+	0x01 CMD_TransferPokemon, 1st argument = secondary payload size, 2nd argument = box that should be transferred from
+	
+		This command uses a secondary payload. The size of this secondary payload needs to be declared beforehand.
+		Prior to requesting a secondary payload, the program will use the second argument to load a specific box from SRAM. Box numbers are 0-indexed and range from 0x00 (box 1) to 0x0B(box 12). This load procedure currently cannot be skipped.
+		Once the secondary payload arrives, the program will verify its integrity and align the payload. Afterwards, it will use the information within this payload to remove pokémon from the current box. Once all transferred pokémon have been removed, the program will save the current box.
+		
+		Closes SRAM access after use.
+		
+	0x02 CMD_SoftReset, no arguments used
+	
+		Instantly soft resets the game.
+	
+	0x03 CMD_ModifySRAMAccess, 1st argument = SRAM enable/disable 2st argument = SRAM bank
+	
+		Can be used to open/close SRAM access.
+		
+		- To open SRAM access, the 1st argument should be set to 0x0A and the 2nd argument should be set to the SRAM bank to be opened (ranging from 0x00 to 0x03).
+		- To close SRAM access, both the 1st and 2nd arguments should be set to 0x00
+	
+	0x04 CMD_RunSecondaryPayload, 1st argument = secondary payload size
+	
+		This command uses a secondary payload. The size of this secondary payload needs to be declared beforehand.
+		Once the secondary payload arrives, the program will verify its integrity and align the payload. Afterwards, it will jump to the secondary payload and execute it.
+		IMPORTANT: if you want to report an error when executing this secondary payload, return with carry flag set.
+		IMPORTANT: if you want to report that the payload was executed safely, return with carry flag reset.
+	
+Secondary Payload structure
+
+	Both TransferPokemon and RunSecondaryPayload request a secondary payload.
+	This secondary payload can have a maximum size of 255 bytes and uses the following structure:
+	
+	1 preamble byte   - 0xFD
+	1 counter byte    - between 0x00 and 0x7F
+	1 safety byte     - 0xFF. Ensures that this secondary payload can never be misinterpreted as a valid command.
+	1 data size byte  - any value. This value should be equal to the amount of received data bytes + 1
+	x data bytes      - any value except 0xFD
+	1 checksum byte   - any value. For the secondary payload to be valid, SUM(data bytes) + checksum must be equal to 0x00
+	
+	!! If the checksum doesn't match, exit early and report an error instead of using the faulty payload.
+	
+	While this secondary packet contains a counter byte, under normal circumstances this would never be sent back to PTGB.
+	
+	When a command that requests a secondary payload fails, it can do so in two ways:
+	1) The original command fails to arrive correctly. In this case, the GB will execute a garbage packet (and communicate a failure state), followed by accepting the secondary payload as if it was a packet.
+		- The inclusion of the counter byte allows PTGB to figure out the point of failure. The inclusion of the safety byte ensures that this packet will be interpreted as a harmless CMD_ReadData.
+	2) The secondary packet fails to arrive correctly. In this case, the GB will exit the command without executing/using the secondary payload. It will then send back the command packet, communicating a failure state.
+	
+	IMPORTANT: the size argument passed along by the command should be equal to the size of the entire packet, excluding the preamble byte.
+	IMPORTANT: the data size byte should only be equal to the amount of data bytes + 1. This, data size byte + 2 = size argument.
+	
+	
+	

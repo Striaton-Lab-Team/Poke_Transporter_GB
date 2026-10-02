@@ -1,0 +1,6 @@
+#
+# Logo (left) : 64x64t, 4bpp, SBB-layout, LZ77 compressed. 
+# Pallet bank 1, copy from 16 to 32.
+#
+-gB4 -gzl -ps16 -pe32
+
