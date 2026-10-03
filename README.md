@@ -85,7 +85,7 @@ See [BUILDING.md](BUILDING.md).
 ## ROM Data:
 - [PRET](https://github.com/pret)
 - [Narishma-gb](https://github.com/Narishma-gb)
-- [Hatena Blogのvs_prof_oak] (https://vs-prof-oak.hatenablog.com/entry/2024/03/02/134741)
+- [Hatena Blogのvs_prof_oak](https://vs-prof-oak.hatenablog.com/entry/2024/03/02/134741)
 
 ## Pokémon Data:
 - [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Main_Page)
