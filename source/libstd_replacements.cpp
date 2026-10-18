@@ -9,7 +9,7 @@
 
 #include "libstd_replacements.h"
 #include "custom_malloc.h"
-#include "libraries/nanoprintf/nanoprintf.h"
+#include "libraries/nanoprintf/include/nanoprintf.h"
 #include <cstdlib>
 #include <ctype.h>
 #include <stdarg.h>

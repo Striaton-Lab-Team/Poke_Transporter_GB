@@ -3,7 +3,7 @@
 #include <stdarg.h>
 
 #if DEBUG_USE_MGBA_PRINT
-#include "libraries/libmgba/mgba.h"
+#include "libraries/libmgba/include/mgba.h"
 
 #if !DEBUG
 static_assert(false, "DEBUG_USE_MGBA_PRINT is only allowed for debug builds!");

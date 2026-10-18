@@ -7,7 +7,7 @@
 #include "gba_rom_values_ita_lz10_bin.h"
 #include "gba_rom_values_jpn_lz10_bin.h"
 #include "gba_rom_values_spa_lz10_bin.h"
-#include "libraries/nanoprintf/nanoprintf.h"
+#include "libraries/nanoprintf/include/nanoprintf.h"
 #include "pokemon_data.h"
 #include "ptgb_save_data_manager.h"
 #include "text_engine.h"

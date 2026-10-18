@@ -1,7 +1,7 @@
 #include "dbg/debug_menu.h"
 #include "background_engine.h"
 #include "dbg/debug_menu_functions.h"
-#include "libraries/nanoprintf/nanoprintf.h"
+#include "libraries/nanoprintf/include/nanoprintf.h"
 #include "sprite_data.h"
 #include "vertical_menu_cursor_handler.h"
 

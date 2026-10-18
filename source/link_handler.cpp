@@ -16,7 +16,7 @@
 #include "global_frame_controller.h"
 #include "interrupt.h"
 #include "libraries/Pokemon-Gen3-to-Gen-X/include/save.h"
-#include "libraries/nanoprintf/nanoprintf.h"
+#include "libraries/nanoprintf/include/nanoprintf.h"
 #include "libstd_replacements.h"
 #include "script_array.h"
 #include "sprite_data.h"

@@ -7,7 +7,7 @@
 #include "dbg/debug_mode.h"
 #include "flash_mem.h"
 #include "global_frame_controller.h"
-#include "libraries/nanoprintf/nanoprintf.h"
+#include "libraries/nanoprintf/include/nanoprintf.h"
 #include "libstd_replacements.h"
 #include "pokemon_data.h"
 #include "ptgb_save_data_manager.h"

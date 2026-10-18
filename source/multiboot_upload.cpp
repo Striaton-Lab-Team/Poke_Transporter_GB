@@ -3,7 +3,7 @@
 #include "FileContainerReader.h"
 #include "background_engine.h"
 #include "global_frame_controller.h"
-#include "libraries/gba-link-connection/LinkCableMultiboot.hpp"
+#include "libraries/gba-link-connection/include/LinkCableMultiboot.hpp"
 #include "text_engine.h"
 #include "text_tables.h"
 #include "translated_text.h"

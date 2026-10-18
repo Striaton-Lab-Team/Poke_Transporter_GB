@@ -22,8 +22,8 @@
 
 #include <sys/iosupport.h>
 #include <gba_types.h>
-#include "libraries/nanoprintf/nanoprintf.h"
-#include "libraries/libmgba/mgba.h"
+#include "libraries/nanoprintf/include/nanoprintf.h"
+#include "libraries/libmgba/include/mgba.h"
 
 #include <stdarg.h>
 #include <stdio.h>
