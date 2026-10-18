@@ -1,6 +1,6 @@
 #include "dex_handler.h"
 
-Dex::Dex(){}
+Dex::Dex() {}
 
 Dex::Dex(OBJ_ATTR *L, OBJ_ATTR *M, OBJ_ATTR *R)
 {

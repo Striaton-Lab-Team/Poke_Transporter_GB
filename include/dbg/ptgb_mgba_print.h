@@ -2,7 +2,8 @@
 #define _PTGB_MGBA_PRINT_H_
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #define PTGB_MGBA_LOG_FATAL 0
@@ -17,10 +18,10 @@ extern "C" {
 #define PTGB_MGBA_INFO(...) ptgb_mgba_print(PTGB_MGBA_LOG_INFO, __VA_ARGS__)
 #define PTGB_MGBA_DEBUG(...) ptgb_mgba_print(PTGB_MGBA_LOG_DEBUG, __VA_ARGS__)
 
-void ptgb_mgba_init(void);
-void ptgb_mgba_deinit(void);
+    void ptgb_mgba_init(void);
+    void ptgb_mgba_deinit(void);
 
-void ptgb_mgba_print(int level, const char *format_str, ...);
+    void ptgb_mgba_print(int level, const char *format_str, ...);
 
 #ifdef __cplusplus
 }

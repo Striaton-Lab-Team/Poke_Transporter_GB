@@ -12,7 +12,7 @@ typedef struct
 
 class script_obj
 {
-public:
+  public:
     script_obj();
     script_obj(const script_obj_params &params);
 
@@ -22,7 +22,7 @@ public:
     u16 get_false_index() const;
     u16 get_cond_id() const;
 
-private:
+  private:
     script_obj_params params_;
 };
 

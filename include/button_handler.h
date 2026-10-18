@@ -5,7 +5,7 @@
 
 class Button
 {
-public:
+  public:
     Button();
     Button(OBJ_ATTR *L, OBJ_ATTR *R, int nLeft_button_width); // wide buttons
     Button(OBJ_ATTR *B);                                      // short button
@@ -17,7 +17,7 @@ public:
     int x;
     int y;
 
-private:
+  private:
     int left_button_width;
     bool highlighted;
     OBJ_ATTR *button_L;

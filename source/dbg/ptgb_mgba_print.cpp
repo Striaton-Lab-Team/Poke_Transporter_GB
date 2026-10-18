@@ -9,15 +9,9 @@
 static_assert(false, "DEBUG_USE_MGBA_PRINT is only allowed for debug builds!");
 #endif
 
-void ptgb_mgba_init(void)
-{
-    mgba_console_open();
-}
+void ptgb_mgba_init(void) { mgba_console_open(); }
 
-void ptgb_mgba_deinit(void)
-{
-    mgba_close();
-}
+void ptgb_mgba_deinit(void) { mgba_close(); }
 
 void ptgb_mgba_print(int level, const char *format_str, ...)
 {
@@ -28,13 +22,9 @@ void ptgb_mgba_print(int level, const char *format_str, ...)
 }
 
 #else
-void ptgb_mgba_init(void)
-{
-}
+void ptgb_mgba_init(void) {}
 
-void ptgb_mgba_deinit(void)
-{
-}
+void ptgb_mgba_deinit(void) {}
 
 void ptgb_mgba_print(int level, const char *format_str, ...)
 {

@@ -5,14 +5,14 @@
 
 class Dex
 {
-public:
+  public:
     Dex();
     Dex(OBJ_ATTR *L, OBJ_ATTR *M, OBJ_ATTR *R);
     void set_location(int x, int y);
     void hide();
     void show();
 
-private:
+  private:
     int x;
     int y;
     bool highlighted;

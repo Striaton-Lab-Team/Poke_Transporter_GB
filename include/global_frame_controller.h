@@ -2,6 +2,7 @@
 #define GLOBAL_FRAME_CONTROLLER_H
 
 #include <cstring>
+#include <tonc.h>
 
 enum LinkAnimationState
 {

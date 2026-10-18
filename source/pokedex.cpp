@@ -1,18 +1,18 @@
-#include <tonc.h>
 #include <cmath>
+#include <tonc.h>
 
-#include "pokedex.h"
-#include "dex_handler.h"
-#include "sprite_data.h"
-#include "pokemon_data.h"
-#include "global_frame_controller.h"
-#include "ptgb_save_data_manager.h"
-#include "button_handler.h"
-#include "translated_text.h"
-#include "text_engine.h"
 #include "FileContainerReader.h"
-#include "text_tables.h"
 #include "TYPES_lz10_bin.h"
+#include "button_handler.h"
+#include "dex_handler.h"
+#include "global_frame_controller.h"
+#include "pokedex.h"
+#include "pokemon_data.h"
+#include "ptgb_save_data_manager.h"
+#include "sprite_data.h"
+#include "text_engine.h"
+#include "text_tables.h"
+#include "translated_text.h"
 
 Dex dex_array[DEX_MAX];
 int dex_shift = 0;
@@ -30,7 +30,8 @@ bool mew_caught;
 bool celebi_caught;
 bool missingno_caught = false;
 
-static void load_general_table_text_entries(u8 *decompression_buffer, u32 decompression_buffer_size, u8 *kanto_buffer, u8 *johto_buffer)
+static void load_general_table_text_entries(u8 *decompression_buffer,
+    u32 decompression_buffer_size, u8 *kanto_buffer, u8 *johto_buffer)
 {
     const u8 **chunkList;
     u32 numChunks;
@@ -47,7 +48,8 @@ void pokedex_init()
 {
     for (int i = 0; i < DEX_MAX; i++)
     {
-        // dex_array[i] = Dex(dex_sprites[DEX_SPRITE_LEFT][i], dex_sprites[DEX_SPRITE_MID][i], dex_sprites[DEX_SPRITE_RIGHT][i]);
+        // dex_array[i] = Dex(dex_sprites[DEX_SPRITE_LEFT][i],
+        // dex_sprites[DEX_SPRITE_MID][i], dex_sprites[DEX_SPRITE_RIGHT][i]);
         // dex_array[i].set_location(dex_x_cord, (i * (8 * 3)) + 8);
     }
     // kanto_count = Button(button_blank_left, button_blank_right, 64);
@@ -87,38 +89,44 @@ void pokedex_init()
 #include "gen_3_charsets_lz10_bin.h"
 #include "libstd_replacements.h"
 
-// attribute noinline is used to make sure it doesn't get inlined and permanently use IWRAM for the decompression_buffer
+// attribute noinline is used to make sure it doesn't get inlined and
+// permanently use IWRAM for the decompression_buffer
 int __attribute__((noinline)) pokedex_loop()
 {
     u8 TYPES[POKEMON_ARRAY_SIZE][2];
     u8 kanto_name[12];
     u8 johto_name[12];
     u8 decompression_buffer[2048];
-    //u16 charset[512];
+    // u16 charset[512];
     u8 name_buffer[16];
     const u8 **namesChunkList;
     u32 namesNumChunks;
     u32 namesChunkSize;
 
-    LZ77UnCompWram(TYPES_lz10_bin, (u8*)TYPES);
-    //LZ77UnCompWram(gen_3_charsets_lz10_bin, (u8*)charset);
+    LZ77UnCompWram(TYPES_lz10_bin, (u8 *)TYPES);
+    // LZ77UnCompWram(gen_3_charsets_lz10_bin, (u8*)charset);
 
-    load_general_table_text_entries(decompression_buffer, sizeof(decompression_buffer), kanto_name, johto_name);
+    load_general_table_text_entries(decompression_buffer,
+        sizeof(decompression_buffer), kanto_name, johto_name);
 
-    get_text_table_chunks(PKMN_NAMES_INDEX, &namesChunkList, &namesNumChunks, &namesChunkSize);
-    FileContainerReader PKMN_NAMES(namesChunkList, namesNumChunks, namesChunkSize);
+    get_text_table_chunks(
+        PKMN_NAMES_INDEX, &namesChunkList, &namesNumChunks, &namesChunkSize);
+    FileContainerReader PKMN_NAMES(
+        namesChunkList, namesNumChunks, namesChunkSize);
     PKMN_NAMES.init(decompression_buffer, sizeof(decompression_buffer));
 
     pokedex_init();
     pokedex_show();
     bool update = true;
 
-    const byte undiscovered_text[] = {0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xFF};
-    byte temp_string[4] = {}; // Should never be longer than 4 characters (including endline)
-                              // TODO: For some reason there is screen tearing here. Probably not noticable on console,
-                              // but it should be removed at some point
+    const byte undiscovered_text[] = {
+        0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xAE, 0xFF};
+    byte temp_string[4] =
+        {}; // Should never be longer than 4 characters (including endline)
+            // TODO: For some reason there is screen tearing here. Probably not
+            // noticable on console, but it should be removed at some point
 
-	tte_set_ink(INK_DARK_GREY);
+    tte_set_ink(INK_DARK_GREY);
     tte_set_pos(8, 146);
     ptgb_write_simple(kanto_name, true);
     convert_int_to_ptgb_str(kanto_dex_num, temp_string, 3);
@@ -256,19 +264,28 @@ int __attribute__((noinline)) pokedex_loop()
                 }
 
                 tte_set_pos(dex_x_cord + (3 * 8), (i * 8 * 2) + 28);
-                convert_int_to_ptgb_str(dex_shift + i + 1 + mythic_skip, temp_string, 3);
+                convert_int_to_ptgb_str(
+                    dex_shift + i + 1 + mythic_skip, temp_string, 3);
                 ptgb_write_simple(temp_string, true);
 
                 tte_set_pos(dex_x_cord + (7 * 8), (i * 8 * 2) + 28);
-                PKMN_NAMES.readFile(dex_shift + i + 1 + mythic_skip, name_buffer);
-                ptgb_write_simple(is_caught(dex_shift + i + 1 + mythic_skip) ? name_buffer : undiscovered_text, true);
-
+                PKMN_NAMES.readFile(
+                    dex_shift + i + 1 + mythic_skip, name_buffer);
+                ptgb_write_simple(is_caught(dex_shift + i + 1 + mythic_skip)
+                                      ? name_buffer
+                                      : undiscovered_text,
+                    true);
             }
-            //global_next_frame(); // This is a bit silly, but it works. Makes the types one frame off from the text, but that's 'fine'
-            // Eventually it could be optimized to move the labels around, but this honestly makes the most sense. Less code but one frame different
+            // global_next_frame(); // This is a bit silly, but it works. Makes
+            // the types one frame off from the text, but that's 'fine'
+            //  Eventually it could be optimized to move the labels around, but
+            //  this honestly makes the most sense. Less code but one frame
+            //  different
             for (int i = 0; i < DEX_MAX; i++)
             {
-                load_type_sprites((const u8*)TYPES, dex_shift + i + 1 + mythic_skip, i, is_caught(dex_shift + i + 1 + mythic_skip));
+                load_type_sprites((const u8 *)TYPES,
+                    dex_shift + i + 1 + mythic_skip, i,
+                    is_caught(dex_shift + i + 1 + mythic_skip));
             }
             update = false;
         }

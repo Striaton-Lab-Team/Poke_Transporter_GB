@@ -2,19 +2,19 @@
 #include "background_engine.h"
 #include "box_menu.h"
 #include "button_menu.h"
+#include "dbg/debug_mode.h"
 #include "flash_mem.h"
 #include "gb_rom_values/gb_rom_values.h"
 #include "global_frame_controller.h"
 #include "link_handler.h"
 #include "mystery_gift_injector.h"
-#include "ptgb_save_data_manager.h"
 #include "pokemon_data.h"
+#include "ptgb_save_data_manager.h"
 #include "select_menu.h"
 #include "sprite_data.h"
 #include "text_engine.h"
 #include "text_tables.h"
 #include "translated_text.h"
-#include "dbg/debug_mode.h"
 #include <tonc.h>
 
 int last_error;
@@ -110,8 +110,7 @@ Box_Menu box_viewer;
 // values So if adding a new dia, command or condition, make sure to add it in
 // the right position/index. defining it this way does not generate an expensive
 // function. It's all stored as read-only data in EWRAM.
-const script_obj_params transfer_script_params[SCRIPT_SIZE] = {
-    // PTGB_DIA_OPEN
+const script_obj_params transfer_script_params[SCRIPT_SIZE] = {// PTGB_DIA_OPEN
     {.text_entry_index = PTGB_DIA_OPEN, .next_if_true = CMD_SET_TUTOR_TRUE},
     // PTGB_DIA_E4
     {.text_entry_index = PTGB_DIA_E4, .next_if_true = CMD_END_SCRIPT},
@@ -546,7 +545,7 @@ bool run_conditional(int index)
         return get_tutorial_flag() && !g_debug_options.force_tutorial;
 
     case COND_NEW_POKEMON:
-        //return box.getHasNewPkmn();    
+        // return box.getHasNewPkmn();
         return newPkmn;
 
     case COND_IS_HOENN_RS:
@@ -694,15 +693,18 @@ bool run_conditional(int index)
 
             obj_unhide(gb_flag, 0);
             obj_set_pos(gb_flag, 1.5 * 8, 14 * 8);
-        
-            globalLinkCable.LinkCommand_ReadMemorySection(globalLinkCable.pccsROMptr->wCurrentBoxNum, &globalLinkCable.boxNum, 1);
+
+            globalLinkCable.LinkCommand_ReadMemorySection(
+                globalLinkCable.pccsROMptr->wCurrentBoxNum,
+                &globalLinkCable.boxNum, 1);
 
             byte boxDataArray[globalLinkCable.pccsROMptr->box_data_size];
-            globalLinkCable.LinkCommand_ReadMemorySection(globalLinkCable.pccsROMptr->wBoxDataStart,
-            boxDataArray, globalLinkCable.pccsROMptr->box_data_size);
+            globalLinkCable.LinkCommand_ReadMemorySection(
+                globalLinkCable.pccsROMptr->wBoxDataStart, boxDataArray,
+                globalLinkCable.pccsROMptr->box_data_size);
 
-            box.loadData(globalLinkCable.gen, globalLinkCable.lang,
-            boxDataArray);
+            box.loadData(
+                globalLinkCable.gen, globalLinkCable.lang, boxDataArray);
         }
         reload_textbox_background();
         load_flex_background(FBG_Fennel, 2);
@@ -794,13 +796,15 @@ bool run_conditional(int index)
         }
         boxRemovalPayload[arrayIndex] = 0xFF;
         arrayIndex++;
-        globalLinkCable.LinkCommand_TransferPokemon(globalLinkCable.boxNum, boxRemovalPayload, arrayIndex);
+        globalLinkCable.LinkCommand_TransferPokemon(
+            globalLinkCable.boxNum, boxRemovalPayload, arrayIndex);
     }
         return true;
 
     case CMD_BOX_MENU:
         hide_textbox();
-        ret = (box_viewer.box_main(&box, globalLinkCable.vers) == CONFIRM_BUTTON);
+        ret =
+            (box_viewer.box_main(&box, globalLinkCable.vers) == CONFIRM_BUTTON);
         show_textbox();
         return ret;
 

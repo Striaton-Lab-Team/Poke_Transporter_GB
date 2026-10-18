@@ -1,11 +1,12 @@
-#include <tonc.h>
 #include "button_menu.h"
 #include "button_handler.h"
-#include "ptgb_save_data_manager.h"
 #include "global_frame_controller.h"
+#include "ptgb_save_data_manager.h"
 #include "string"
+#include <tonc.h>
 
-Button_Menu::Button_Menu(int nRows, int nColumns, int nButton_width, int nButton_height, bool enable_cancel)
+Button_Menu::Button_Menu(int nRows, int nColumns, int nButton_width,
+    int nButton_height, bool enable_cancel)
 {
     columns = nColumns;
     rows = nRows;
@@ -60,7 +61,9 @@ int Button_Menu::button_main()
                 curr_x = get_x_from_pos(button_vector.size() - 1);
             }
         }
-        else if (key_hit(KEY_LEFT) && ((curr_x > 0) || ((curr_x == 0) && (curr_y == rows - 1) && (offset_value > 0))))
+        else if (key_hit(KEY_LEFT) &&
+                 ((curr_x > 0) || ((curr_x == 0) && (curr_y == rows - 1) &&
+                                      (offset_value > 0))))
         {
             if (curr_x == 0 && offset_value > 0)
             {
@@ -117,7 +120,7 @@ void Button_Menu::show_buttons()
 
 void Button_Menu::hide_buttons()
 {
-    for(size_t i=0; i < button_vector.size(); ++i)
+    for (size_t i = 0; i < button_vector.size(); ++i)
     {
         button_vector[i].hide();
     }
@@ -125,19 +128,24 @@ void Button_Menu::hide_buttons()
 
 void Button_Menu::organize_buttons()
 {
-    // Total space, minus the space taken up by the buttons, divided by the spaces between the buttons.
+    // Total space, minus the space taken up by the buttons, divided by the
+    // spaces between the buttons.
     int vertical_space =
         ((y_max - y_min) - (rows * button_height)) / (rows + 1);
     int horizontal_space =
         ((x_max - x_min) - (columns * button_width)) / (columns + 1);
-    bottom_offset = ((horizontal_space + button_width) * ((rows * columns) - button_vector.size()) / 2);
+    bottom_offset = ((horizontal_space + button_width) *
+                     ((rows * columns) - button_vector.size()) / 2);
     offset_value = (rows * columns) - button_vector.size();
     for (unsigned int i = 0; i < button_vector.size(); i++)
     {
         button_vector.at(i).set_location(
-            ((horizontal_space + button_width) * get_x_from_pos(i)) + horizontal_space + x_min +
-                (get_y_from_pos(i) == (unsigned int)(rows - 1) ? bottom_offset : 0),
-            ((vertical_space + button_height) * get_y_from_pos(i)) + vertical_space + y_min);
+            ((horizontal_space + button_width) * get_x_from_pos(i)) +
+                horizontal_space + x_min +
+                (get_y_from_pos(i) == (unsigned int)(rows - 1) ? bottom_offset
+                                                               : 0),
+            ((vertical_space + button_height) * get_y_from_pos(i)) +
+                vertical_space + y_min);
     }
 }
 
@@ -146,15 +154,9 @@ unsigned int Button_Menu::get_pos_from_xy(int nX, int nY)
     return (nY * columns) + nX;
 }
 
-unsigned int Button_Menu::get_x_from_pos(int nPos)
-{
-    return (nPos % columns);
-}
+unsigned int Button_Menu::get_x_from_pos(int nPos) { return (nPos % columns); }
 
-unsigned int Button_Menu::get_y_from_pos(int nPos)
-{
-    return (nPos / columns);
-}
+unsigned int Button_Menu::get_y_from_pos(int nPos) { return (nPos / columns); }
 
 void Button_Menu::set_rows_and_columns(int nRows, int nColumns)
 {
@@ -167,7 +169,4 @@ void Button_Menu::set_bottom_row_offset(int nBottom_offset)
     bottom_offset = nBottom_offset;
 }
 
-void Button_Menu::clear_vector()
-{
-    button_vector.clear();
-}
+void Button_Menu::clear_vector() { button_vector.clear(); }

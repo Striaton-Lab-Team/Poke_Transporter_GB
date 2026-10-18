@@ -1,16 +1,16 @@
-#include <tonc.h>
-#include <cmath>
-#include "libstd_replacements.h"
 #include "global_frame_controller.h"
-#include "random.h"
+#include "FileContainerReader.h"
 #include "background_engine.h"
-#include "text_engine.h"
+#include "dbg/debug_mode.h"
+#include "libstd_replacements.h"
+#include "random.h"
 #include "sprite_data.h"
 #include "string.h"
-#include "translated_text.h"
-#include "dbg/debug_mode.h"
-#include "FileContainerReader.h"
+#include "text_engine.h"
 #include "text_tables.h"
+#include "translated_text.h"
+#include <cmath>
+#include <tonc.h>
 
 int global_frame_count = 0;
 bool rand_enabled = true;
@@ -21,9 +21,10 @@ int fennel_blink_state = 0;
 bool missingno_enabled = false;
 bool treecko_enabled = false;
 
-// split off from global_next_frame to limit the stack usage of the general_text_table_buffer to
-// the execution of this function
-// the noinline attribute prevents the compiler from inlining this function back into the global_next_frame function
+// split off from global_next_frame to limit the stack usage of the
+// general_text_table_buffer to the execution of this function the noinline
+// attribute prevents the compiler from inlining this function back into the
+// global_next_frame function
 static void __attribute__((noinline)) show_pulled_cart_error()
 {
     u8 decompression_buffer[2048];
@@ -34,10 +35,13 @@ static void __attribute__((noinline)) show_pulled_cart_error()
     get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
 
     FileContainerReader general_text_reader(chunkList, numChunks, chunkSize);
-    general_text_reader.init(decompression_buffer, sizeof(decompression_buffer));
+    general_text_reader.init(
+        decompression_buffer, sizeof(decompression_buffer));
 
-    ptgb_write_textbox(general_text_reader.getPointerToFileInDecompressionBuffer(GENERAL_pulled_cart_error), true, true,
-                       GENERAL_INDEX, GENERAL_pulled_cart_error, true);
+    ptgb_write_textbox(
+        general_text_reader.getPointerToFileInDecompressionBuffer(
+            GENERAL_pulled_cart_error),
+        true, true, GENERAL_INDEX, GENERAL_pulled_cart_error, true);
 }
 
 void global_next_frame()
@@ -74,8 +78,11 @@ void global_next_frame()
         set_menu_sprite_pal(1);
     }
 
-    // This way of determining the animation speed is stupid and will be changed, but leaving it for now since the whole animation will be changing.
-    if (curr_link_animation_state != state_off && global_frame_count % (40 / curr_link_animation_state) == 0)
+    // This way of determining the animation speed is stupid and will be
+    // changed, but leaving it for now since the whole animation will be
+    // changing.
+    if (curr_link_animation_state != state_off &&
+        global_frame_count % (40 / curr_link_animation_state) == 0)
     {
         cable_frame = (cable_frame + 1) % 12;
         if (curr_link_animation_state != state_off)
@@ -86,27 +93,23 @@ void global_next_frame()
     global_frame_count++;
 };
 
-int get_frame_count()
-{
-    return global_frame_count;
-}
+int get_frame_count() { return global_frame_count; }
 
-void enable_auto_random()
-{
-    rand_enabled = true;
-}
+void enable_auto_random() { rand_enabled = true; }
 
-void disable_auto_random()
-{
-    rand_enabled = false;
-}
+void disable_auto_random() { rand_enabled = false; }
 
 const unsigned short MENU_PALS[5][4] = {
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(31, 7, 01), RGB15(00, 00, 00)},  // Red
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(10, 9, 31), RGB15(00, 00, 00)},  // Blue
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(07, 23, 03), RGB15(00, 00, 00)}, // Green
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(15, 10, 03), RGB15(00, 00, 00)}, // Brown
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(29, 5, 13), RGB15(00, 00, 00)},  // Pink
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(31, 7, 01),
+        RGB15(00, 00, 00)}, // Red
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(10, 9, 31),
+        RGB15(00, 00, 00)}, // Blue
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(07, 23, 03),
+        RGB15(00, 00, 00)}, // Green
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(15, 10, 03),
+        RGB15(00, 00, 00)}, // Brown
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(29, 5, 13),
+        RGB15(00, 00, 00)}, // Pink
 };
 
 void set_menu_sprite_pal(int frame)
@@ -137,7 +140,9 @@ void set_menu_sprite_pal(int frame)
     }
 }
 
-static const int path[12][2] = {{19, 18}, {19, 19}, {18, 19}, {17, 19}, {16, 19}, {15, 19}, {14, 19}, {13, 19}, {12, 19}, {11, 19}, {10, 19}, {24, 24}};
+static const int path[12][2] = {{19, 18}, {19, 19}, {18, 19}, {17, 19},
+    {16, 19}, {15, 19}, {14, 19}, {13, 19}, {12, 19}, {11, 19}, {10, 19},
+    {24, 24}};
 
 void run_link_cable_animation(int frame)
 {
@@ -265,20 +270,11 @@ void set_missingno(bool val)
     }
 }
 
-void set_treecko(bool val)
-{
-    treecko_enabled = val;
-}
+void set_treecko(bool val) { treecko_enabled = val; }
 
-bool get_missingno_enabled()
-{
-    return missingno_enabled;
-}
+bool get_missingno_enabled() { return missingno_enabled; }
 
-bool get_treecko_enabled()
-{
-    return treecko_enabled;
-}
+bool get_treecko_enabled() { return treecko_enabled; }
 
 int get_string_char_count(const byte *str)
 {

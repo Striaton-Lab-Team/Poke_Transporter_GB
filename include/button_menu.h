@@ -1,8 +1,8 @@
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 
-#include <tonc.h>
 #include "libstd_replacements.h"
+#include <tonc.h>
 
 #include "button_handler.h"
 
@@ -19,8 +19,9 @@
 
 class Button_Menu
 {
-public:
-    Button_Menu(int nRows, int nColumns, int nButton_width, int nButton_height, bool enable_cancel);
+  public:
+    Button_Menu(int nRows, int nColumns, int nButton_width, int nButton_height,
+        bool enable_cancel);
     int button_main();
     void add_button(Button btn, int return_val);
     void hide_buttons();
@@ -34,7 +35,7 @@ public:
     void set_bottom_row_offset(int nBottom_offset);
     void clear_vector();
 
-private:
+  private:
     ptgb::vector<Button> button_vector;
     ptgb::vector<int> return_values;
     int columns;

@@ -1,21 +1,21 @@
-#include <tonc.h>
-#include "typeDefs.h"
-#include "button_menu.h"
-#include "button_handler.h"
-#include "ptgb_save_data_manager.h"
-#include "global_frame_controller.h"
-#include "string"
-#include "sprite_data.h"
 #include "box_menu.h"
-#include "text_engine.h"
-#include "translated_text.h"
 #include "FileContainerReader.h"
-#include "text_tables.h"
+#include "button_handler.h"
+#include "button_menu.h"
 #include "dbg/debug_mode.h"
+#include "global_frame_controller.h"
+#include "ptgb_save_data_manager.h"
+#include "sprite_data.h"
+#include "string"
+#include "text_engine.h"
+#include "text_tables.h"
+#include "translated_text.h"
+#include "typeDefs.h"
+#include <tonc.h>
 
 Box_Menu::Box_Menu() {};
 
-int Box_Menu::box_main(PokeBox* box, Version vers)
+int Box_Menu::box_main(PokeBox *box, Version vers)
 {
     PokemonTables pkmnTables;
     u8 names_decompression_buffer[2048];
@@ -28,14 +28,15 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
     FileContainerReader namesReader(chunkList, numChunks, chunkSize);
 
     tte_erase_screen();
-    
+
     if (vers == VERSION_UNKNOWN)
     {
         load_flex_background(FBG_Box_Green, 2);
     }
     else
     {
-        load_flex_background((FlexBackground)((int)FBG_Box_Green + (int)vers), 2); // This is kinda gross, but it works
+        load_flex_background((FlexBackground)((int)FBG_Box_Green + (int)vers),
+            2); // This is kinda gross, but it works
     }
 
     REG_BG1VOFS = 0;
@@ -54,7 +55,8 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
     obj_unhide(box_select, 0);
     int index = 0;
 
-    namesReader.init(names_decompression_buffer, sizeof(names_decompression_buffer));
+    namesReader.init(
+        names_decompression_buffer, sizeof(names_decompression_buffer));
 
     while (true)
     {
@@ -144,9 +146,11 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
         if (update_pos)
         {
             index = x + (y * BOXMENU_HNUM);
-            obj_set_pos(box_select, BOXMENU_LEFT + (x * (BOXMENU_SPRITE_WIDTH + BOXMENU_HSPACE)), BOXMENU_TOP + (y * (BOXMENU_SPRITE_HEIGHT + BOXMENU_VSPACE)));
+            obj_set_pos(box_select,
+                BOXMENU_LEFT + (x * (BOXMENU_SPRITE_WIDTH + BOXMENU_HSPACE)),
+                BOXMENU_TOP + (y * (BOXMENU_SPRITE_HEIGHT + BOXMENU_VSPACE)));
             tte_erase_rect(6, 16, 80, 152);
-            GBPokemon* curr_pkmn = box->getGBPokemon(index);
+            GBPokemon *curr_pkmn = box->getGBPokemon(index);
             obj_hide(grabbed_front_sprite);
             if (index < box->getNumInBox() && curr_pkmn->isValid)
             {
@@ -155,10 +159,12 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
 
                 tte_set_pos(6, 88);
                 if (
-                    // Only the name if the language is either both Japanese or neither is Japanese
-                    ((curr_pkmn->getLanguage() == JAPANESE) && (PTGB_BUILD_LANGUAGE == JPN_ID)) || 
-                    ((curr_pkmn->getLanguage() != JAPANESE) && (PTGB_BUILD_LANGUAGE != JPN_ID))
-                    )
+                    // Only the name if the language is either both Japanese or
+                    // neither is Japanese
+                    ((curr_pkmn->getLanguage() == JAPANESE) &&
+                        (PTGB_BUILD_LANGUAGE == JPN_ID)) ||
+                    ((curr_pkmn->getLanguage() != JAPANESE) &&
+                        (PTGB_BUILD_LANGUAGE != JPN_ID)))
                 {
                     curr_pkmn->externalConvertNickname(&pkmnTables, val);
                     ptgb_write_simple(val, true);
@@ -172,7 +178,7 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
                 }
                 tte_set_pos(14, 98);
 
-                if(nameEntryIndex == MISSINGNO)
+                if (nameEntryIndex == MISSINGNO)
                 {
                     nameEntryIndex = 0;
                 }
@@ -186,7 +192,8 @@ int Box_Menu::box_main(PokeBox* box, Version vers)
                 val[3] = 0x00; // " "
                 val[4] = 0xFF; // endline
                 ptgb_write_simple(val, true);
-                convert_int_to_ptgb_str(curr_pkmn->getLevel(), val); // Val should never go out of bounds
+                convert_int_to_ptgb_str(curr_pkmn->getLevel(),
+                    val); // Val should never go out of bounds
                 ptgb_write_simple(val, true);
 
                 update_front_box_sprite(curr_pkmn, true);

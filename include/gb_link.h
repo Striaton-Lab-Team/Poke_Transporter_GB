@@ -1,4 +1,4 @@
-//Created by StevenChaulk https://github.com/stevenchaulk/arduino-poke-gen2
+// Created by StevenChaulk https://github.com/stevenchaulk/arduino-poke-gen2
 
 #ifndef GB_LINK_H
 

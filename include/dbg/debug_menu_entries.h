@@ -12,7 +12,8 @@ enum class DebugMenuSection
 };
 
 /**
- * @brief This function pointer is used to define a function filling a specifi DebugMenuSection
+ * @brief This function pointer is used to define a function filling a specifi
+ * DebugMenuSection
  */
 typedef void (*fill_menu_entries_func)(vertical_menu &menu, u16 *charset);
 
@@ -23,8 +24,10 @@ typedef struct MenuSectionMapEntry
 } MenuSectionMapEntry;
 
 /**
- * @brief This function constructs the actual debug menu entries and fills the provided menu with them.
+ * @brief This function constructs the actual debug menu entries and fills the
+ * provided menu with them.
  */
-void fill_debug_menu_with_entries(vertical_menu &menu, u16 *charset, DebugMenuSection section);
+void fill_debug_menu_with_entries(
+    vertical_menu &menu, u16 *charset, DebugMenuSection section);
 
 #endif

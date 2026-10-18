@@ -1,14 +1,14 @@
-#include <maxmod.h>
 #include "sound.h"
 #include "soundbank_bin.h"
+#include <maxmod.h>
 
 #if ENABLE_SOUND
 static void sound_irq_handler(void)
 {
-    #ifdef INCLUDE_SOUND
+#ifdef INCLUDE_SOUND
     mmVBlank();
     mmFrame();
-    #endif
+#endif
 }
 #endif
 

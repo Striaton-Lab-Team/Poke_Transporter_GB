@@ -1,10 +1,10 @@
 #ifndef SPRITE_DATA_H
 #define SPRITE_DATA_H
 
-#include <tonc.h>
-#include "rom_data.h"
 #include "box_menu.h"
 #include "link_handler.h"
+#include "rom_data.h"
+#include <tonc.h>
 
 #define FENNEL_SHIFT 4
 
@@ -21,28 +21,28 @@ extern OBJ_ATTR *button_no;
 #include "types.h"
 extern OBJ_ATTR *type_sprites[14];
 
-#include "flag_jpn.h"
 #include "flag_eng.h"
 #include "flag_fre.h"
-#include "flag_ita.h"
 #include "flag_ger.h"
-#include "flag_spa.h"
+#include "flag_ita.h"
+#include "flag_jpn.h"
 #include "flag_kor.h"
+#include "flag_spa.h"
 extern OBJ_ATTR *gb_flag;
 extern OBJ_ATTR *gba_flag;
+#include "Label_Blue.h"
+#include "Label_Crystal.h"
+#include "Label_Gold.h"
 #include "Label_Green.h"
 #include "Label_Red.h"
-#include "Label_Blue.h"
-#include "Label_Yellow.h"
-#include "Label_Gold.h"
 #include "Label_Silver.h"
-#include "Label_Crystal.h"
 #include "Label_Unknown.h"
+#include "Label_Yellow.h"
 extern OBJ_ATTR *cart_label;
-#include "GB_Shell.h"
+#include "GBCS_Shell.h"
 #include "GBC_Shell.h"
 #include "GBS_Shell.h"
-#include "GBCS_Shell.h"
+#include "GB_Shell.h"
 extern OBJ_ATTR *cart_shell;
 
 #include "arrows.h"
@@ -68,11 +68,11 @@ extern OBJ_ATTR *ptgb_logo_l;
 #include "ptgb_logo_r.h"
 extern OBJ_ATTR *ptgb_logo_r;
 
-#include "ruby_cart.h"
-#include "sapphire_cart.h"
+#include "emerald_cart.h"
 #include "fr_cart.h"
 #include "lg_cart.h"
-#include "emerald_cart.h"
+#include "ruby_cart.h"
+#include "sapphire_cart.h"
 extern OBJ_ATTR *gba_cart;
 
 #include "link_frame1.h"
@@ -144,29 +144,31 @@ enum FlexBackground
 #define TILESET_PTGB 0
 #define TILESET_TEXT 1
 
-#define TILESET_OFFSET_BACKDROP  0
-#define TILESET_OFFSET_TEXTBOX  38
-#define TILESET_OFFSET_FLEXBG   64
+#define TILESET_OFFSET_BACKDROP 0
+#define TILESET_OFFSET_TEXTBOX 38
+#define TILESET_OFFSET_FLEXBG 64
 
 #define TILEMAP_BACKDROP 4
-#define TILEMAP_FLEXBG   5
-#define TILEMAP_TEXTBOX  6
-#define TILEMAP_TEXT     7
+#define TILEMAP_FLEXBG 5
+#define TILEMAP_TEXTBOX 6
+#define TILEMAP_TEXT 7
 
 extern rom_data curr_GBA_rom;
 
-void load_sprite(OBJ_ATTR *sprite, const unsigned int objTiles[], int objTilesLen,
-                 u32 &tile_id, u32 pal_bank, int attr0, int attr1, u32 priority);
+void load_sprite(OBJ_ATTR *sprite, const unsigned int objTiles[],
+    int objTilesLen, u32 &tile_id, u32 pal_bank, int attr0, int attr1,
+    u32 priority);
 
 void load_sprite_compressed(OBJ_ATTR *sprite, const unsigned int objTiles[],
-                 u32 &tile_id, u32 pal_bank, int attr0, int attr1, u32 priority);
+    u32 &tile_id, u32 pal_bank, int attr0, int attr1, u32 priority);
 void load_background();
 void set_background_pal(int curr_rom_id, bool dark, bool fade);
 void load_textbox_background();
 void load_flex_background(FlexBackground background_id, int layer);
 void load_eternal_sprites();
-void load_temp_box_sprites(PokeBox* box);
-void load_type_sprites(const u8* pkmn_type_table, int pkmn_index, int dex_offset, bool is_caught);
+void load_temp_box_sprites(PokeBox *box);
+void load_type_sprites(
+    const u8 *pkmn_type_table, int pkmn_index, int dex_offset, bool is_caught);
 void add_menu_box(int options, int startTileX, int startTileY);
 void add_menu_box(int startTileX, int startTileY, int width, int height);
 void reload_textbox_background();
@@ -177,5 +179,5 @@ int get_curr_flex_background();
 void update_y_offset();
 void erase_textbox_tiles();
 void update_front_box_sprite(Pokemon *curr_pkmn, bool make_greyscale);
-void update_menu_sprite(PokeBox* box, int index, int frame);
+void update_menu_sprite(PokeBox *box, int index, int frame);
 #endif
