@@ -73,8 +73,8 @@ void load_graphics()
 void initialization_script(void)
 {
     // Initializations
-    REG_DISPCNT = DCNT_BLANK | DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_BG2 |
-                  DCNT_BG3 | DCNT_OBJ | DCNT_OBJ_1D;
+    REG_DISPCNT = DCNT_BLANK | DCNT_MODE0 | DCNT_BG0 | DCNT_BG1 | DCNT_BG2 | DCNT_BG3 | DCNT_OBJ |
+                  DCNT_OBJ_1D;
 
     // Disable for save data read/write
     REG_IME = 0;
@@ -112,8 +112,8 @@ void initialization_script(void)
     PTGB_MGBA_INFO("Hello from PTGB!");
 };
 
-// attribute noinline is used to make sure it doesn't get inlined and
-// permanently use IWRAM for the decompression_buffer
+// attribute noinline is used to make sure it doesn't get inlined and permanently use IWRAM for the
+// decompression_buffer
 void __attribute__((noinline)) game_load_error(void)
 {
     u8 general_text_buffer[2048];
@@ -129,8 +129,7 @@ void __attribute__((noinline)) game_load_error(void)
 
     BG_TEXTBOX = (BG_TEXTBOX & ~BG_PRIO_MASK) | BG_PRIO(1);
     text_reader.readFile(GENERAL_cart_load_error, lineBuffer);
-    ptgb_write_textbox(
-        lineBuffer, true, false, GENERAL_INDEX, GENERAL_cart_load_error, false);
+    ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX, GENERAL_cart_load_error, false);
 
     // key_poll();
     do
@@ -143,15 +142,13 @@ void __attribute__((noinline)) game_load_error(void)
 
     if (key_hit(KEY_SELECT))
     {
-        // We also want to give the option in this screen to upload the
-        // multiboot rom to another GBA. This can be useful when the user wants
-        // to work with a flashcart in single rom mode. The EZ Flash Omega (DE)
-        // for instance, triggers a reset of the gba if you insert it while the
-        // GBA is turned on. So the only way to work with it, is to boot Poke
-        // Transporter GB over multiboot and have the flashcart already
-        // inserted. It would be a shame not to support this flashcart, because
-        // it's awesome for pokémon fans. After all: it supports ds transfer and
-        // should support connecting with the gamecube games.
+        // We also want to give the option in this screen to upload the multiboot rom to another
+        // GBA. This can be useful when the user wants to work with a flashcart in single rom mode.
+        // The EZ Flash Omega (DE) for instance, triggers a reset of the gba if you insert it while
+        // the GBA is turned on. So the only way to work with it, is to boot Poke Transporter GB
+        // over multiboot and have the flashcart already inserted. It would be a shame not to
+        // support this flashcart, because it's awesome for pokémon fans. After all: it supports ds
+        // transfer and should support connecting with the gamecube games.
         multiboot_upload_screen();
         return;
     }
@@ -164,8 +161,8 @@ void __attribute__((noinline)) game_load_error(void)
     }
 };
 
-// attribute noinline is used to make sure it doesn't get inlined and
-// permanently use IWRAM for the decompression_buffer
+// attribute noinline is used to make sure it doesn't get inlined and permanently use IWRAM for the
+// decompression_buffer
 void __attribute__((noinline)) lang_mismatch_error(void)
 {
     u8 general_text_buffer[2048];
@@ -181,8 +178,8 @@ void __attribute__((noinline)) lang_mismatch_error(void)
 
     BG_TEXTBOX = (BG_TEXTBOX & ~BG_PRIO_MASK) | BG_PRIO(1);
     text_reader.readFile(GENERAL_lang_mismatch_warning, lineBuffer);
-    ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX,
-        GENERAL_lang_mismatch_warning, false);
+    ptgb_write_textbox(
+        lineBuffer, true, false, GENERAL_INDEX, GENERAL_lang_mismatch_warning, false);
 
     // key_poll();
     do
@@ -194,8 +191,7 @@ void __attribute__((noinline)) lang_mismatch_error(void)
     erase_textbox_tiles();
 };
 
-// avoid inlining to avoid permanently storing the credits_decompression_buffer
-// in IWRAM
+// avoid inlining to avoid permanently storing the credits_decompression_buffer in IWRAM
 int __attribute__((noinline)) credits()
 {
     u8 credits_decompression_buffer[2048];
@@ -208,8 +204,7 @@ int __attribute__((noinline)) credits()
     FileContainerReader creditsReader(chunkList, numChunks, chunkSize);
     u32 curr_credits_num = 0;
 
-    creditsReader.init(
-        credits_decompression_buffer, sizeof(credits_decompression_buffer));
+    creditsReader.init(credits_decompression_buffer, sizeof(credits_decompression_buffer));
     bool update = true;
 
     while (true)
@@ -217,8 +212,7 @@ int __attribute__((noinline)) credits()
         if (update)
         {
             creditsReader.readFile(curr_credits_num, lineBuffer);
-            ptgb_write_textbox(lineBuffer, true, false, CREDITS_INDEX,
-                curr_credits_num, false);
+            ptgb_write_textbox(lineBuffer, true, false, CREDITS_INDEX, curr_credits_num, false);
             update = false;
         }
 
@@ -234,8 +228,7 @@ int __attribute__((noinline)) credits()
             curr_credits_num--;
             update = true;
         }
-        if (key_hit(KEY_RIGHT) &&
-            curr_credits_num < (creditsReader.getNumberOfFiles() - 1))
+        if (key_hit(KEY_RIGHT) && curr_credits_num < (creditsReader.getNumberOfFiles() - 1))
         {
             curr_credits_num++;
             update = true;
@@ -245,8 +238,7 @@ int __attribute__((noinline)) credits()
     }
 };
 
-// avoid inlining to avoid permanently storing the tutorial_decompression_buffer
-// in IWRAM
+// avoid inlining to avoid permanently storing the tutorial_decompression_buffer in IWRAM
 int __attribute__((noinline)) tutorial()
 {
 
@@ -260,8 +252,7 @@ int __attribute__((noinline)) tutorial()
     FileContainerReader tutorialReader(chunkList, numChunks, chunkSize);
     u32 curr_tutorial_num = 0;
 
-    tutorialReader.init(
-        tutorial_decompression_buffer, sizeof(tutorial_decompression_buffer));
+    tutorialReader.init(tutorial_decompression_buffer, sizeof(tutorial_decompression_buffer));
     bool update = true;
 
     while (true)
@@ -269,8 +260,7 @@ int __attribute__((noinline)) tutorial()
         if (update)
         {
             tutorialReader.readFile(curr_tutorial_num, lineBuffer);
-            ptgb_write_textbox(lineBuffer, true, false, TUTORIAL_INDEX,
-                curr_tutorial_num, false);
+            ptgb_write_textbox(lineBuffer, true, false, TUTORIAL_INDEX, curr_tutorial_num, false);
             update = false;
         }
 
@@ -286,8 +276,7 @@ int __attribute__((noinline)) tutorial()
             curr_tutorial_num--;
             update = true;
         }
-        if (key_hit(KEY_RIGHT) &&
-            curr_tutorial_num < (tutorialReader.getNumberOfFiles() - 1))
+        if (key_hit(KEY_RIGHT) && curr_tutorial_num < (tutorialReader.getNumberOfFiles() - 1))
         {
             curr_tutorial_num++;
             update = true;
@@ -297,18 +286,15 @@ int __attribute__((noinline)) tutorial()
     }
 };
 
-// attribute noinline is used to avoid permanently storing the
-// general_text_table_buffer in IWRAM
+// attribute noinline is used to avoid permanently storing the general_text_table_buffer in IWRAM
 int __attribute__((noinline)) main_menu_loop()
 {
     uint8_t general_text_table_buffer[2048];
     u8 lineBuffer[1024];
 #define NUM_MENU_OPTIONS 4
     const uint8_t menu_options[NUM_MENU_OPTIONS] = {GENERAL_option_transfer,
-        GENERAL_option_dreamdex, GENERAL_option_credits,
-        GENERAL_option_tutorial};
-    int return_values[NUM_MENU_OPTIONS] = {
-        BTN_TRANSFER, BTN_POKEDEX, BTN_CREDITS, BTN_TUTORIAL};
+        GENERAL_option_dreamdex, GENERAL_option_credits, GENERAL_option_tutorial};
+    int return_values[NUM_MENU_OPTIONS] = {BTN_TRANSFER, BTN_POKEDEX, BTN_CREDITS, BTN_TUTORIAL};
     const u8 **chunkList;
     u32 numChunks;
     u32 chunkSize;
@@ -318,8 +304,7 @@ int __attribute__((noinline)) main_menu_loop()
     bool update = true;
     u16 test = 0;
 
-    text_reader.init(
-        general_text_table_buffer, sizeof(general_text_table_buffer));
+    text_reader.init(general_text_table_buffer, sizeof(general_text_table_buffer));
 
     while (true)
     {
@@ -357,8 +342,7 @@ int __attribute__((noinline)) main_menu_loop()
             }
             else
             {
-                curr_selection = ((curr_selection + (NUM_MENU_OPTIONS - 1)) %
-                                  NUM_MENU_OPTIONS);
+                curr_selection = ((curr_selection + (NUM_MENU_OPTIONS - 1)) % NUM_MENU_OPTIONS);
             }
         }
         else if (key_hit(KEY_A))
@@ -394,12 +378,11 @@ static void show_gears_of_progress()
     }
 }
 
-// split off from the main function in order to keep the scope of the variables
-// limited to the execution of this function otherwise they stick around for the
-// entire runtime of the program the attribute noinline is used to prevent the
-// compiler from inlining this function back into the main function this
-// decision was based on the output of build/main.su after adding the
-// -fstack-usage compile flag
+// split off from the main function in order to keep the scope of the variables limited to the
+// execution of this function otherwise they stick around for the entire runtime of the program the
+// attribute noinline is used to prevent the compiler from inlining this function back into the main
+// function this decision was based on the output of build/main.su after adding the -fstack-usage
+// compile flag
 static void __attribute__((noinline)) show_intro()
 {
     u8 general_text_table_buffer[2048];
@@ -412,13 +395,11 @@ static void __attribute__((noinline)) show_intro()
     FileContainerReader general_text_reader(chunkList, numChunks, chunkSize);
     bool start_pressed = false;
 
-    general_text_reader.init(
-        general_text_table_buffer, sizeof(general_text_table_buffer));
+    general_text_reader.init(general_text_table_buffer, sizeof(general_text_table_buffer));
 
     tte_set_ink(INK_ROM_COLOR);
     general_text_reader.readFile(GENERAL_intro_legal, lineBuffer);
-    ptgb_write_textbox(
-        lineBuffer, true, true, GENERAL_INDEX, GENERAL_intro_legal, true);
+    ptgb_write_textbox(lineBuffer, true, true, GENERAL_INDEX, GENERAL_intro_legal, true);
 
     show_gears_of_progress();
 
@@ -506,8 +487,8 @@ int main(void)
         load_flex_background(FBG_Fennel, 2);
         text_loop(BTN_TRANSFER);
         initialize_save_data();
-        // TODO: We should be able to test for a Bootleg rom in here- if the
-        // save data isn't written, then it is bootleg.
+        // TODO: We should be able to test for a Bootleg rom in here- if the save data isn't
+        // written, then it is bootleg.
     }
 
     obj_unhide_multi(ptgb_logo_l, 1, 2);

@@ -21,9 +21,9 @@ int fennel_blink_state = 0;
 bool missingno_enabled = false;
 bool treecko_enabled = false;
 
-// split off from global_next_frame to limit the stack usage of the
-// general_text_table_buffer to the execution of this function the noinline
-// attribute prevents the compiler from inlining this function back into the
+// split off from global_next_frame to limit the stack usage of the general_text_table_buffer to
+// the execution of this function
+// the noinline attribute prevents the compiler from inlining this function back into the
 // global_next_frame function
 static void __attribute__((noinline)) show_pulled_cart_error()
 {
@@ -35,13 +35,11 @@ static void __attribute__((noinline)) show_pulled_cart_error()
     get_text_table_chunks(GENERAL_INDEX, &chunkList, &numChunks, &chunkSize);
 
     FileContainerReader general_text_reader(chunkList, numChunks, chunkSize);
-    general_text_reader.init(
-        decompression_buffer, sizeof(decompression_buffer));
+    general_text_reader.init(decompression_buffer, sizeof(decompression_buffer));
 
     ptgb_write_textbox(
-        general_text_reader.getPointerToFileInDecompressionBuffer(
-            GENERAL_pulled_cart_error),
-        true, true, GENERAL_INDEX, GENERAL_pulled_cart_error, true);
+        general_text_reader.getPointerToFileInDecompressionBuffer(GENERAL_pulled_cart_error), true,
+        true, GENERAL_INDEX, GENERAL_pulled_cart_error, true);
 }
 
 void global_next_frame()
@@ -78,9 +76,8 @@ void global_next_frame()
         set_menu_sprite_pal(1);
     }
 
-    // This way of determining the animation speed is stupid and will be
-    // changed, but leaving it for now since the whole animation will be
-    // changing.
+    // This way of determining the animation speed is stupid and will be changed, but leaving it for
+    // now since the whole animation will be changing.
     if (curr_link_animation_state != state_off &&
         global_frame_count % (40 / curr_link_animation_state) == 0)
     {
@@ -100,16 +97,11 @@ void enable_auto_random() { rand_enabled = true; }
 void disable_auto_random() { rand_enabled = false; }
 
 const unsigned short MENU_PALS[5][4] = {
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(31, 7, 01),
-        RGB15(00, 00, 00)}, // Red
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(10, 9, 31),
-        RGB15(00, 00, 00)}, // Blue
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(07, 23, 03),
-        RGB15(00, 00, 00)}, // Green
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(15, 10, 03),
-        RGB15(00, 00, 00)}, // Brown
-    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(29, 5, 13),
-        RGB15(00, 00, 00)}, // Pink
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(31, 7, 01), RGB15(00, 00, 00)},  // Red
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(10, 9, 31), RGB15(00, 00, 00)},  // Blue
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(07, 23, 03), RGB15(00, 00, 00)}, // Green
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(15, 10, 03), RGB15(00, 00, 00)}, // Brown
+    {RGB15(31, 31, 31), RGB15(31, 19, 10), RGB15(29, 5, 13), RGB15(00, 00, 00)},  // Pink
 };
 
 void set_menu_sprite_pal(int frame)
@@ -140,9 +132,8 @@ void set_menu_sprite_pal(int frame)
     }
 }
 
-static const int path[12][2] = {{19, 18}, {19, 19}, {18, 19}, {17, 19},
-    {16, 19}, {15, 19}, {14, 19}, {13, 19}, {12, 19}, {11, 19}, {10, 19},
-    {24, 24}};
+static const int path[12][2] = {{19, 18}, {19, 19}, {18, 19}, {17, 19}, {16, 19}, {15, 19},
+    {14, 19}, {13, 19}, {12, 19}, {11, 19}, {10, 19}, {24, 24}};
 
 void run_link_cable_animation(int frame)
 {
@@ -346,7 +337,4 @@ void convert_int_to_ptgb_str(int val, byte str[], int min_length)
     str[count] = 0xFF;
 }
 
-void convert_int_to_ptgb_str(int val, byte str[])
-{
-    convert_int_to_ptgb_str(val, str, 0);
-}
+void convert_int_to_ptgb_str(int val, byte str[]) { convert_int_to_ptgb_str(val, str, 0); }

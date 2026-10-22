@@ -8,11 +8,10 @@
 #define TILE_HEIGHT 8
 #define TILE_WIDTH 8
 
-Select_Menu::Select_Menu(bool enable_cancel, u8 nMenu_type,
-    unsigned nStartTileX, unsigned nStartTileY)
+Select_Menu::Select_Menu(
+    bool enable_cancel, u8 nMenu_type, unsigned nStartTileX, unsigned nStartTileY)
     : vertical_menu_cursor_handler(TEXT_WIDTH, 3),
-      menu_widget_(vertical_menu_settings{
-          .x = static_cast<unsigned>(nStartTileX * TILE_WIDTH),
+      menu_widget_(vertical_menu_settings{.x = static_cast<unsigned>(nStartTileX * TILE_WIDTH),
           .y = static_cast<unsigned>(nStartTileY * TILE_HEIGHT),
           .width = 10 * TEXT_WIDTH,
           .height = TILE_HEIGHT * 2, // to account for the margins
@@ -33,9 +32,7 @@ Select_Menu::Select_Menu(bool enable_cancel, u8 nMenu_type,
 void Select_Menu::add_option(const u8 option, u8 return_value)
 {
     const simple_item_widget_data item_data = {
-        .text = {.text_table_index = option,
-            .margin_left = 2 * TILE_WIDTH,
-            .margin_top = 0},
+        .text = {.text_table_index = option, .margin_left = 2 * TILE_WIDTH, .margin_top = 0},
         .value = return_value,
         .on_execute_callback = nullptr};
     menu_widget_.add_item_widget(new simple_item_renderer(item_data));
@@ -65,8 +62,7 @@ int Select_Menu::select_menu_main()
 
     if (choice_index != UINT32_MAX)
     {
-        widget = static_cast<simple_item_renderer *>(
-            menu_widget_.get_item_widget_at(choice_index));
+        widget = static_cast<simple_item_renderer *>(menu_widget_.get_item_widget_at(choice_index));
     }
     item_value = (widget) ? widget->get_data().value : UINT8_MAX;
 
@@ -87,14 +83,13 @@ void Select_Menu::on_hide()
     obj_hide(gb_flag);
 }
 
-void Select_Menu::on_selection_changed(
-    unsigned new_index, unsigned x, unsigned y)
+void Select_Menu::on_selection_changed(unsigned new_index, unsigned x, unsigned y)
 {
     // call the base implementation to move the cursor
     vertical_menu_cursor_handler::on_selection_changed(new_index, x, y);
 
-    simple_item_renderer *widget = static_cast<simple_item_renderer *>(
-        menu_widget_.get_item_widget_at(new_index));
+    simple_item_renderer *widget =
+        static_cast<simple_item_renderer *>(menu_widget_.get_item_widget_at(new_index));
     const unsigned item_value = (widget) ? widget->get_data().value : UINT8_MAX;
 
     if (item_value == UINT8_MAX)

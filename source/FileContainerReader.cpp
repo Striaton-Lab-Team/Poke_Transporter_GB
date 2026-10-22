@@ -6,11 +6,10 @@
 #define FILE_CONTAINER_HEADER_SIZE 4
 #define FILE_INDEX_ENTRY_SIZE 2
 
-FileContainerReader::FileContainerReader(
-    const u8 **chunkList, u32 chunkCount, u32 chunkSize)
+FileContainerReader::FileContainerReader(const u8 **chunkList, u32 chunkCount, u32 chunkSize)
     : fileNameBuffer_(), decompressionBuffer_(nullptr), chunkList_(chunkList),
-      chunkCount_(chunkCount), chunkSize_(chunkSize), fileIndex_(nullptr),
-      curChunkIndex_(0), curPos_(0), fileCount_(0), hasNames_(false)
+      chunkCount_(chunkCount), chunkSize_(chunkSize), fileIndex_(nullptr), curChunkIndex_(0),
+      curPos_(0), fileCount_(0), hasNames_(false)
 {
 }
 
@@ -23,8 +22,7 @@ FileContainerReader::~FileContainerReader()
     }
 }
 
-bool FileContainerReader::init(
-    u8 *decompressionBuffer, u32 decompressionBufferSize)
+bool FileContainerReader::init(u8 *decompressionBuffer, u32 decompressionBufferSize)
 {
     if (decompressionBufferSize < chunkSize_)
     {
@@ -60,15 +58,14 @@ const char *FileContainerReader::getFileName(u32 fileIndex)
         return nullptr;
     }
 
-    // the file names are stored right after the file index, and each name is 16
-    // bytes long.
+    // the file names are stored right after the file index, and each name is 16 bytes long.
     const u32 indexSize = fileCount_ * FILE_INDEX_ENTRY_SIZE;
     const u32 nameTableStartPos = FILE_CONTAINER_HEADER_SIZE + indexSize;
     seek(nameTableStartPos + (fileIndex * FILE_NAME_LENGTH));
 
     // Now copy the file name to a local buffer.
-    // the reason is that not every string is necessarily null terminated in the
-    // fileocontainer data.
+    // the reason is that not every string is necessarily null terminated in the fileocontainer
+    // data.
     read((u8 *)fileNameBuffer_, FILE_NAME_LENGTH);
     fileNameBuffer_[FILE_NAME_LENGTH] = '\0';
     return fileNameBuffer_;
@@ -101,9 +98,8 @@ void FileContainerReader::read(u8 *buffer, u32 size)
         }
 
         const u32 bytesRemainingInChunk = chunkSize_ - curPos_;
-        const u32 bytesToRead = bytesRemaining < bytesRemainingInChunk
-                                    ? bytesRemaining
-                                    : bytesRemainingInChunk;
+        const u32 bytesToRead =
+            bytesRemaining < bytesRemainingInChunk ? bytesRemaining : bytesRemainingInChunk;
 
         memcpy(buffer, decompressionBuffer_ + curPos_, bytesToRead);
         bytesRemaining -= bytesToRead;
@@ -137,8 +133,7 @@ u32 FileContainerReader::getFileOffset(u32 entryIndex) const
     // - file index (fileCount * 2 bytes)
     // - optional name table (fileCount * 16 bytes)
     //
-    u32 offset =
-        FILE_CONTAINER_HEADER_SIZE + (fileCount_ * FILE_INDEX_ENTRY_SIZE);
+    u32 offset = FILE_CONTAINER_HEADER_SIZE + (fileCount_ * FILE_INDEX_ENTRY_SIZE);
     if (hasNames_)
     {
         offset += fileCount_ * FILE_NAME_LENGTH;

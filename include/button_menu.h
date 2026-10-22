@@ -20,8 +20,7 @@
 class Button_Menu
 {
   public:
-    Button_Menu(int nRows, int nColumns, int nButton_width, int nButton_height,
-        bool enable_cancel);
+    Button_Menu(int nRows, int nColumns, int nButton_width, int nButton_height, bool enable_cancel);
     int button_main();
     void add_button(Button btn, int return_val);
     void hide_buttons();

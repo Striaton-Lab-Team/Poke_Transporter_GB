@@ -16,9 +16,8 @@ enum class MenuInputHandleState
      */
     HANDLED,
     /**
-     * @brief Same as HANDLED, but also indicates that the viewport should be
-     * updated. degrades to HANDLED after passing through
-     * vertical_menu::handle_input()
+     * @brief Same as HANDLED, but also indicates that the viewport should be updated.
+     * degrades to HANDLED after passing through vertical_menu::handle_input()
      */
     HANDLED_UPDATE_VIEWPORT,
     /**
@@ -42,8 +41,8 @@ class i_item_widget
 {
   public:
     virtual ~i_item_widget();
-    virtual void render_item(FileContainerReader &text_table, unsigned x,
-        unsigned y, bool is_focused) = 0;
+    virtual void render_item(
+        FileContainerReader &text_table, unsigned x, unsigned y, bool is_focused) = 0;
     virtual MenuInputHandleState handle_input() = 0;
 
   protected:
@@ -62,8 +61,7 @@ class i_vertical_menu_state_changed_handler
 
     virtual void on_show() = 0;
     virtual void on_hide() = 0;
-    virtual void on_selection_changed(
-        unsigned new_index, unsigned x, unsigned y) = 0;
+    virtual void on_selection_changed(unsigned new_index, unsigned x, unsigned y) = 0;
 
   protected:
   private:
@@ -93,14 +91,12 @@ typedef struct vertical_menu_settings
     unsigned height;
 
     /**
-     * @brief The top margin (in pixels) after which we start rendering the
-     * first menu item.
+     * @brief The top margin (in pixels) after which we start rendering the first menu item.
      */
     unsigned margin_top;
 
     /**
-     * @brief The bottom margin (in pixels) after which we stop rendering the
-     * last menu item.
+     * @brief The bottom margin (in pixels) after which we stop rendering the last menu item.
      */
     unsigned margin_bottom;
 
@@ -110,8 +106,7 @@ typedef struct vertical_menu_settings
     unsigned initial_focus_index;
 
     /**
-     * @brief The height of each menu item in pixels. Will be used to position
-     * the items.
+     * @brief The height of each menu item in pixels. Will be used to position the items.
      */
     unsigned item_height;
 
@@ -173,8 +168,7 @@ class vertical_menu
      * @brief This function adds an item widget to the menu.
      * The menu will take ownership of the pointer, if
      * settings_.should_delete_item_widgets_on_destruct is true.
-     * Otherwise, the caller is responsible for managing the memory of the item
-     * widgets.
+     * Otherwise, the caller is responsible for managing the memory of the item widgets.
      */
     void add_item_widget(i_item_widget *item_widget);
 
@@ -220,8 +214,8 @@ class vertical_menu
      * manually.
      *
      * @return Will return the index of the chosen item if a choice was made,
-     * or UINT32_MAX if no choice was made and the menu was exited in some other
-     * way (ex: B button).
+     * or UINT32_MAX if no choice was made and the menu was exited in some other way
+     * (ex: B button).
      */
     unsigned run();
 
@@ -229,8 +223,7 @@ class vertical_menu
      * @brief Sets the optional state changed handler.
      * This is useful for managing external components, such as a cursor.
      */
-    void set_state_changed_handler(
-        i_vertical_menu_state_changed_handler *handler);
+    void set_state_changed_handler(i_vertical_menu_state_changed_handler *handler);
 
     /**
      * @brief This function sets a handler that will run on every
@@ -264,8 +257,8 @@ typedef struct simple_item_widget_data
     struct
     {
         /**
-         * @brief The index of the text table (see vertical_menu_settings) entry
-         * to use as the label of this item.
+         * @brief The index of the text table (see vertical_menu_settings) entry to use as the label
+         * of this item.
          */
         unsigned text_table_index;
 
@@ -280,25 +273,24 @@ typedef struct simple_item_widget_data
     } text;
 
     /**
-     * @brief The value this widget represents. This is useful for choice/input
-     * handling. But it won't be used if an on_execute_callback is set.
+     * @brief The value this widget represents. This is useful for choice/input handling.
+     * But it won't be used if an on_execute_callback is set.
      */
     unsigned value;
 
     /**
-     * @brief Optional execute callback. This will be executed when the user
-     * presses A while this item is focused. If this is nullptr, then
-     * MenuInputHandleState::CHOICE_MADE will be returned when the user presses
-     * A, and the caller can check the value field to know what choice was made.
+     * @brief Optional execute callback. This will be executed when the user presses A while this
+     * item is focused. If this is nullptr, then MenuInputHandleState::CHOICE_MADE will be returned
+     * when the user presses A, and the caller can check the value field to know what choice was
+     * made.
      */
     void (*on_execute_callback)(void *context);
 } simple_item_widget_data;
 
 /**
- * @brief This is the simplest possible item widget, which will just render a
- * single line of text for a single item and allow you to press A to execute a
- * callback. It's useful for simple menus that don't require toggles or multiple
- * options.
+ * @brief This is the simplest possible item widget, which will just render a single line of text
+ * for a single item and allow you to press A to execute a callback. It's useful for simple menus
+ * that don't require toggles or multiple options.
  */
 class simple_item_renderer : public i_item_widget
 {
@@ -308,8 +300,8 @@ class simple_item_renderer : public i_item_widget
 
     const simple_item_widget_data &get_data() const;
 
-    void render_item(FileContainerReader &text_table, unsigned x, unsigned y,
-        bool is_focused) override;
+    void render_item(
+        FileContainerReader &text_table, unsigned x, unsigned y, bool is_focused) override;
     MenuInputHandleState handle_input() override;
 
   protected:

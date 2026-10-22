@@ -16,8 +16,7 @@
 
 // recommended for a 32 bit system to have at least 33 bytes available
 // source: https://cplusplus.com/reference/cstdlib/itoa/
-// unfortunately itoa is not standardized, so we'll have to make do with
-// snprintf
+// unfortunately itoa is not standardized, so we'll have to make do with snprintf
 static char conversion_buffer[33];
 
 const char *ptgb::to_string(int intVal)
@@ -32,8 +31,8 @@ const char *ptgb::to_string(unsigned int wordVal)
     return conversion_buffer;
 }
 
-// when compiling with -nostdlib++, we need to provide our own operator new and
-// delete implementations Regular operator new
+// when compiling with -nostdlib++, we need to provide our own operator new and delete
+// implementations Regular operator new
 void *operator new(std::size_t size)
 {
     void *ptr = malloc(size);
@@ -49,10 +48,7 @@ void *operator new(std::size_t size)
 }
 
 // nothrow version
-void *operator new(std::size_t size, const std::nothrow_t &) noexcept
-{
-    return malloc(size);
-}
+void *operator new(std::size_t size, const std::nothrow_t &) noexcept { return malloc(size); }
 
 // regular array operator new
 void *operator new[](std::size_t size)
@@ -66,10 +62,7 @@ void *operator new[](std::size_t size)
 }
 
 // nothrow array operator new
-void *operator new[](std::size_t size, const std::nothrow_t &) noexcept
-{
-    return malloc(size);
-}
+void *operator new[](std::size_t size, const std::nothrow_t &) noexcept { return malloc(size); }
 
 // operator delete
 void operator delete(void *ptr) noexcept { free(ptr); }
@@ -81,10 +74,7 @@ void operator delete[](void *ptr) noexcept { free(ptr); }
 void operator delete(void *ptr, const std::nothrow_t &) noexcept { free(ptr); }
 
 // nothrow array delete
-void operator delete[](void *ptr, const std::nothrow_t &) noexcept
-{
-    free(ptr);
-}
+void operator delete[](void *ptr, const std::nothrow_t &) noexcept { free(ptr); }
 
 // sized delete
 void operator delete(void *ptr, std::size_t size) noexcept

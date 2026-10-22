@@ -6,21 +6,18 @@
 #include <sys/iosupport.h>
 
 // Okay, let's go over the basics of this file for a moment.
-// By default, a lot of code is getting pulled in by the linker from static
-// libraries such as newlibc and libtonc. The problem is that everytime a single
-// symbol/function is needed from one of the .o files inside one of these static
-// libs, the entire .o file is getting pulled in, alongside all of ITS
-// dependencies. This cascades pretty quickly. So this pulls in a lot of
-// unnecessary code, but also (global) variables. To solve that, we can try to
-// override these functions by defining a custom version of them here. But to
-// avoid still pulling in the .o file, we have to define every symbol that could
-// be referenced somehow in either our code or the static libraries themselves.
-// Worst case, this means we have to redefine every single function that is
-// defined in that .o file. But doing so, means we can modify the code slightly
-// to avoid pulling in a lot of bloat. we don't need.
+// By default, a lot of code is getting pulled in by the linker from static libraries such as
+// newlibc and libtonc. The problem is that everytime a single symbol/function is needed from one of
+// the .o files inside one of these static libs, the entire .o file is getting pulled in, alongside
+// all of ITS dependencies. This cascades pretty quickly. So this pulls in a lot of unnecessary
+// code, but also (global) variables. To solve that, we can try to override these functions by
+// defining a custom version of them here. But to avoid still pulling in the .o file, we have to
+// define every symbol that could be referenced somehow in either our code or the static libraries
+// themselves. Worst case, this means we have to redefine every single function that is defined in
+// that .o file. But doing so, means we can modify the code slightly to avoid pulling in a lot of
+// bloat. we don't need.
 
-// HACK: Avoid pulling in a large handles buffer, which we don't need. Only
-// define the minimum.
+// HACK: Avoid pulling in a large handles buffer, which we don't need. Only define the minimum.
 
 #define MAX_HANDLES 3
 
@@ -28,23 +25,20 @@ static __handle __stdin_handle = {0, 1, NULL};
 static __handle __stdout_handle = {1, 1, NULL};
 static __handle __stderr_handle = {2, 1, NULL};
 
-static __handle *handles[MAX_HANDLES] = {
-    &__stdin_handle, &__stdout_handle, &__stderr_handle};
+static __handle *handles[MAX_HANDLES] = {&__stdin_handle, &__stdout_handle, &__stderr_handle};
 
 extern "C"
 {
     // HACK:
-    // Unfortunately, libtonc references siscanf, which in turn causes a "lot"
-    // of binary bloat from newlibc (in regards to locale support) to be pulled
-    // in by the linker. However, if you look at what it is actually used for
-    // (in libtonc's tte_iohook.c), is just to extract 1 or 2 integers from a
-    // string by specifying a custom -extremely simplified- version, we can
-    // avoid pulling in the version from libc (alongside all the symbols IT
-    // references) Obviously it doesn't support everything it should. Just
-    // enough to support libtonc's current iteration.
+    // Unfortunately, libtonc references siscanf, which in turn causes a "lot" of binary bloat from
+    // newlibc (in regards to locale support) to be pulled in by the linker. However, if you look at
+    // what it is actually used for (in libtonc's tte_iohook.c), is just to extract 1 or 2 integers
+    // from a string by specifying a custom -extremely simplified- version, we can avoid pulling in
+    // the version from libc (alongside all the symbols IT references) Obviously it doesn't support
+    // everything it should. Just enough to support libtonc's current iteration.
     //
-    // Anyway, doing this optimizes away a lot of scanf related functions from
-    // newlib and locale support among which a 13KB "categories" symbol.
+    // Anyway, doing this optimizes away a lot of scanf related functions from newlib and locale
+    // support among which a 13KB "categories" symbol.
     int siscanf(const char *str, const char *format, ...)
     {
         bool expectingFormatSpecifier = false;
@@ -73,8 +67,8 @@ extern "C"
                         (*resultVal) += (*str) - '0';
                         ++str;
                     }
-                    // go back to the last character of the int, because we'll
-                    // forward by one again at the end of the outer loop
+                    // go back to the last character of the int, because we'll forward by one again
+                    // at the end of the outer loop
                     --str;
                     ++ret;
                 }
@@ -94,9 +88,9 @@ extern "C"
     }
 
     // HACK: stub the libsysbase_libsysbase_a-handle_manager.o functions
-    // this, alongside the -Wl,--wrap linker options ensures that this object
-    // file and its 4KB IWRAM "handles" buffer is not getting pulled in by the
-    // linker. We don't need it and we could use the 4KB of extra IWRAM!
+    // this, alongside the -Wl,--wrap linker options ensures that this object file
+    // and its 4KB IWRAM "handles" buffer is not getting pulled in by the linker.
+    // We don't need it and we could use the 4KB of extra IWRAM!
     __handle *__wrap___get_handle(int fd)
     {
         if (fd < 0 || fd >= MAX_HANDLES)
@@ -107,9 +101,9 @@ extern "C"
 
     int __wrap__close_r(struct _reent *ptr, int fd) { return 0; }
 
-// HACK: The functions below were defined here to avoid pulling in the verdana9
-// font (4 KB) into the rom, which we're not using. The original function in
-// libtonc would use verdana9 as a default if the specified font was NULL.
+// HACK: The functions below were defined here to avoid pulling in the verdana9 font (4 KB) into the
+// rom, which we're not using. The original function in libtonc would use verdana9 as a default if
+// the specified font was NULL.
 #include <string.h>
 #include <tonc_bios.h>
 #include <tonc_tte.h>
@@ -125,8 +119,8 @@ extern "C"
         \param font		Font to initialize with.
         \param proc		Glyph renderer
     */
-    void tte_init_chr4c(int bgnr, u16 bgcnt, u16 se0, u32 cattrs, u32 clrs,
-        const TFont *font, fnDrawg proc)
+    void tte_init_chr4c(
+        int bgnr, u16 bgcnt, u16 se0, u32 cattrs, u32 clrs, const TFont *font, fnDrawg proc)
     {
         if (proc == NULL)
             proc = chr4c_drawg_default;
@@ -136,8 +130,7 @@ extern "C"
         TTC *tc = tte_get_context();
         TSurface *srf = &tc->dst;
 
-        srf_init(srf, SRF_CHR4C,
-            &tile_mem[BFN_GET(bgcnt, BG_CBB)][se0 & SE_ID_MASK], SCREEN_WIDTH,
+        srf_init(srf, SRF_CHR4C, &tile_mem[BFN_GET(bgcnt, BG_CBB)][se0 & SE_ID_MASK], SCREEN_WIDTH,
             SCREEN_HEIGHT, 4, pal_bg_mem);
         schr4c_prep_map(srf, se_mem[BFN_GET(bgcnt, BG_SBB)], se0);
 
@@ -170,10 +163,9 @@ extern "C"
         schr4c_rect(&tc->dst, left, top, right, bottom, tc->cattr[TTE_PAPER]);
     }
 
-    // HACK: We need to replace the entirety of tte_main.c in libtonc to avoid
-    // pulling in sys8font (because it's used as a default in tte_init_base() if
-    // the specified font is NULL) So here's a modified version of tte_main.c
-    // (only tte_init_base() is really changed though):
+    // HACK: We need to replace the entirety of tte_main.c in libtonc to avoid pulling in sys8font
+    // (because it's used as a default in tte_init_base() if the specified font is NULL) So here's a
+    // modified version of tte_main.c (only tte_init_base() is really changed though):
     //////////////////////// tte_main.c ////////////////////////
 
     // --------------------------------------------------------------------
@@ -204,10 +196,7 @@ extern "C"
     // --------------------------------------------------------------------
 
     //! Set the master context pointer.
-    void tte_set_context(TTC *tc)
-    {
-        gp_tte_context = tc ? tc : &__tte_main_context;
-    }
+    void tte_set_context(TTC *tc) { gp_tte_context = tc ? tc : &__tte_main_context; }
 
     //! Set color attribute of \a type to \a cattr.
     void tte_set_color_attr(eint type, u16 cattr)
@@ -265,8 +254,7 @@ extern "C"
         tc->eraseProc = eraseProc;
 
         // Default is SBB 0
-        const TSurface srf = {
-            (u8 *)se_mem, 32 * 2, 32, 32, 8, SRF_BMP16, 256, pal_bg_mem};
+        const TSurface srf = {(u8 *)se_mem, 32 * 2, 32, 32, 8, SRF_BMP16, 256, pal_bg_mem};
         tc->dst = srf;
 
         tc->cattr[TTE_INK] = 0xF1;
@@ -428,8 +416,7 @@ extern "C"
         Examples:<br>
         - <b>#{X:32}</b>		Move to \e x = 32;
         - <b>#{ci:0x7FFF}</b>	Set ink color to white.
-        - <b>#{w:120;es;P}</b>	Wait 120 frames, clear screen, return to top of
-       screen.
+        - <b>#{w:120;es;P}</b>	Wait 120 frames, clear screen, return to top of screen.
         \param str	Start of command. Assumes the initial "\{" is lobbed
             off already.
         \return pointer to after the parsed command.
@@ -459,12 +446,10 @@ extern "C"
             {
             // --- Absolute Positions ---
             case 'X':
-                tc->cursorX = curr[1] == ':' ? strtol(curr + 2, &next, 0)
-                                             : tc->marginLeft;
+                tc->cursorX = curr[1] == ':' ? strtol(curr + 2, &next, 0) : tc->marginLeft;
                 break;
             case 'Y':
-                tc->cursorY =
-                    curr[1] == ':' ? strtol(curr + 2, &next, 0) : tc->marginTop;
+                tc->cursorY = curr[1] == ':' ? strtol(curr + 2, &next, 0) : tc->marginTop;
                 break;
             case 'P':
             {
@@ -540,12 +525,12 @@ extern "C"
                     tte_erase_line();
                     break;
                 case 'f': // line up to cursorX
-                    tte_erase_rect(tc->cursorX, tc->cursorY, tc->marginRight,
-                        tc->cursorY + tc->font->charH);
+                    tte_erase_rect(
+                        tc->cursorX, tc->cursorY, tc->marginRight, tc->cursorY + tc->font->charH);
                     break;
                 case 'b': // line from cursorX
-                    tte_erase_rect(tc->marginLeft, tc->cursorY, tc->cursorX,
-                        tc->cursorY + tc->font->charH);
+                    tte_erase_rect(
+                        tc->marginLeft, tc->cursorY, tc->cursorX, tc->cursorY + tc->font->charH);
                     break;
                 case 'r': // rectangle
                 {
@@ -790,8 +775,7 @@ extern "C"
         TTC *tc = tte_get_context();
 
         if (tc->eraseProc)
-            tc->eraseProc(tc->marginLeft, tc->marginTop, tc->marginRight,
-                tc->marginBottom);
+            tc->eraseProc(tc->marginLeft, tc->marginTop, tc->marginRight, tc->marginBottom);
     }
 
     //! Erase the whole line (within the margins).
@@ -804,8 +788,7 @@ extern "C"
         int height = tc->font->charH;
 
         if (tc->eraseProc)
-            tc->eraseProc(tc->marginLeft, tc->cursorY, tc->marginRight,
-                tc->cursorY + height);
+            tc->eraseProc(tc->marginLeft, tc->cursorY, tc->marginRight, tc->cursorY + height);
     }
 
     //! Get the size taken up by a string.

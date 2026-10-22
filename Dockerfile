@@ -13,7 +13,7 @@ RUN useradd -m -u ${UID} -g ${GID} ${USER}
 ENV DEBIAN_FRONTEND="noninteractive"
 ENV IS_PTGB=true
 
-RUN apt-get update && apt-get install -y sudo build-essential cmake bison flex pkg-config libpng-dev git python3-pip jq && pip install --root-user-action=ignore pandas requests openpyxl debugpy pypng --break-system-packages
+RUN apt-get update && apt-get install -y sudo build-essential cmake bison flex pkg-config libpng-dev git python3-pip jq clang-format-19 && pip install --root-user-action=ignore pandas requests openpyxl debugpy pypng --break-system-packages
 
 RUN echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER} && chmod 0440 /etc/sudoers.d/${USER}
 

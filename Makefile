@@ -19,7 +19,7 @@ help: # Display this help message
 	@tabs 2
 	@printf "\033[1;4mTargets\033[0m\n"	
 # shows help for all targets that follow the format of "target: #", where target includes a-z, A-Z, 0-9, and _ characters
-	@grep -E '^[a-zA-Z0-9_]+: #'  Makefile | while read -r l; do printf "\t\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
+	@grep -E '^[a-zA-Z0-9_-]+: #'  Makefile | while read -r l; do printf "\t\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
 
 # if [ $(id | grep -c docker) = 0 ]; then
 # $1 = command name
@@ -123,6 +123,22 @@ _setup:
 	$(call check_package,rgbasm,rgbds)
 # jq
 	$(call check_package,jq,jq)
+
+# Install the formatter in existing containers as well as new images.
+	if ! command -v clang-format-19 >/dev/null 2>&1; then
+		sudo apt-get update && sudo apt-get install -y clang-format-19 || exit $$?
+	fi
+
+.PHONY: format check-format
+format: FORMAT_FLAGS := -i
+check-format: FORMAT_FLAGS := --dry-run --Werror
+format: # Format only PTGB source and include folders
+check-format: # Check only PTGB formatting without changing files
+format check-format:
+	@find source include \
+		-type f \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' \
+		-o -name '*.h' -o -name '*.hh' -o -name '*.hpp' -o -name '*.hxx' \) -print0 | \
+		xargs -0 -r clang-format-19 --style=file --fallback-style=none $(FORMAT_FLAGS)
 
 # $1 = command name
 # $2 = package name

@@ -1,6 +1,11 @@
+BasedOnStyle: LLVM # Make the defaults explicit instead of implicit
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ContinuationIndentWidth: 4
+ColumnLimit: 100 # Applies to code and comments alike
+ReflowComments: true # Wrap comments that go past ColumnLimit
+SortIncludes: CaseSensitive # Sort includes within each block
+IncludeBlocks: Preserve # Blank lines separate blocks; order across blocks is kept
 AlignAfterOpenBracket: DontAlign # Ensure a tabulation first inside a bracket
 BreakBeforeBraces: Allman # Ensure opening bracket goes to newline for a statement

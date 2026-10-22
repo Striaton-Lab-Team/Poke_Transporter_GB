@@ -14,8 +14,7 @@ enum LinkAnimationState
 
 // TODO: This is kinda a silly spot for this
 // make sure outBuffer is large enough! Should be at least hex_len + 1
-template <typename I>
-void n2hexstr(char *outBuffer, I w, size_t hex_len = sizeof(I) << 1)
+template <typename I> void n2hexstr(char *outBuffer, I w, size_t hex_len = sizeof(I) << 1)
 {
     static const char *digits = "0123456789ABCDEF";
     memset(outBuffer, '0', hex_len);

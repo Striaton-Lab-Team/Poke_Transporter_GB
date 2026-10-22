@@ -10,20 +10,18 @@
 
 i_item_widget::~i_item_widget() {}
 
-i_vertical_menu_state_changed_handler::~i_vertical_menu_state_changed_handler()
-{
-}
+i_vertical_menu_state_changed_handler::~i_vertical_menu_state_changed_handler() {}
 
 i_run_cycle_handler::~i_run_cycle_handler() {}
 
-static unsigned get_num_visible_items(unsigned vertical_menu_height,
-    unsigned margin_top, unsigned margin_bottom, unsigned item_height)
+static unsigned get_num_visible_items(unsigned vertical_menu_height, unsigned margin_top,
+    unsigned margin_bottom, unsigned item_height)
 {
     return ((vertical_menu_height - margin_top - margin_bottom) / item_height);
 }
 
-static unsigned get_viewport_end_index(unsigned viewport_start_index,
-    unsigned num_visible_items, unsigned total_items)
+static unsigned get_viewport_end_index(
+    unsigned viewport_start_index, unsigned num_visible_items, unsigned total_items)
 {
     unsigned end_index = viewport_start_index + num_visible_items;
     // bounds check to make sure we don't go past the total number of items
@@ -33,9 +31,9 @@ static unsigned get_viewport_end_index(unsigned viewport_start_index,
 }
 
 vertical_menu::vertical_menu(const vertical_menu_settings &settings)
-    : settings_(settings), state_changed_handler_(nullptr),
-      run_cycle_handler_(nullptr), focused_index_(settings.initial_focus_index),
-      viewport_start_index_(0), items_(), is_focused_(true)
+    : settings_(settings), state_changed_handler_(nullptr), run_cycle_handler_(nullptr),
+      focused_index_(settings.initial_focus_index), viewport_start_index_(0), items_(),
+      is_focused_(true)
 {
 }
 
@@ -43,8 +41,8 @@ vertical_menu::~vertical_menu() { clear_item_widgets(); }
 
 void vertical_menu::show()
 {
-    add_menu_box(settings_.x / TILE_WIDTH, settings_.y / TILE_HEIGHT,
-        settings_.width, settings_.height);
+    add_menu_box(
+        settings_.x / TILE_WIDTH, settings_.y / TILE_HEIGHT, settings_.width, settings_.height);
 
     update_viewport();
 
@@ -56,8 +54,7 @@ void vertical_menu::show()
     // initial selection change notification
     const unsigned render_index = focused_index_ - viewport_start_index_;
     handle_selection_change(focused_index_, settings_.x,
-        settings_.y + settings_.margin_top +
-            (render_index * settings_.item_height));
+        settings_.y + settings_.margin_top + (render_index * settings_.item_height));
 }
 
 i_item_widget *vertical_menu::get_item_widget_at(unsigned index) const
@@ -81,18 +78,11 @@ void vertical_menu::hide()
     reload_textbox_background();
 }
 
-const vertical_menu_settings &vertical_menu::get_settings() const
-{
-    return settings_;
-}
+const vertical_menu_settings &vertical_menu::get_settings() const { return settings_; }
 
-void vertical_menu::set_settings(const vertical_menu_settings &settings)
-{
-    settings_ = settings;
-}
+void vertical_menu::set_settings(const vertical_menu_settings &settings) { settings_ = settings; }
 
-void vertical_menu::add_item_widgets(
-    i_item_widget **item_widgets, unsigned num_widgets)
+void vertical_menu::add_item_widgets(i_item_widget **item_widgets, unsigned num_widgets)
 {
     items_.reserve(items_.size() + num_widgets);
     for (unsigned i = 0; i < num_widgets; ++i)
@@ -101,10 +91,7 @@ void vertical_menu::add_item_widgets(
     }
 }
 
-void vertical_menu::add_item_widget(i_item_widget *item_widget)
-{
-    items_.push_back(item_widget);
-}
+void vertical_menu::add_item_widget(i_item_widget *item_widget) { items_.push_back(item_widget); }
 
 void vertical_menu::clear_item_widgets()
 {
@@ -123,8 +110,7 @@ void vertical_menu::clear_item_widgets()
 void vertical_menu::set_focused(bool is_focused)
 {
     is_focused_ = is_focused;
-    if (state_changed_handler_ &&
-        settings_.should_hide_state_changed_handler_on_not_focused)
+    if (state_changed_handler_ && settings_.should_hide_state_changed_handler_on_not_focused)
     {
         if (is_focused_)
         {
@@ -156,11 +142,9 @@ MenuInputHandleState vertical_menu::handle_input()
     {
         // the child widget is requesting that we update the viewport.
         //  so we do that here and then degrade the result to HANDLED,
-        // since we've already done the viewport update that the child widget
-        // requested.
+        // since we've already done the viewport update that the child widget requested.
         update_viewport();
-        result = MenuInputHandleState::HANDLED; // degrade to HANDLED after
-                                                // updating the viewport
+        result = MenuInputHandleState::HANDLED; // degrade to HANDLED after updating the viewport
     }
     if (result != MenuInputHandleState::NOT_HANDLED)
     {
@@ -168,8 +152,8 @@ MenuInputHandleState vertical_menu::handle_input()
     }
 
     // if the user presses B, and the current settings allow it,
-    // we will return the CANCELLED state, which the caller can use to know that
-    // they should exit the menu.
+    // we will return the CANCELLED state, which the caller can use to know that they should exit
+    // the menu.
     if (settings_.allow_cancel && key_hit(KEY_B))
     {
         return MenuInputHandleState::CANCELLED;
@@ -177,11 +161,10 @@ MenuInputHandleState vertical_menu::handle_input()
 
     if (key_hit(KEY_DOWN))
     {
-        const unsigned num_visible_items =
-            get_num_visible_items(settings_.height, settings_.margin_top,
-                settings_.margin_bottom, settings_.item_height);
-        const unsigned current_viewport_end_index = get_viewport_end_index(
-            viewport_start_index_, num_visible_items, items_.size());
+        const unsigned num_visible_items = get_num_visible_items(
+            settings_.height, settings_.margin_top, settings_.margin_bottom, settings_.item_height);
+        const unsigned current_viewport_end_index =
+            get_viewport_end_index(viewport_start_index_, num_visible_items, items_.size());
         ++focused_index_;
         if (focused_index_ == current_viewport_end_index)
         {
@@ -201,11 +184,9 @@ MenuInputHandleState vertical_menu::handle_input()
     {
         if (focused_index_ == 0)
         {
-            // currently the first item was selected, so do wrap around to the
-            // end.
-            const unsigned num_visible_items =
-                get_num_visible_items(settings_.height, settings_.margin_top,
-                    settings_.margin_bottom, settings_.item_height);
+            // currently the first item was selected, so do wrap around to the end.
+            const unsigned num_visible_items = get_num_visible_items(settings_.height,
+                settings_.margin_top, settings_.margin_bottom, settings_.item_height);
             const unsigned max_index = items_.size() - 1;
 
             viewport_start_index_ = (max_index - num_visible_items) + 1;
@@ -219,8 +200,7 @@ MenuInputHandleState vertical_menu::handle_input()
         did_navigate = true;
     }
 
-    // if we did navigate, we need to update the viewport and state changed
-    // handler.
+    // if we did navigate, we need to update the viewport and state changed handler.
     if (did_navigate)
     {
         const unsigned render_index = focused_index_ - viewport_start_index_;
@@ -229,8 +209,7 @@ MenuInputHandleState vertical_menu::handle_input()
             update_viewport();
         }
         handle_selection_change(focused_index_, settings_.x,
-            settings_.y + settings_.margin_top +
-                (render_index * settings_.item_height));
+            settings_.y + settings_.margin_top + (render_index * settings_.item_height));
         return MenuInputHandleState::HANDLED;
     }
 
@@ -244,10 +223,9 @@ void vertical_menu::update_viewport()
     u32 textTableNumChunks;
     u32 textTableChunkSize;
 
-    get_text_table_chunks(settings_.text_table_index, &textTableChunkList,
-        &textTableNumChunks, &textTableChunkSize);
-    FileContainerReader text_table(
-        textTableChunkList, textTableNumChunks, textTableChunkSize);
+    get_text_table_chunks(
+        settings_.text_table_index, &textTableChunkList, &textTableNumChunks, &textTableChunkSize);
+    FileContainerReader text_table(textTableChunkList, textTableNumChunks, textTableChunkSize);
 
     clear_viewport();
 
@@ -256,26 +234,24 @@ void vertical_menu::update_viewport()
         text_table.init(decompression_buffer, sizeof(decompression_buffer));
     }
 
-    const unsigned num_visible_items = get_num_visible_items(settings_.height,
-        settings_.margin_top, settings_.margin_bottom, settings_.item_height);
-    const unsigned viewport_end_index = get_viewport_end_index(
-        viewport_start_index_, num_visible_items, items_.size());
+    const unsigned num_visible_items = get_num_visible_items(
+        settings_.height, settings_.margin_top, settings_.margin_bottom, settings_.item_height);
+    const unsigned viewport_end_index =
+        get_viewport_end_index(viewport_start_index_, num_visible_items, items_.size());
     unsigned cur_y = settings_.y + settings_.margin_top;
 
     for (unsigned i = viewport_start_index_; i < viewport_end_index; ++i)
     {
-        items_[i]->render_item(
-            text_table, settings_.x, cur_y, (i == focused_index_));
+        items_[i]->render_item(text_table, settings_.x, cur_y, (i == focused_index_));
         cur_y += settings_.item_height;
     }
 }
 
 void vertical_menu::clear_viewport()
 {
-    // tte_erase_rect expects (left, top, right, bottom), not (x, y, width,
-    // height)
-    tte_erase_rect(settings_.x, settings_.y, settings_.x + settings_.width,
-        settings_.y + settings_.height);
+    // tte_erase_rect expects (left, top, right, bottom), not (x, y, width, height)
+    tte_erase_rect(
+        settings_.x, settings_.y, settings_.x + settings_.width, settings_.y + settings_.height);
 }
 
 unsigned vertical_menu::run()
@@ -312,8 +288,7 @@ unsigned vertical_menu::run()
     return UINT32_MAX;
 }
 
-void vertical_menu::set_state_changed_handler(
-    i_vertical_menu_state_changed_handler *handler)
+void vertical_menu::set_state_changed_handler(i_vertical_menu_state_changed_handler *handler)
 {
     state_changed_handler_ = handler;
 }
@@ -323,8 +298,7 @@ void vertical_menu::set_run_cycle_handler(i_run_cycle_handler *handler)
     run_cycle_handler_ = handler;
 }
 
-void vertical_menu::handle_selection_change(
-    unsigned new_index, unsigned x, unsigned y)
+void vertical_menu::handle_selection_change(unsigned new_index, unsigned x, unsigned y)
 {
     if (state_changed_handler_)
     {
@@ -332,17 +306,11 @@ void vertical_menu::handle_selection_change(
     }
 }
 
-simple_item_renderer::simple_item_renderer(const simple_item_widget_data &data)
-    : data_(data)
-{
-}
+simple_item_renderer::simple_item_renderer(const simple_item_widget_data &data) : data_(data) {}
 
 simple_item_renderer::~simple_item_renderer() {}
 
-const simple_item_widget_data &simple_item_renderer::get_data() const
-{
-    return data_;
-}
+const simple_item_widget_data &simple_item_renderer::get_data() const { return data_; }
 
 void simple_item_renderer::render_item(
     FileContainerReader &text_table, unsigned x, unsigned y, bool is_focused)

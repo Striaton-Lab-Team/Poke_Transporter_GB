@@ -20,14 +20,12 @@ void multiboot_upload_screen()
     FileContainerReader general_text_reader(chunkList, numChunks, chunkSize);
     LinkCableMultiboot linkCableMultiboot;
 
-    general_text_reader.init(
-        decompression_buffer, sizeof(decompression_buffer));
+    general_text_reader.init(decompression_buffer, sizeof(decompression_buffer));
 
     // multiboot_show_textbox();
-    general_text_reader.readFile(
-        GENERAL_send_multiboot_instructions, lineBuffer);
-    ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX,
-        GENERAL_send_multiboot_instructions, false);
+    general_text_reader.readFile(GENERAL_send_multiboot_instructions, lineBuffer);
+    ptgb_write_textbox(
+        lineBuffer, true, false, GENERAL_INDEX, GENERAL_send_multiboot_instructions, false);
 
     // wait for key press
     do
@@ -44,8 +42,7 @@ void multiboot_upload_screen()
     // start upload
     // multiboot_show_textbox();
     general_text_reader.readFile(GENERAL_send_multiboot_wait, lineBuffer);
-    ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX,
-        GENERAL_send_multiboot_wait, false);
+    ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX, GENERAL_send_multiboot_wait, false);
     VBlankIntrWait();
 
     const u32 romSize = 256 * 1024; // EWRAM = 256 KB
@@ -64,8 +61,7 @@ void multiboot_upload_screen()
                         : GENERAL_send_multiboot_failure;
     general_text_reader.readFile(fileIndex, lineBuffer);
 
-    ptgb_write_textbox(
-        lineBuffer, true, false, GENERAL_INDEX, fileIndex, false);
+    ptgb_write_textbox(lineBuffer, true, false, GENERAL_INDEX, fileIndex, false);
 
     // wait for keypress again.
     do

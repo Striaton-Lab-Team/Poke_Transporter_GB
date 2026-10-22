@@ -40,9 +40,9 @@ LinkSPI *linkSPI = &linkSPIInstance;
 #define DISCOVERY_TIMEOUT_TRANSFERS 2048
 #define DISCOVERY_CONFIRM_TIMEOUT_TRANSFERS 180
 
-// Here's a compilation check to ensure that the size of these structs match our
-// expectations. Just update it if you changed the struct members. The
-// data-generator process prints their actual sizes.
+// Here's a compilation check to ensure that the size of these structs match our expectations.
+// Just update it if you changed the struct members. The data-generator process prints their actual
+// sizes.
 static_assert(sizeof(struct GB_ROM) == 140);
 static_assert(sizeof(struct ROM_DATA) == 164);
 
@@ -51,16 +51,12 @@ LinkConnection globalLinkCable;
 /**
  * @brief This function determines the expected packet arrival address.
  *
- * PTGB sends packets with an additional read pointer. For packets intended to
- * run commands, this address is set to the address the packet is supposed to
- * arrive at.
+ * PTGB sends packets with an additional read pointer. For packets intended to run commands,
+ * this address is set to the address the packet is supposed to arrive at.
  *
  * This address depends on the generation of the Game Boy ROM being used.
  */
-static u16 determinePacketArrivalAddress(int gen)
-{
-    return (gen == 1) ? 0xC6DC : 0xC8DC;
-}
+static u16 determinePacketArrivalAddress(int gen) { return (gen == 1) ? 0xC6DC : 0xC8DC; }
 
 void linkCableIRQ()
 {
@@ -68,18 +64,17 @@ void linkCableIRQ()
     ----------------
     This handshake process can be a bit weird, so let's break it down:
 
-    First we exchange the bytes via handshake. inData will be set to the
-    recieved byte, and the byte we send out will be outData.
+    First we exchange the bytes via handshake. inData will be set to the recieved byte, and the byte
+    we send out will be outData.
 
-    Then we determining what byte we will be sending out next, based on
-    enterState and inByte in handleStateLogic(). This will set exitState and
-    nextOutByte.
+    Then we determining what byte we will be sending out next, based on enterState and inByte in
+    handleStateLogic(). This will set exitState and nextOutByte.
 
     Then we print our information in the following format: globalCounter
     enterState:stateCounter:exitState inData outData
 
-    We then prepare for the next cycle. Counters are incremented (or reset),
-    enterState is set to exitState, and outByte is set to nextOutByte.
+    We then prepare for the next cycle. Counters are incremented (or reset), enterState is set to
+    exitState, and outByte is set to nextOutByte.
     ----------------
     */
     if (!globalLinkCable.earlyExit())
@@ -88,8 +83,7 @@ void linkCableIRQ()
 
         globalLinkCable.handleStateLogic();
 
-        if (g_debug_options.print_link_data ||
-            g_debug_options.print_link_packets)
+        if (g_debug_options.print_link_data || g_debug_options.print_link_packets)
         {
             globalLinkCable.printData();
         }
@@ -122,10 +116,8 @@ void LinkPacket::loadSecondaryPayload(byte *payload, int payloadSize)
     }
     secondaryPayloadSizeChecksum = 0x100 - secondaryPayloadSizeChecksum;
 
-    PTGB_MGBA_INFO(
-        "Secondary payload loaded: dataSize=%d packetSizeArg=%d checksum=%X",
-        secondaryPayloadDataSize,
-        secondaryPayloadDataSize + SECONDARY_PAYLOAD_HEADER_SIZE,
+    PTGB_MGBA_INFO("Secondary payload loaded: dataSize=%d packetSizeArg=%d checksum=%X",
+        secondaryPayloadDataSize, secondaryPayloadDataSize + SECONDARY_PAYLOAD_HEADER_SIZE,
         secondaryPayloadSizeChecksum);
 }
 
@@ -151,8 +143,8 @@ void LinkConnection::setup(const u16 *debug_charset)
 
     if (g_debug_options.write_cable_data_to_save == WRITE_CABLE_DATA_MODE_SRAM)
     {
-        // if we're writing the cable data to SRAM, we should clear the SRAM
-        // first to make sure there's no leftover data from previous transfers
+        // if we're writing the cable data to SRAM, we should clear the SRAM first to make sure
+        // there's no leftover data from previous transfers
         volatile u8 *cur = SRAM_PTR;
         volatile u8 *end = SRAM_PTR + 0x10000;
         while (cur < end)
@@ -161,8 +153,7 @@ void LinkConnection::setup(const u16 *debug_charset)
             ++cur;
         }
     }
-    else if (g_debug_options.write_cable_data_to_save ==
-             WRITE_CABLE_DATA_MODE_CART)
+    else if (g_debug_options.write_cable_data_to_save == WRITE_CABLE_DATA_MODE_CART)
     {
         // before each write, we need to erase the sector.
         // so, let's do that for the first one before we start writing anything.
@@ -269,8 +260,7 @@ void LinkConnection::exchangeBytes()
     int timeout_frames = 10;
     inData = linkSPI->transfer(outData, [&timeout_frames]()
                                {
-        // In the mGBA Lua bridge, replies arrive via emulator callbacks between
-    frames.
+        // In the mGBA Lua bridge, replies arrive via emulator callbacks between frames.
         // Waiting here prevents valid bytes from being reported as timeouts.
         global_next_frame();
         return --timeout_frames <= 0; });
@@ -283,8 +273,8 @@ void LinkConnection::exchangeBytes()
         // PTGB_MGBA_INFO("in: %X, out: %X", inData, outData);
         break;
     case WRITE_CABLE_DATA_MODE_SRAM:
-        // Pretend transfer, by loading the bytes from SRAM (where we stored
-        // them with writeData() in a previous transfer)
+        // Pretend transfer, by loading the bytes from SRAM (where we stored them with writeData()
+        // in a previous transfer)
         inData = (*(SRAM_PTR + link_cable_array_index));
         ++link_cable_array_index;
         outData = (*(SRAM_PTR + link_cable_array_index));
@@ -292,22 +282,22 @@ void LinkConnection::exchangeBytes()
         break;
     case WRITE_CABLE_DATA_MODE_CART:
     {
-        // Pretend transfer, by loading the bytes from the cartridge save.
-        // (where we stored them with writeData() in a previous transfer) skip
-        // the first 6 bytes, which are for human consumption
+        // Pretend transfer, by loading the bytes from the cartridge save. (where we stored them
+        // with writeData() in a previous transfer) skip the first 6 bytes, which are for human
+        // consumption
         link_cable_array_index += 6;
 
-        inData = read_byte_save((0x1000 * link_cable_memory_section_index) +
-                                link_cable_array_index);
+        inData =
+            read_byte_save((0x1000 * link_cable_memory_section_index) + link_cable_array_index);
         ++link_cable_array_index;
-        outData = read_byte_save((0x1000 * link_cable_memory_section_index) +
-                                 link_cable_array_index);
+        outData =
+            read_byte_save((0x1000 * link_cable_memory_section_index) + link_cable_array_index);
         ++link_cable_array_index;
 
         if (link_cable_array_index >= 0x1000)
         {
-            // if we reached the end of the section, we need to load the next
-            // section (if there is one)
+            // if we reached the end of the section, we need to load the next section (if there is
+            // one)
             ++link_cable_memory_section_index;
             link_cable_array_index = 0;
         }
@@ -321,8 +311,7 @@ void LinkConnection::startConnection(LinkState startState)
     switch (startState)
     {
     case INITIAL_CONNECTION:
-        // Start searching and make sure the first byte sent requests the
-        // external clock
+        // Start searching and make sure the first byte sent requests the external clock
         irq_disable(II_TIMER3);
         REG_TM3CNT = 0;
         REG_IF = (1 << II_TIMER3);
@@ -384,8 +373,7 @@ void LinkConnection::printData()
             ptgb_write_debug(this->debug_charset, line, true);
         }
 
-        // TODO: This is pretty rough, but it's the best we can do until the
-        // text engine rewrite.
+        // TODO: This is pretty rough, but it's the best we can do until the text engine rewrite.
         if (g_debug_options.print_link_packets && currIncomingPacket != nullptr)
         {
             tte_erase_rect(160, 16, H_MAX, V_MAX);
@@ -446,23 +434,17 @@ void LinkConnection::writeData()
     {
         // save the data to the cartridge in chunks of 4 KB
         // WARNING: If you want to add or remove fields here,
-        // make sure to keep the number of bytes a clean divider of 4096
-        // (global_memory_buffer_size)
+        // make sure to keep the number of bytes a clean divider of 4096 (global_memory_buffer_size)
 
-        // the next 6 bytes are for human consumption when viewed in a hex
-        // editor. they can be useful to correlate the current LinkConnection
-        // state with the data that was sent over the cable. but they're not
-        // needed for reconstructing the conversation with
+        // the next 6 bytes are for human consumption when viewed in a hex editor.
+        // they can be useful to correlate the current LinkConnection state with the data that was
+        // sent over the cable. but they're not needed for reconstructing the conversation with
         // load_cable_data_from_save
-        global_memory_buffer[writeBufferOffset + 0] =
-            (u8)(globalStateCounter >> 8) & 0xFF;
-        global_memory_buffer[writeBufferOffset + 1] =
-            (u8)(globalStateCounter >> 0) & 0xFF;
+        global_memory_buffer[writeBufferOffset + 0] = (u8)(globalStateCounter >> 8) & 0xFF;
+        global_memory_buffer[writeBufferOffset + 1] = (u8)(globalStateCounter >> 0) & 0xFF;
         global_memory_buffer[writeBufferOffset + 2] = (u8)enterState;
-        global_memory_buffer[writeBufferOffset + 3] =
-            (u8)(subStateCounter >> 8) & 0xFF;
-        global_memory_buffer[writeBufferOffset + 4] =
-            (u8)(subStateCounter >> 0) & 0xFF;
+        global_memory_buffer[writeBufferOffset + 3] = (u8)(subStateCounter >> 8) & 0xFF;
+        global_memory_buffer[writeBufferOffset + 4] = (u8)(subStateCounter >> 0) & 0xFF;
         global_memory_buffer[writeBufferOffset + 5] = (u8)exitState;
 
         // actual data bytes start here.
@@ -492,8 +474,7 @@ void LinkConnection::handleStateLogic()
         linkSPI->activate(LinkSPI::Mode::MASTER_256KBPS);
         outData = 0x01;
         nextOutData = 0x01;
-        REG_TM3D = -(DISCOVERY_TIMER_MIN +
-                     (globalStateCounter & DISCOVERY_TIMER_PHASE_MASK));
+        REG_TM3D = -(DISCOVERY_TIMER_MIN + (globalStateCounter & DISCOVERY_TIMER_PHASE_MASK));
         REG_TM3CNT = TM_FREQ_1024 | TM_IRQ | TM_ENABLE;
         exitState = CLOCK_ACQUIRE;
         break;
@@ -503,16 +484,15 @@ void LinkConnection::handleStateLogic()
 
         if (inData == 0x02)
         {
-            // Receiving 0x02 while sending 0x01 means the other Game Boy
-            // offered external-clock mode and should now have selected the GBA
-            // as master.
+            // Receiving 0x02 while sending 0x01 means the other Game Boy offered
+            // external-clock mode and should now have selected the GBA as master.
             REG_TM3D = -INITIAL_LINK_TIMER;
             exitState = CLOCK_CONFIRM;
         }
         else if (inData == 0xFE)
         {
-            // Keep compatibility with an already-established connection where
-            // the role-selection byte was completed before discovery began.
+            // Keep compatibility with an already-established connection where the
+            // role-selection byte was completed before discovery began.
             REG_TM3D = -INITIAL_LINK_TIMER;
             exitState = SAVE_SUCCESS;
             nextOutData = 0x01;
@@ -523,8 +503,7 @@ void LinkConnection::handleStateLogic()
         }
         else
         {
-            REG_TM3D = -(DISCOVERY_TIMER_MIN +
-                         (subStateCounter & DISCOVERY_TIMER_PHASE_MASK));
+            REG_TM3D = -(DISCOVERY_TIMER_MIN + (subStateCounter & DISCOVERY_TIMER_PHASE_MASK));
         }
         break;
 
@@ -649,8 +628,7 @@ void LinkConnection::handleStateLogic()
     case GET_CHECKSUM:
         if (inData != 0xFD)
         {
-            dataOutBuffer[dataOutBufferCurrIndex % DATA_OUT_BUFFER_SIZE] =
-                inData;
+            dataOutBuffer[dataOutBufferCurrIndex % DATA_OUT_BUFFER_SIZE] = inData;
             dataOutBufferCurrIndex++;
             nextOutData = 0x01;
         }
@@ -662,8 +640,8 @@ void LinkConnection::handleStateLogic()
                 while (true)
                 {
                 }
-                // Add in an error message thrown here once we, ya know, rewrite
-                // the text engine to make that possible
+                // Add in an error message thrown here once we, ya know, rewrite the text engine to
+                // make that possible
             }
             loadPayloadByROM(currROM);
             exitState = SEND_SPECIFIC_PAYLOAD;
@@ -698,8 +676,7 @@ void LinkConnection::handleStateLogic()
         break;
 
     case SEND_FIRST_PACKET:
-        // In order to make sure everything is set to go, we need to send a
-        // dummy packet.
+        // In order to make sure everything is set to go, we need to send a dummy packet.
         currOutgoingPacket = &dummyPacket;
         nextOutData = 0xFF;
         exitState = STANDARD_PACKET_EXCHANGE;
@@ -725,8 +702,7 @@ void LinkConnection::handleStateLogic()
             nextOutData = currOutgoingPacket->command;
             if (currOutgoingPacket->command == CMD_SoftReset)
             {
-                // Immedaitely remove the Soft Reset packet from in use, it will
-                // not get a response.
+                // Immedaitely remove the Soft Reset packet from in use, it will not get a response.
                 currOutgoingPacket->inUse = false;
             }
             break;
@@ -743,18 +719,14 @@ void LinkConnection::handleStateLogic()
             nextOutData = currOutgoingPacket->pointer >> 8;
             break;
         case TOTAL_PACKET_LENGTH:
-            PTGB_MGBA_INFO("Sent packet: cmd=[%X], args=[%X, %X], ptr=[%X], "
-                           "ID=[%X], Data=[%X, %X, %X, %X, %X, %X, %X, %X]",
+            PTGB_MGBA_INFO("Sent packet: cmd=[%X], args=[%X, %X], ptr=[%X], ID=[%X], Data=[%X, %X, "
+                           "%X, %X, %X, %X, %X, %X]",
                 currOutgoingPacket->command, currOutgoingPacket->argument[0],
                 currOutgoingPacket->argument[1], currOutgoingPacket->pointer,
-                currOutgoingPacket->packetID,
-                currOutgoingPacket->recievedData[0],
-                currOutgoingPacket->recievedData[1],
-                currOutgoingPacket->recievedData[2],
-                currOutgoingPacket->recievedData[3],
-                currOutgoingPacket->recievedData[4],
-                currOutgoingPacket->recievedData[5],
-                currOutgoingPacket->recievedData[6],
+                currOutgoingPacket->packetID, currOutgoingPacket->recievedData[0],
+                currOutgoingPacket->recievedData[1], currOutgoingPacket->recievedData[2],
+                currOutgoingPacket->recievedData[3], currOutgoingPacket->recievedData[4],
+                currOutgoingPacket->recievedData[5], currOutgoingPacket->recievedData[6],
                 currOutgoingPacket->recievedData[7]);
             exitState = RUNNING_CODE_DELAY;
             nextOutData = 0xFF;
@@ -769,8 +741,7 @@ void LinkConnection::handleStateLogic()
 
     case RUNNING_CODE_DELAY:
     {
-        // We are currently processing something, we need to wait for that to
-        // finish.
+        // We are currently processing something, we need to wait for that to finish.
         if (inData == 0xFE)
         {
             nextOutData = 0xFF;
@@ -779,8 +750,7 @@ void LinkConnection::handleStateLogic()
         {
             if (currOutgoingPacket->secondaryPayloadData != nullptr)
             {
-                // We get our response after the GB gets the secondary payload,
-                // send that first.
+                // We get our response after the GB gets the secondary payload, send that first.
                 exitState = SECONDARY_PACKET_EXCHANGE;
             }
             else
@@ -797,37 +767,31 @@ void LinkConnection::handleStateLogic()
         {
         case 0:
             nextOutData = 0xFD;
-            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=preamble out=%X in=%X "
-                           "packet=%X cmd=%d",
-                subStateCounter, nextOutData, inData,
-                currOutgoingPacket->packetID, currOutgoingPacket->command);
+            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=preamble out=%X in=%X packet=%X cmd=%d",
+                subStateCounter, nextOutData, inData, currOutgoingPacket->packetID,
+                currOutgoingPacket->command);
             break;
         case 1:
             nextOutData = linkPacketArrIndex;
             currOutgoingPacket->packetID = linkPacketArrIndex;
-            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=counter out=%X in=%X "
-                           "packet=%X cmd=%d",
-                subStateCounter, nextOutData, inData,
-                currOutgoingPacket->packetID, currOutgoingPacket->command);
+            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=counter out=%X in=%X packet=%X cmd=%d",
+                subStateCounter, nextOutData, inData, currOutgoingPacket->packetID,
+                currOutgoingPacket->command);
             break;
         case 2:
             // The command ID matches the saftey byte (0xFF)
             nextOutData = 0xFF;
-            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=safety out=%X in=%X "
-                           "packet=%X cmd=%d",
-                subStateCounter, nextOutData, inData,
-                currOutgoingPacket->packetID, currOutgoingPacket->command);
+            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=safety out=%X in=%X packet=%X cmd=%d",
+                subStateCounter, nextOutData, inData, currOutgoingPacket->packetID,
+                currOutgoingPacket->command);
             break;
         case 3:
-            nextOutData =
-                currOutgoingPacket->secondaryPayloadDataSize +
-                1; // We need to include the checksum value here as well
-            PTGB_MGBA_INFO("Secondary byte: sub=%d phase=dataSize out=%X in=%X "
-                           "dataSize=%d packetSizeArg=%d",
-                subStateCounter, nextOutData, inData,
-                currOutgoingPacket->secondaryPayloadDataSize,
-                currOutgoingPacket->secondaryPayloadDataSize +
-                    SECONDARY_PAYLOAD_HEADER_SIZE);
+            nextOutData = currOutgoingPacket->secondaryPayloadDataSize +
+                          1; // We need to include the checksum value here as well
+            PTGB_MGBA_INFO(
+                "Secondary byte: sub=%d phase=dataSize out=%X in=%X dataSize=%d packetSizeArg=%d",
+                subStateCounter, nextOutData, inData, currOutgoingPacket->secondaryPayloadDataSize,
+                currOutgoingPacket->secondaryPayloadDataSize + SECONDARY_PAYLOAD_HEADER_SIZE);
             break;
         default:
             // We're through all the constant values, let's do the rest.
@@ -836,23 +800,18 @@ void LinkConnection::handleStateLogic()
             {
                 nextOutData =
                     currOutgoingPacket
-                        ->secondaryPayloadData[subStateCounter -
-                                               SECONDARY_PAYLOAD_HEADER_SIZE];
-                PTGB_MGBA_INFO("Secondary byte: sub=%d phase=data index=%d "
-                               "out=%X in=%X packet=%X",
-                    subStateCounter,
-                    subStateCounter - SECONDARY_PAYLOAD_HEADER_SIZE,
-                    nextOutData, inData, currOutgoingPacket->packetID);
+                        ->secondaryPayloadData[subStateCounter - SECONDARY_PAYLOAD_HEADER_SIZE];
+                PTGB_MGBA_INFO("Secondary byte: sub=%d phase=data index=%d out=%X in=%X packet=%X",
+                    subStateCounter, subStateCounter - SECONDARY_PAYLOAD_HEADER_SIZE, nextOutData,
+                    inData, currOutgoingPacket->packetID);
             }
             else if ((subStateCounter - SECONDARY_PAYLOAD_HEADER_SIZE) ==
                      currOutgoingPacket->secondaryPayloadDataSize)
             {
                 // Add the checksum and we're done with the packet.
                 nextOutData = currOutgoingPacket->secondaryPayloadSizeChecksum;
-                PTGB_MGBA_INFO("Secondary byte: sub=%d phase=checksum out=%X "
-                               "in=%X packet=%X",
-                    subStateCounter, nextOutData, inData,
-                    currOutgoingPacket->packetID);
+                PTGB_MGBA_INFO("Secondary byte: sub=%d phase=checksum out=%X in=%X packet=%X",
+                    subStateCounter, nextOutData, inData, currOutgoingPacket->packetID);
             }
             else if (inData != currOutgoingPacket->packetID)
             {
@@ -861,13 +820,12 @@ void LinkConnection::handleStateLogic()
             }
             else
             {
-                PTGB_MGBA_INFO("Secondary response counter seen: sub=%d "
-                               "packet=%X cmd=%d in=%X",
-                    subStateCounter, currOutgoingPacket->packetID,
-                    currOutgoingPacket->command, inData);
-                // Great, the secondary payload has been processed and we are
-                // currently receiving the response. Let's log the first
-                // response byte and head back to the normal packet talk
+                PTGB_MGBA_INFO("Secondary response counter seen: sub=%d packet=%X cmd=%d in=%X",
+                    subStateCounter, currOutgoingPacket->packetID, currOutgoingPacket->command,
+                    inData);
+                // Great, the secondary payload has been processed and we are currently receiving
+                // the response. Let's log the first response byte and head back to the normal
+                // packet talk
                 exitState = STANDARD_PACKET_EXCHANGE;
 
                 // Use a dummy packet to flush it out
@@ -880,12 +838,11 @@ void LinkConnection::handleStateLogic()
     break;
 
     case PROCESS_PACKET:
-        currIncomingPacket = &linkPacketArr[dataOutBuffer[INP_COUNTER_INDEX] %
-                                            LINK_PACKET_ARRAY_SIZE];
+        currIncomingPacket =
+            &linkPacketArr[dataOutBuffer[INP_COUNTER_INDEX] % LINK_PACKET_ARRAY_SIZE];
         if (allPacketsProcessed())
         {
-            // We have no valid responses that we are looking for, go to the
-            // end.
+            // We have no valid responses that we are looking for, go to the end.
             exitState = END;
         }
         else if (processPacket())
@@ -952,57 +909,52 @@ void LinkConnection::prepareForNextCycle()
 
 /*
  * So, dealing with writing to the cartridge in the IRQ handler was a no-go.
- * It just caused too many issues with data corruption, probably because the
- * write and erase_sector operation was taking too long.
+ * It just caused too many issues with data corruption, probably because the write and erase_sector
+ * operation was taking too long.
  *
  * So, I moved it to the main loop through this function.
- * However, we need to be aware that this function can get interrupted by the
- * IRQ handler at any time.
+ * However, we need to be aware that this function can get interrupted by the IRQ handler at any
+ * time.
  *
- * We also need to take care to not have global_memory_buffer overflow as the
- * IRQ handler just keeps adding to it.
+ * We also need to take care to not have global_memory_buffer overflow as the IRQ handler just keeps
+ * adding to it.
  */
 void LinkConnection::handleCartIO()
 {
     u8 writeBuffer[0x1000];
     unsigned curBufDepth = writeBufferOffset;
 
-    // first copy the current data to a local buffer. Note: the IRQ handler
-    // could append new data to global_memory_buffer during this call!
+    // first copy the current data to a local buffer. Note: the IRQ handler could append new data to
+    // global_memory_buffer during this call!
     memcpy(writeBuffer, global_memory_buffer, curBufDepth);
-    // by updating the writeBufferOffset already, we allow the IRQ handler to
-    // start writing at the new right position immediately.
+    // by updating the writeBufferOffset already, we allow the IRQ handler to start writing at the
+    // new right position immediately.
     writeBufferOffset -= curBufDepth;
-    // now move any data received during the memcpy to before writeBufferOffset,
-    // so it will be included in the next batch. Note: keep in mind, here too
-    // the IRQ handler may be appending new data to global_memory_buffer and
-    // increase writeBufferOffset. but it's harmless.
-    memmove(global_memory_buffer, global_memory_buffer + curBufDepth,
-        writeBufferOffset);
+    // now move any data received during the memcpy to before writeBufferOffset, so it will be
+    // included in the next batch. Note: keep in mind, here too the IRQ handler may be appending new
+    // data to global_memory_buffer and increase writeBufferOffset. but it's harmless.
+    memmove(global_memory_buffer, global_memory_buffer + curBufDepth, writeBufferOffset);
 
     u8 *curWriteBuf = writeBuffer;
     const u8 *const endWriteBuf = writeBuffer + curBufDepth;
 
     while (curWriteBuf < endWriteBuf)
     {
-        // make sure not to write beyond the current flash sector's boundaries.
-        // We'll need an erase_sector() call before we write to the next sector.
+        // make sure not to write beyond the current flash sector's boundaries. We'll need an
+        // erase_sector() call before we write to the next sector.
         const unsigned bytesRemainingInSector = 0x1000 - link_cable_array_index;
-        const unsigned bytesToWrite = (curBufDepth < bytesRemainingInSector)
-                                          ? curBufDepth
-                                          : bytesRemainingInSector;
+        const unsigned bytesToWrite =
+            (curBufDepth < bytesRemainingInSector) ? curBufDepth : bytesRemainingInSector;
 
         copy_ram_to_save(curWriteBuf,
-            (0x1000 * link_cable_memory_section_index) + link_cable_array_index,
-            bytesToWrite);
+            (0x1000 * link_cable_memory_section_index) + link_cable_array_index, bytesToWrite);
         curWriteBuf += bytesToWrite;
         curBufDepth -= bytesToWrite;
         link_cable_array_index += bytesToWrite;
 
         if (link_cable_array_index >= 0x1000)
         {
-            // we have reached the end of our current sector. Let's erase the
-            // next one.
+            // we have reached the end of our current sector. Let's erase the next one.
             link_cable_array_index = 0;
             ++link_cable_memory_section_index;
             erase_sector(0x1000 * link_cable_memory_section_index);
@@ -1017,32 +969,27 @@ bool LinkConnection::earlyExit()
         pauseOnByte = true;
         pauseOnPacket = false;
     }
-    else if (g_debug_options.print_link_packets && !skipPrint &&
-             key_held(KEY_RIGHT))
+    else if (g_debug_options.print_link_packets && !skipPrint && key_held(KEY_RIGHT))
     {
         pauseOnPacket = true;
         pauseOnByte = false;
     }
-    else if (g_debug_options.print_link_data && !skipPrint &&
-             key_held(KEY_SELECT))
+    else if (g_debug_options.print_link_data && !skipPrint && key_held(KEY_SELECT))
     {
         pauseOnByte = false;
     }
-    else if (g_debug_options.print_link_packets && !skipPrint &&
-             key_held(KEY_START))
+    else if (g_debug_options.print_link_packets && !skipPrint && key_held(KEY_START))
     {
         pauseOnPacket = false;
     }
-    else if ((g_debug_options.print_link_data ||
-                 g_debug_options.print_link_packets) &&
+    else if ((g_debug_options.print_link_data || g_debug_options.print_link_packets) &&
              key_held(KEY_UP))
     {
         skipPrint = true;
         pauseOnPacket = false;
         pauseOnByte = false;
     }
-    else if ((g_debug_options.print_link_data ||
-                 g_debug_options.print_link_packets) &&
+    else if ((g_debug_options.print_link_data || g_debug_options.print_link_packets) &&
              key_held(KEY_DOWN))
     {
         skipPrint = false;
@@ -1056,8 +1003,7 @@ bool LinkConnection::earlyExit()
         }
     }
 
-    if (pauseOnPacket && (enterState == LOAD_NEXT_PACKET) &&
-        g_debug_options.print_link_packets)
+    if (pauseOnPacket && (enterState == LOAD_NEXT_PACKET) && g_debug_options.print_link_packets)
     {
         if (key_hit(KEY_A))
         {
@@ -1071,12 +1017,11 @@ bool LinkConnection::earlyExit()
 bool LinkConnection::processPacket()
 {
 
-    PTGB_MGBA_INFO("Recieved raw data: Data=[%X, %X, %X, %X, %X, %X, %X, %X, "
-                   "%X, %X, %X, %X, %X, %X, %X, %X]",
-        dataOutBuffer[0], dataOutBuffer[1], dataOutBuffer[2], dataOutBuffer[3],
-        dataOutBuffer[4], dataOutBuffer[5], dataOutBuffer[6], dataOutBuffer[7],
-        dataOutBuffer[8], dataOutBuffer[9], dataOutBuffer[10],
-        dataOutBuffer[11], dataOutBuffer[12], dataOutBuffer[13],
+    PTGB_MGBA_INFO(
+        "Recieved raw data: Data=[%X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X]",
+        dataOutBuffer[0], dataOutBuffer[1], dataOutBuffer[2], dataOutBuffer[3], dataOutBuffer[4],
+        dataOutBuffer[5], dataOutBuffer[6], dataOutBuffer[7], dataOutBuffer[8], dataOutBuffer[9],
+        dataOutBuffer[10], dataOutBuffer[11], dataOutBuffer[12], dataOutBuffer[13],
         dataOutBuffer[14], dataOutBuffer[15]);
 
     int checksum = 0;
@@ -1102,37 +1047,28 @@ bool LinkConnection::processPacket()
 
     checksum &= 0x7F;
 
-    byte lsbByte =
-        dataOutBuffer[INP_LSB_INDEX] | dataOutBuffer[INP_LSB_INDEX + 1];
+    byte lsbByte = dataOutBuffer[INP_LSB_INDEX] | dataOutBuffer[INP_LSB_INDEX + 1];
     for (int i = 0; i < 8; i++)
     {
         currIncomingPacket->recievedData[i] =
-            (dataOutBuffer[INP_DATA_INDEX + i] << 1) |
-            ((lsbByte >> (7 - i)) & 0b1);
+            (dataOutBuffer[INP_DATA_INDEX + i] << 1) | ((lsbByte >> (7 - i)) & 0b1);
     }
 
-    PTGB_MGBA_INFO(
-        "Packet decoded: packet=%u cmd=%d lsb=%X/%X checksumExpected=%X "
-        "checksumGot=%X recv=%X %X %X %X %X %X %X %X",
-        currIncomingPacket->packetID, currIncomingPacket->command,
-        dataOutBuffer[INP_LSB_INDEX], dataOutBuffer[INP_LSB_INDEX + 1],
-        checksum, dataOutBuffer[INP_CHECKSUM_INDEX],
-        currIncomingPacket->recievedData[0],
-        currIncomingPacket->recievedData[1],
-        currIncomingPacket->recievedData[2],
-        currIncomingPacket->recievedData[3],
-        currIncomingPacket->recievedData[4],
-        currIncomingPacket->recievedData[5],
-        currIncomingPacket->recievedData[6],
-        currIncomingPacket->recievedData[7]);
+    PTGB_MGBA_INFO("Packet decoded: packet=%u cmd=%d lsb=%X/%X checksumExpected=%X checksumGot=%X "
+                   "recv=%X %X %X %X %X %X %X %X",
+        currIncomingPacket->packetID, currIncomingPacket->command, dataOutBuffer[INP_LSB_INDEX],
+        dataOutBuffer[INP_LSB_INDEX + 1], checksum, dataOutBuffer[INP_CHECKSUM_INDEX],
+        currIncomingPacket->recievedData[0], currIncomingPacket->recievedData[1],
+        currIncomingPacket->recievedData[2], currIncomingPacket->recievedData[3],
+        currIncomingPacket->recievedData[4], currIncomingPacket->recievedData[5],
+        currIncomingPacket->recievedData[6], currIncomingPacket->recievedData[7]);
 
     if (checksum != dataOutBuffer[INP_CHECKSUM_INDEX])
     {
-        // The checksum has to match in order for it to be valid, if we've made
-        // it this far down the line.
+        // The checksum has to match in order for it to be valid, if we've made it this far down the
+        // line.
         currIncomingPacket->latestError = CHECKSUM_MISMATCH;
-        PTGB_MGBA_INFO(
-            "Packet checksum mismatch: packet=%u cmd=%d expected=%X got=%X",
+        PTGB_MGBA_INFO("Packet checksum mismatch: packet=%u cmd=%d expected=%X got=%X",
             currIncomingPacket->packetID, currIncomingPacket->command, checksum,
             dataOutBuffer[INP_CHECKSUM_INDEX]);
         return false;
@@ -1142,8 +1078,8 @@ bool LinkConnection::processPacket()
         (dataOutBuffer[INP_DATA_INDEX] & 0x80))
     {
         currIncomingPacket->latestError = ERROR_FLAG;
-        PTGB_MGBA_INFO("Packet reports GB command failure: packet=%u cmd=%d "
-                       "encodedFirstData=%X decodedFirstData=%X",
+        PTGB_MGBA_INFO("Packet reports GB command failure: packet=%u cmd=%d encodedFirstData=%X "
+                       "decodedFirstData=%X",
             currIncomingPacket->packetID, currIncomingPacket->command,
             dataOutBuffer[INP_DATA_INDEX], currIncomingPacket->recievedData[0]);
         return false;
@@ -1151,52 +1087,36 @@ bool LinkConnection::processPacket()
 
     if (currIncomingPacket->command != CMD_ReadDataRequest)
     {
-        // These command types will echo the first 8 bytes of the packet back to
-        // verify they were recieved correctly. Make sure that's the case. This
-        // will also fail if a secondary packet fails
-        if (currIncomingPacket->recievedData[0] !=
-                currIncomingPacket->packetID ||
-            currIncomingPacket->recievedData[1] !=
-                currIncomingPacket->command ||
-            currIncomingPacket->recievedData[2] !=
-                currIncomingPacket->argument[0] ||
-            currIncomingPacket->recievedData[3] !=
-                currIncomingPacket->argument[1] ||
-            currIncomingPacket->recievedData[4] !=
-                ((currIncomingPacket->pointer >> 0) & 0xFF) ||
-            currIncomingPacket->recievedData[5] !=
-                ((currIncomingPacket->pointer >> 8) & 0xFF) ||
+        // These command types will echo the first 8 bytes of the packet back to verify they were
+        // recieved correctly. Make sure that's the case. This will also fail if a secondary packet
+        // fails
+        if (currIncomingPacket->recievedData[0] != currIncomingPacket->packetID ||
+            currIncomingPacket->recievedData[1] != currIncomingPacket->command ||
+            currIncomingPacket->recievedData[2] != currIncomingPacket->argument[0] ||
+            currIncomingPacket->recievedData[3] != currIncomingPacket->argument[1] ||
+            currIncomingPacket->recievedData[4] != ((currIncomingPacket->pointer >> 0) & 0xFF) ||
+            currIncomingPacket->recievedData[5] != ((currIncomingPacket->pointer >> 8) & 0xFF) ||
             currIncomingPacket->recievedData[6] != 0xFF ||
             currIncomingPacket->recievedData[7] != 0xFF)
         {
             currIncomingPacket->latestError = ECHO_MISMATCH;
-            PTGB_MGBA_INFO("Packet echo mismatch: packet=%u cmd=%d recv=%X %X "
-                           "%X %X %X %X %X %X",
+            PTGB_MGBA_INFO("Packet echo mismatch: packet=%u cmd=%d recv=%X %X %X %X %X %X %X %X",
                 currIncomingPacket->packetID, currIncomingPacket->command,
-                currIncomingPacket->recievedData[0],
-                currIncomingPacket->recievedData[1],
-                currIncomingPacket->recievedData[2],
-                currIncomingPacket->recievedData[3],
-                currIncomingPacket->recievedData[4],
-                currIncomingPacket->recievedData[5],
-                currIncomingPacket->recievedData[6],
-                currIncomingPacket->recievedData[7]);
+                currIncomingPacket->recievedData[0], currIncomingPacket->recievedData[1],
+                currIncomingPacket->recievedData[2], currIncomingPacket->recievedData[3],
+                currIncomingPacket->recievedData[4], currIncomingPacket->recievedData[5],
+                currIncomingPacket->recievedData[6], currIncomingPacket->recievedData[7]);
             return false;
         }
     }
 
     currIncomingPacket->latestError = PACKET_SUCCESS;
-    PTGB_MGBA_INFO(
-        "Packet success: packet=%u cmd=%d recv=%X %X %X %X %X %X %X %X",
+    PTGB_MGBA_INFO("Packet success: packet=%u cmd=%d recv=%X %X %X %X %X %X %X %X",
         currIncomingPacket->packetID, currIncomingPacket->command,
-        currIncomingPacket->recievedData[0],
-        currIncomingPacket->recievedData[1],
-        currIncomingPacket->recievedData[2],
-        currIncomingPacket->recievedData[3],
-        currIncomingPacket->recievedData[4],
-        currIncomingPacket->recievedData[5],
-        currIncomingPacket->recievedData[6],
-        currIncomingPacket->recievedData[7]);
+        currIncomingPacket->recievedData[0], currIncomingPacket->recievedData[1],
+        currIncomingPacket->recievedData[2], currIncomingPacket->recievedData[3],
+        currIncomingPacket->recievedData[4], currIncomingPacket->recievedData[5],
+        currIncomingPacket->recievedData[6], currIncomingPacket->recievedData[7]);
     return true;
 }
 
@@ -1204,46 +1124,40 @@ void LinkConnection::consumePacket()
 {
     /*
     ----------------
-    For this part, the LinkConnection has an array of 4 packets that it will
-    send. The current packet will be sent and a response will be recieved at the
-    same time. If the recieved packet is successful, the data will be moved to
-    the outArray and the packet will be replaced by a packet asking for the next
-    data section. If the packet was not successful it will stay in the list and
-    be ran again down the line. If packets have been sent for all the data
-    sections, a completed packet will be replaced with an empty packet. Once the
-    array is full of empty packets, the data has all been read and we are
-    finished.
+    For this part, the LinkConnection has an array of 4 packets that it will send.
+    The current packet will be sent and a response will be recieved at the same time. If the
+    recieved packet is successful, the data will be moved to the outArray and the packet will be
+    replaced by a packet asking for the next data section. If the packet was not successful it will
+    stay in the list and be ran again down the line. If packets have been sent for all the data
+    sections, a completed packet will be replaced with an empty packet. Once the array is full of
+    empty packets, the data has all been read and we are finished.
     ----------------
   */
     if (currIncomingPacket->latestError == PACKET_SUCCESS)
     {
         // Packet was successful, Find which packet sent it and mark it.
-        // If this was data, then save the data and replace it with the next one
-        // in line
+        // If this was data, then save the data and replace it with the next one in line
         currIncomingPacket->latestError = PACKET_READ;
         if (currIncomingPacket->command == CMD_ReadDataRequest)
         {
             for (int i = 0; i < 8; i++)
             {
-                if (((currIncomingPacket->pointer - linkPacketDataStart) + i) <
-                    linkPacketDataSize)
+                if (((currIncomingPacket->pointer - linkPacketDataStart) + i) < linkPacketDataSize)
                 {
-                    outDataArrayPtr[(currIncomingPacket->pointer -
-                                        linkPacketDataStart) +
-                                    i] = currIncomingPacket->recievedData[i];
+                    outDataArrayPtr[(currIncomingPacket->pointer - linkPacketDataStart) + i] =
+                        currIncomingPacket->recievedData[i];
                 }
             }
             // Do we have more data to read?
             if ((linkPacketDataAddr - linkPacketDataStart) < linkPacketDataSize)
             {
-                *currIncomingPacket = LinkPacket(
-                    CMD_ReadDataRequest, 0x00, 0x00, linkPacketDataAddr);
+                *currIncomingPacket =
+                    LinkPacket(CMD_ReadDataRequest, 0x00, 0x00, linkPacketDataAddr);
                 linkPacketDataAddr += 8;
             }
             else
             {
-                // Mark the packet as out of use, we've gotten all the data we
-                // need.
+                // Mark the packet as out of use, we've gotten all the data we need.
                 currIncomingPacket->inUse = false;
             }
         }
@@ -1264,8 +1178,7 @@ bool LinkConnection::prepareNextPacket()
     {
         linkPacketArrIndex = (linkPacketArrIndex + 1) & LINK_PACKET_INDEX_MASK;
 
-        LinkPacket *candidate =
-            &linkPacketArr[linkPacketArrIndex % LINK_PACKET_ARRAY_SIZE];
+        LinkPacket *candidate = &linkPacketArr[linkPacketArrIndex % LINK_PACKET_ARRAY_SIZE];
 
         if (candidate->inUse && candidate->latestError != PACKET_READ)
         {
@@ -1282,8 +1195,7 @@ bool LinkConnection::allPacketsProcessed()
 {
     for (int i = 0; i < LINK_PACKET_ARRAY_SIZE; i++)
     {
-        if (linkPacketArr[i].inUse &&
-            linkPacketArr[i].latestError != PACKET_READ)
+        if (linkPacketArr[i].inUse && linkPacketArr[i].latestError != PACKET_READ)
         {
             return false;
         }
@@ -1306,8 +1218,7 @@ void LinkConnection::resetLinkPackets()
 
     // Set the current outgoing packet to be the first in order.
     currOutgoingPacket = &linkPacketArr[0];
-    // And set the incoming packet to nullptr since we don't know what that is
-    // yet.
+    // And set the incoming packet to nullptr since we don't know what that is yet.
     currIncomingPacket = nullptr;
 
     for (int i = 0; i < DATA_OUT_BUFFER_SIZE; i++)
@@ -1363,8 +1274,8 @@ bool LinkConnection::LinkCommand_ReloadCurrentBox(bool waitForCompletion)
 
     resetLinkPackets();
 
-    linkPacketArr[0] = LinkPacket(
-        CMD_ReloadCurrentBox, 0x00, 0x00, determinePacketArrivalAddress(gen));
+    linkPacketArr[0] =
+        LinkPacket(CMD_ReloadCurrentBox, 0x00, 0x00, determinePacketArrivalAddress(gen));
 
     globalLinkCable.startConnection(PACKET_EXCHANGE);
     if (waitForCompletion)
@@ -1374,8 +1285,8 @@ bool LinkConnection::LinkCommand_ReloadCurrentBox(bool waitForCompletion)
     return true;
 };
 
-bool LinkConnection::LinkCommand_TransferPokemon(int boxNumber,
-    byte removalArray[], int removalArrayLength, bool waitForCompletion)
+bool LinkConnection::LinkCommand_TransferPokemon(
+    int boxNumber, byte removalArray[], int removalArrayLength, bool waitForCompletion)
 {
     if (g_debug_options.ignore_link_cable)
     {
@@ -1419,9 +1330,9 @@ bool LinkConnection::LinkCommand_TransferPokemon(int boxNumber,
 
     resetLinkPackets();
 
-    linkPacketArr[0] = LinkPacket(CMD_TransferPokemon,
-        removalArrayLength + SECONDARY_PAYLOAD_HEADER_SIZE, boxNumber,
-        determinePacketArrivalAddress(gen));
+    linkPacketArr[0] =
+        LinkPacket(CMD_TransferPokemon, removalArrayLength + SECONDARY_PAYLOAD_HEADER_SIZE,
+            boxNumber, determinePacketArrivalAddress(gen));
     linkPacketArr[0].loadSecondaryPayload(removalArray, removalArrayLength);
 
     // REG_TM3D = -0x4000 / 60;
@@ -1449,8 +1360,7 @@ bool LinkConnection::LinkCommand_SoftReset(bool waitForCompletion)
 
     resetLinkPackets();
 
-    linkPacketArr[0] = LinkPacket(
-        CMD_SoftReset, 0x00, 0x00, determinePacketArrivalAddress(gen));
+    linkPacketArr[0] = LinkPacket(CMD_SoftReset, 0x00, 0x00, determinePacketArrivalAddress(gen));
 
     globalLinkCable.startConnection(PACKET_EXCHANGE);
     if (waitForCompletion)
@@ -1483,13 +1393,13 @@ bool LinkConnection::LinkCommand_ModifySRAMAccess(
 
     if (enableSRAM)
     {
-        linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x0A, SRAMbank,
-            determinePacketArrivalAddress(gen));
+        linkPacketArr[0] =
+            LinkPacket(CMD_ModifySRAMAccess, 0x0A, SRAMbank, determinePacketArrivalAddress(gen));
     }
     else
     {
-        linkPacketArr[0] = LinkPacket(CMD_ModifySRAMAccess, 0x00, 0x00,
-            determinePacketArrivalAddress(gen));
+        linkPacketArr[0] =
+            LinkPacket(CMD_ModifySRAMAccess, 0x00, 0x00, determinePacketArrivalAddress(gen));
     }
 
     globalLinkCable.startConnection(PACKET_EXCHANGE);
@@ -1517,8 +1427,7 @@ bool LinkConnection::LinkCommand_RunSecondaryPayload(
     resetLinkPackets();
 
     linkPacketArr[0] = LinkPacket(CMD_RunSecondaryPayload,
-        payloadLength + SECONDARY_PAYLOAD_HEADER_SIZE, 0x00,
-        determinePacketArrivalAddress(gen));
+        payloadLength + SECONDARY_PAYLOAD_HEADER_SIZE, 0x00, determinePacketArrivalAddress(gen));
     linkPacketArr[0].loadSecondaryPayload(payload, payloadLength);
 
     globalLinkCable.startConnection(PACKET_EXCHANGE);
@@ -1543,8 +1452,8 @@ bool LinkConnection::LinkCommand_ReadMemorySection(
 
     if (dataPointer > 0xFFFF)
     {
-        waitForCompletion = true; // We have to wait for completion with the
-                                  // SRAM bank loading, so we can close it
+        waitForCompletion =
+            true; // We have to wait for completion with the SRAM bank loading, so we can close it
         LinkCommand_ModifySRAMAccess(true, dataPointer >> 16);
     }
 
@@ -1561,8 +1470,7 @@ bool LinkConnection::LinkCommand_ReadMemorySection(
     {
         if ((i * 8) < linkPacketDataSize)
         {
-            linkPacketArr[i] =
-                LinkPacket(CMD_ReadDataRequest, 0x00, 0x00, linkPacketDataAddr);
+            linkPacketArr[i] = LinkPacket(CMD_ReadDataRequest, 0x00, 0x00, linkPacketDataAddr);
             linkPacketDataAddr += 8;
         }
         else

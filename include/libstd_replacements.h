@@ -22,8 +22,7 @@ namespace ptgb
  * In case you want to convert more than one int to string within the same call,
  * consider using npf_snprintf instead!
  *
- * Also: if you want to hold on to the converted value, consider copying the
- * returned string
+ * Also: if you want to hold on to the converted value, consider copying the returned string
  */
 const char *to_string(int intVal);
 
@@ -36,8 +35,7 @@ const char *to_string(int intVal);
  * In case you want to convert more than one int to string within the same call,
  * consider using npf_snprintf instead!
  *
- * Also: if you want to hold on to the converted value, consider copying the
- * returned string
+ * Also: if you want to hold on to the converted value, consider copying the returned string
  */
 const char *to_string(unsigned int wordVal);
 
@@ -48,8 +46,7 @@ template <class ValueType> class vector
 
     vector() : buffer_(), capacity_(default_capacity), count_(0)
     {
-        buffer_ = static_cast<ValueType *>(
-            ::operator new(sizeof(ValueType) * capacity_));
+        buffer_ = static_cast<ValueType *>(::operator new(sizeof(ValueType) * capacity_));
         if (!buffer_)
         {
             return; // allocation failed
@@ -59,8 +56,7 @@ template <class ValueType> class vector
     vector(const ValueType *valueList, uint16_t listSize)
         : buffer_(), capacity_(listSize), count_(0)
     {
-        buffer_ = static_cast<ValueType *>(
-            ::operator new(sizeof(ValueType) * capacity_));
+        buffer_ = static_cast<ValueType *>(::operator new(sizeof(ValueType) * capacity_));
         if (!buffer_)
         {
             return; // allocation failed
@@ -71,8 +67,7 @@ template <class ValueType> class vector
     vector(const vector<ValueType> &otherList)
         : buffer_(), capacity_(otherList.capacity_), count_(0)
     {
-        buffer_ = static_cast<ValueType *>(
-            ::operator new(sizeof(ValueType) * capacity_));
+        buffer_ = static_cast<ValueType *>(::operator new(sizeof(ValueType) * capacity_));
         if (!buffer_)
         {
             return; // allocation failed
@@ -92,8 +87,8 @@ template <class ValueType> class vector
         {
             return;
         }
-        ValueType *new_buffer = static_cast<ValueType *>(
-            ::operator new(sizeof(ValueType) * newSize));
+        ValueType *new_buffer =
+            static_cast<ValueType *>(::operator new(sizeof(ValueType) * newSize));
         if (!new_buffer)
         {
             return; // allocation failed, keep the old buffer
@@ -188,10 +183,7 @@ template <class ValueType> class vector
 
     ValueType &operator[](uint16_t index) { return *(buffer_ + index); }
 
-    const ValueType &operator[](uint16_t index) const
-    {
-        return *(buffer_ + index);
-    }
+    const ValueType &operator[](uint16_t index) const { return *(buffer_ + index); }
 
   private:
     ValueType *buffer_;

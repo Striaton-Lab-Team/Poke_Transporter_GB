@@ -1,14 +1,13 @@
 #ifndef _DEBUG_MENU_FUNCTIONS_H
 #define _DEBUG_MENU_FUNCTIONS_H
 
-// Here we define debug menu callback functions, to be used as
-// on_execute_callback or on_option_activate in the debug menu entries.
+// Here we define debug menu callback functions, to be used as on_execute_callback or
+// on_option_activate in the debug menu entries.
 
 /**
  * @brief Shows a submenu
  *
- * @param user_param the DebugMenuSection enum value corresponding to the
- * submenu to show.
+ * @param user_param the DebugMenuSection enum value corresponding to the submenu to show.
  */
 void show_debug_menu_section(void *context, unsigned user_param);
 
@@ -18,8 +17,8 @@ void show_debug_menu_section(void *context, unsigned user_param);
 void show_text_debug_screen(void *context, unsigned user_param);
 
 /**
- * @brief This function will show the debug info screen, which contains various
- * flags and info about the current game state.
+ * @brief This function will show the debug info screen, which contains various flags and info about
+ * the current game state.
  */
 void show_debug_info_screen(void *context, unsigned user_param);
 
@@ -27,8 +26,7 @@ void show_debug_info_screen(void *context, unsigned user_param);
  * @brief This is a generic u8/bool value set callback
  *
  * @param context a (u8* or bool*) pointer to the flag you want to set/unset.
- * @param user_param the value to set the flag to. 0 -> false, anything else ->
- * true.
+ * @param user_param the value to set the flag to. 0 -> false, anything else -> true.
  */
 void dbg_set_byte_val(void *context, unsigned user_param);
 

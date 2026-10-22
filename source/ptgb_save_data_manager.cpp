@@ -27,8 +27,7 @@ void write_custom_save_data()
 
 bool is_caught(int dex_num)
 {
-    return (((save_data_array[CAUGHT_DATA + (dex_num / 8)]) >> dex_num % 8) &
-               1) ||
+    return (((save_data_array[CAUGHT_DATA + (dex_num / 8)]) >> dex_num % 8) & 1) ||
            g_debug_options.force_all_caught;
 }
 
@@ -77,8 +76,8 @@ bool check_can_save()
     byte data_buffer[8] = {};
     byte test_buffer[8] = {0xC7, 0xCF, 0xCA, 0xCA, 0xBF, 0xCE, 0xA4, 0xBE};
 
-    // Copy the current bytes and save them to the data buffer, and replace them
-    // with the test_buffer
+    // Copy the current bytes and save them to the data buffer, and replace them with the
+    // test_buffer
     copy_save_to_ram(HALL_OF_FAME + 0x1000, &global_memory_buffer[0], 0x1000);
     for (int i = 0; i < 8; i++)
     {
@@ -88,8 +87,8 @@ bool check_can_save()
     erase_sector(HALL_OF_FAME + 0x1000);
     copy_ram_to_save(&global_memory_buffer[0], HALL_OF_FAME + 0x1000, 0x1000);
 
-    // Overwrite the data in the global memory buffer to make sure that it isn't
-    // still there when testing
+    // Overwrite the data in the global memory buffer to make sure that it isn't still there when
+    // testing
     for (int i = 0; i < 8; i++)
     {
         global_memory_buffer[HOF_SECTION + i] = 0;
@@ -104,8 +103,7 @@ bool check_can_save()
             // Did not save correctly, return false
             return false;
         }
-        // Set the byte in the memory buffer back in preperation for saving it
-        // back again
+        // Set the byte in the memory buffer back in preperation for saving it back again
         global_memory_buffer[HOF_SECTION + i] = data_buffer[i];
     }
 

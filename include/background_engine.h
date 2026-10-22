@@ -15,10 +15,10 @@
 void background_frame(int global_frame_count);
 
 /**
- * @brief This function draws the textbox (=copies the tiles) for a specific
- * text table and text key. Each text table entry could have a different type of
- * textbox associated with it. This function will look up the textbox type for
- * the given text table and text key, and then draw the textbox accordingly.
+ * @brief This function draws the textbox (=copies the tiles) for a specific text table and text
+ * key. Each text table entry could have a different type of textbox associated with it. This
+ * function will look up the textbox type for the given text table and text key, and then draw the
+ * textbox accordingly.
  */
 void create_textbox(int text_section, int text_key, bool eraseMainBox);
 
@@ -28,13 +28,12 @@ void create_textbox(int text_section, int text_key, bool eraseMainBox);
 void create_textbox(u8 textbox_type, bool eraseMainBox);
 
 /**
- * @brief This function draws a textbox at the specified tile coordinates, with
- * the specified text space dimensions. This is the most low-level version of
- * the create_textbox function, and it doesn't do any lookup for textbox types.
- * It just draws a textbox with the given parameters.
+ * @brief This function draws a textbox at the specified tile coordinates, with the specified text
+ * space dimensions. This is the most low-level version of the create_textbox function, and it
+ * doesn't do any lookup for textbox types. It just draws a textbox with the given parameters.
  */
-void create_textbox(int startTileX, int startTileY, int text_space_width,
-    int text_space_height, bool eraseMainBox);
+void create_textbox(
+    int startTileX, int startTileY, int text_space_width, int text_space_height, bool eraseMainBox);
 void show_textbox();
 void hide_textbox();
 #endif

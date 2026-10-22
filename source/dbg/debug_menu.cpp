@@ -18,8 +18,7 @@ static unsigned current_menu_section_stack_size;
 
 static void pop_submenu() { --current_menu_section_stack_size; }
 
-static __attribute__((noinline)) void show_debug_menu_internal(
-    DebugMenuSection sectionType)
+static __attribute__((noinline)) void show_debug_menu_internal(DebugMenuSection sectionType)
 {
     u16 charset[256];
     const s16 cursor_offset_x = 3;
@@ -47,8 +46,7 @@ static __attribute__((noinline)) void show_debug_menu_internal(
         .should_delete_item_widgets_on_destruct = true,
         .should_hide_state_changed_handler_on_not_focused = true};
 
-    vertical_menu_cursor_handler cursor_handler(
-        cursor_offset_x, cursor_offset_y);
+    vertical_menu_cursor_handler cursor_handler(cursor_offset_x, cursor_offset_y);
     vertical_menu debug_menu(menu_settings);
 
     debug_menu.set_state_changed_handler(&cursor_handler);
@@ -63,21 +61,20 @@ static __attribute__((noinline)) void show_debug_menu_internal(
     hide_textbox();
     tte_erase_rect(0, 0, H_MAX, V_MAX);
 
-    // execute any callback that was delayed by pressing the A button on an
-    // executable row. This is done to make sure the debug menu is fully hidden
-    // before executing the callback, to avoid rendering issues.
+    // execute any callback that was delayed by pressing the A button on an executable row.
+    // This is done to make sure the debug menu is fully hidden before executing the callback,
+    // to avoid rendering issues.
     if (delayed_execute_callback)
     {
-        delayed_execute_callback(
-            delayed_execute_context, delayed_execute_user_param);
+        delayed_execute_callback(delayed_execute_context, delayed_execute_user_param);
         delayed_execute_callback = nullptr;
         delayed_execute_context = nullptr;
         delayed_execute_user_param = 0;
     }
     else if (ret == UINT32_MAX)
     {
-        // if the user cancelled out of the menu, we pop the submenu stack to go
-        // back to the previous menu.
+        // if the user cancelled out of the menu, we pop the submenu stack to go back to the
+        // previous menu.
         pop_submenu();
     }
 }
@@ -90,16 +87,12 @@ void show_debug_menu()
     push_debug_menu_section(DebugMenuSection::MAIN);
     while (current_menu_section_stack_size > 0)
     {
-        curr_section =
-            current_menu_section[current_menu_section_stack_size - 1];
+        curr_section = current_menu_section[current_menu_section_stack_size - 1];
         show_debug_menu_internal(curr_section);
     }
 }
 
-debug_menu_row_widget::debug_menu_row_widget(const debug_menu_row_data &data)
-    : data_(data)
-{
-}
+debug_menu_row_widget::debug_menu_row_widget(const debug_menu_row_data &data) : data_(data) {}
 
 debug_menu_row_widget::~debug_menu_row_widget()
 {
@@ -125,20 +118,19 @@ void debug_menu_row_widget::render_item(
 
     if (data_.option_section.num_options > 0)
     {
-        const u8 selected_option_index =
-            data_.option_section.selected_option_index;
+        const u8 selected_option_index = data_.option_section.selected_option_index;
 
         tte_set_pos(x + option_margin_left, y + margin_top);
         if (data_.option_section.options[selected_option_index].text)
         {
-            ptgb_write_debug(data_.charset,
-                data_.option_section.options[selected_option_index].text, true);
+            ptgb_write_debug(
+                data_.charset, data_.option_section.options[selected_option_index].text, true);
         }
         else
         {
             char buf[32];
-            npf_snprintf(buf, sizeof(buf), "%u",
-                data_.option_section.options[selected_option_index].value);
+            npf_snprintf(
+                buf, sizeof(buf), "%u", data_.option_section.options[selected_option_index].value);
             ptgb_write_debug(data_.charset, buf, true);
         }
     }
@@ -147,19 +139,14 @@ void debug_menu_row_widget::render_item(
     {
         if (data_.option_section.num_options > 0)
         {
-            const int toggle_arrow_left_x = static_cast<int>(x) +
-                                            option_margin_left +
-                                            toggle_arrow_left_offset_x;
-            const int toggle_arrow_right_x = static_cast<int>(x) +
-                                             option_margin_left +
-                                             toggle_arrow_right_offset_x;
-            const int toggle_arrows_y =
-                static_cast<int>(y) + margin_top + toggle_arrows_offset_y;
+            const int toggle_arrow_left_x =
+                static_cast<int>(x) + option_margin_left + toggle_arrow_left_offset_x;
+            const int toggle_arrow_right_x =
+                static_cast<int>(x) + option_margin_left + toggle_arrow_right_offset_x;
+            const int toggle_arrows_y = static_cast<int>(y) + margin_top + toggle_arrows_offset_y;
 
-            obj_set_pos(
-                toggle_arrow_left, toggle_arrow_left_x, toggle_arrows_y);
-            obj_set_pos(
-                toggle_arrow_right, toggle_arrow_right_x, toggle_arrows_y);
+            obj_set_pos(toggle_arrow_left, toggle_arrow_left_x, toggle_arrows_y);
+            obj_set_pos(toggle_arrow_right, toggle_arrow_right_x, toggle_arrows_y);
             obj_unhide(toggle_arrow_left, 0);
             obj_unhide(toggle_arrow_right, 0);
         }
@@ -179,18 +166,15 @@ MenuInputHandleState debug_menu_row_widget::handle_input()
         if (key_hit(KEY_RIGHT))
         {
             data_.option_section.selected_option_index =
-                (data_.option_section.selected_option_index + 1) %
-                data_.option_section.num_options;
+                (data_.option_section.selected_option_index + 1) % data_.option_section.num_options;
             handled = true;
         }
         if (key_hit(KEY_LEFT))
         {
             --data_.option_section.selected_option_index;
-            if (data_.option_section.selected_option_index >=
-                data_.option_section.num_options)
+            if (data_.option_section.selected_option_index >= data_.option_section.num_options)
             {
-                data_.option_section.selected_option_index =
-                    data_.option_section.num_options - 1;
+                data_.option_section.selected_option_index = data_.option_section.num_options - 1;
             }
             handled = true;
         }
@@ -198,9 +182,7 @@ MenuInputHandleState debug_menu_row_widget::handle_input()
         if (handled && data_.option_section.on_option_activate)
         {
             data_.option_section.on_option_activate(data_.context,
-                data_.option_section
-                    .options[data_.option_section.selected_option_index]
-                    .value);
+                data_.option_section.options[data_.option_section.selected_option_index].value);
         }
 
         if (handled)
@@ -222,8 +204,7 @@ MenuInputHandleState debug_menu_row_widget::handle_input()
 
 void push_debug_menu_section(DebugMenuSection section)
 {
-    constexpr size_t num_levels =
-        sizeof(current_menu_section) / sizeof(current_menu_section[0]);
+    constexpr size_t num_levels = sizeof(current_menu_section) / sizeof(current_menu_section[0]);
     if (current_menu_section_stack_size < num_levels)
     {
         current_menu_section[current_menu_section_stack_size] = section;

@@ -20,16 +20,14 @@ uint line_char_index;
 const byte *curr_text;
 bool text_exit;
 
-// This function was separated from text_loop to reduce the scope of the
-// text_decompression_buffer. if we didn't do this, the decompression_buffer
-// would be kept on the stack (=IWRAM) for the entire duration of the
-// text_loop() call. This is particularly bad because the whole
-// mystery_gift_builder sequence is being triggered from within text_loop(). And
-// there we need all the IWRAM we can muster. Doing it this way does mean that
-// we need to completely restart decompression whenever we switch from dialog
-// entry. but given that it requires user input to do so, I believe it's worth
-// it and not time-critical. attribute noinline was used to make sure the
-// compiler doesn't inline this code back into text_loop()
+// This function was separated from text_loop to reduce the scope of the text_decompression_buffer.
+// if we didn't do this, the decompression_buffer would be kept on the stack (=IWRAM) for the entire
+// duration of the text_loop() call. This is particularly bad because the whole mystery_gift_builder
+// sequence is being triggered from within text_loop(). And there we need all the IWRAM we can
+// muster. Doing it this way does mean that we need to completely restart decompression whenever we
+// switch from dialog entry. but given that it requires user input to do so, I believe it's worth it
+// and not time-critical. attribute noinline was used to make sure the compiler doesn't inline this
+// code back into text_loop()
 static __attribute__((noinline)) const u8 *read_dialogue_text_entry(
     u32 index, u32 text_section, u8 *output_buffer)
 {
@@ -41,16 +39,14 @@ static __attribute__((noinline)) const u8 *read_dialogue_text_entry(
     get_text_table_chunks(text_section, &chunkList, &numChunks, &chunkSize);
     FileContainerReader dialogueTable(chunkList, numChunks, chunkSize);
 
-    dialogueTable.init(
-        text_decompression_buffer, sizeof(text_decompression_buffer));
+    dialogueTable.init(text_decompression_buffer, sizeof(text_decompression_buffer));
     dialogueTable.readFile(index, output_buffer);
 
     return output_buffer;
 }
 
-// This will have to be changed to be dynamic to support nicknamed Pokemon that
-// are in a different language than the current build. Maybe combine Japanese
-// and Latin into one larger font?
+// This will have to be changed to be dynamic to support nicknamed Pokemon that are in a different
+// language than the current build. Maybe combine Japanese and Latin into one larger font?
 
 #if PTGB_BUILD_LANGUAGE == 1
 #define BUILD_FONT &japanese_normalFont
@@ -61,21 +57,20 @@ static __attribute__((noinline)) const u8 *read_dialogue_text_entry(
 void init_text_engine()
 {
     // Load the TTE
-    // tte_init_se(3, BG_CBB(TEXT_CBB) | BG_SBB(TEXT_SBB) | BG_PRIO(0), 0,
-    // CLR_WHITE, 14, &japanese_smallFont, NULL);
+    // tte_init_se(3, BG_CBB(TEXT_CBB) | BG_SBB(TEXT_SBB) | BG_PRIO(0), 0, CLR_WHITE, 14,
+    // &japanese_smallFont, NULL);
 
-    tte_init_chr4c(3, // BG 3
-        BG_CBB(TILESET_TEXT) |
-            BG_SBB(TILEMAP_TEXT), // Charblock 0; screenblock 10
-        0xF000,                   // Screen-entry offset
-        bytes2word(               // Color attributes:
-            13,                   // Text color
-            15,                   // Shadow color
-            0,                    // Paper
-            0),                   // Special
-        CLR_WHITE,                // White text
-        BUILD_FONT,               // Custom font
-        NULL                      // Use default chr4 renderer
+    tte_init_chr4c(3,                                // BG 3
+        BG_CBB(TILESET_TEXT) | BG_SBB(TILEMAP_TEXT), // Charblock 0; screenblock 10
+        0xF000,                                      // Screen-entry offset
+        bytes2word(                                  // Color attributes:
+            13,                                      // Text color
+            15,                                      // Shadow color
+            0,                                       // Paper
+            0),                                      // Special
+        CLR_WHITE,                                   // White text
+        BUILD_FONT,                                  // Custom font
+        NULL                                         // Use default chr4 renderer
     );
     tte_init_con();
 
@@ -91,9 +86,8 @@ void init_text_engine()
 
 int text_loop(int script)
 {
-    // we have restricted the dialog entries to 1024 bytes in the text_helper
-    // main.py so we shouldn't run into problems when we only use 1 KB to
-    // contain a text entry.
+    // we have restricted the dialog entries to 1024 bytes in the text_helper main.py
+    // so we shouldn't run into problems when we only use 1 KB to contain a text entry.
     u8 diag_entry_text_buffer[1024];
     switch (script)
     {
@@ -110,21 +104,19 @@ int text_loop(int script)
         break;
     }
 
-    curr_text = (curr_line.has_text())
-                    ? read_dialogue_text_entry(curr_line.get_text_entry_index(),
-                          PTGB_INDEX, diag_entry_text_buffer)
-                    : NULL;
+    curr_text = (curr_line.has_text()) ? read_dialogue_text_entry(curr_line.get_text_entry_index(),
+                                             PTGB_INDEX, diag_entry_text_buffer)
+                                       : NULL;
 
     // tte_set_margins(LEFT, TOP, RIGHT, BOTTOM);
     if (script != SCRIPT_DEBUG)
     {
         while (true) // This loops through all the connected script objects
         {
-            if (curr_text != NULL && curr_text[char_index] != 0xFF &&
-                curr_text[char_index] != 0xFB)
+            if (curr_text != NULL && curr_text[char_index] != 0xFF && curr_text[char_index] != 0xFB)
             {
-                ptgb_write_textbox(curr_text, false, true, PTGB_INDEX,
-                    curr_line.get_text_entry_index(), false);
+                ptgb_write_textbox(
+                    curr_text, false, true, PTGB_INDEX, curr_line.get_text_entry_index(), false);
             }
 
             // wait_for_user_to_continue();
@@ -140,11 +132,10 @@ int text_loop(int script)
                 break;
             }
 
-            curr_text =
-                (curr_line.has_text())
-                    ? read_dialogue_text_entry(curr_line.get_text_entry_index(),
-                          PTGB_INDEX, diag_entry_text_buffer)
-                    : NULL;
+            curr_text = (curr_line.has_text())
+                            ? read_dialogue_text_entry(curr_line.get_text_entry_index(), PTGB_INDEX,
+                                  diag_entry_text_buffer)
+                            : NULL;
             char_index = 0;
 
             if (text_exit)
@@ -174,15 +165,13 @@ int text_loop(int script)
             {
                 if (key_hit(KEY_LEFT))
                 {
-                    text_key =
-                        (text_key + (text_section_lengths[text_section] - 1)) %
-                        text_section_lengths[text_section];
+                    text_key = (text_key + (text_section_lengths[text_section] - 1)) %
+                               text_section_lengths[text_section];
                     update_text = true;
                 }
                 else if (key_hit(KEY_RIGHT))
                 {
-                    text_key =
-                        (text_key + 1) % text_section_lengths[text_section];
+                    text_key = (text_key + 1) % text_section_lengths[text_section];
                     update_text = true;
                 }
                 else if (key_hit(KEY_UP))
@@ -194,21 +183,18 @@ int text_loop(int script)
                     else
                     {
                         text_section =
-                            ((text_section + (NUM_TEXT_SECTIONS - 1)) %
-                                NUM_TEXT_SECTIONS);
+                            ((text_section + (NUM_TEXT_SECTIONS - 1)) % NUM_TEXT_SECTIONS);
                     }
                     update_text = true;
                 }
                 else if (key_hit(KEY_DOWN))
                 {
-                    text_section = (text_section + (NUM_TEXT_SECTIONS - 1)) %
-                                   NUM_TEXT_SECTIONS;
+                    text_section = (text_section + (NUM_TEXT_SECTIONS - 1)) % NUM_TEXT_SECTIONS;
                     update_text = true;
                 }
                 else if (key_hit(KEY_START) || key_hit(KEY_SELECT))
                 {
-                    instant_text = key_hit(
-                        KEY_START); // instant with start, not with select
+                    instant_text = key_hit(KEY_START); // instant with start, not with select
                     exit = true;
                     tte_erase_line();
                 }
@@ -225,11 +211,9 @@ int text_loop(int script)
                     tte_set_pos(0, 0);
                     tte_erase_rect(0, 0, 240, 160);
                     ptgb_write_debug(debug_charset, "(", true);
-                    ptgb_write_debug(
-                        debug_charset, ptgb::to_string(text_section), true);
+                    ptgb_write_debug(debug_charset, ptgb::to_string(text_section), true);
                     ptgb_write_debug(debug_charset, ", ", true);
-                    ptgb_write_debug(
-                        debug_charset, ptgb::to_string(text_key), true);
+                    ptgb_write_debug(debug_charset, ptgb::to_string(text_key), true);
                     ptgb_write_debug(debug_charset, ")", true);
                     update_text = false;
                 }
@@ -237,15 +221,12 @@ int text_loop(int script)
             }
 
             line_char_index = 0;
-            curr_text = read_dialogue_text_entry(
-                text_key, text_section, diag_entry_text_buffer);
+            curr_text = read_dialogue_text_entry(text_key, text_section, diag_entry_text_buffer);
             char_index = 0;
 
-            if (curr_text != NULL && curr_text[char_index] != 0xFF &&
-                curr_text[char_index] != 0xFB)
+            if (curr_text != NULL && curr_text[char_index] != 0xFF && curr_text[char_index] != 0xFB)
             {
-                ptgb_write_textbox(curr_text, instant_text, true, text_section,
-                    text_key, true);
+                ptgb_write_textbox(curr_text, instant_text, true, text_section, text_key, true);
             }
 
             update_text = true;
@@ -286,8 +267,8 @@ void set_text_exit()
 }
 
 // Implement a version that creates the textbox as well
-int ptgb_write_textbox(const byte *text, bool instant, bool waitForUser,
-    int text_section, int text_key, bool eraseMainBox)
+int ptgb_write_textbox(const byte *text, bool instant, bool waitForUser, int text_section,
+    int text_key, bool eraseMainBox)
 {
     tte_erase_rect(0, 0, H_MAX, V_MAX);
     erase_textbox_tiles();
@@ -298,8 +279,7 @@ int ptgb_write_textbox(const byte *text, bool instant, bool waitForUser,
         load_flex_background(FBG_Fennel, 2);
     }
     int out = ptgb_write(text, instant, 9999,
-        text_box_type_tables[text_section]
-                            [text_key]); // This is kinda silly but it'll work.
+        text_box_type_tables[text_section][text_key]); // This is kinda silly but it'll work.
     if (waitForUser)
     {
 
@@ -319,8 +299,7 @@ int ptgb_write_textbox(const byte *text, bool instant, bool waitForUser,
 // Implement a version that just writes the whole string
 int ptgb_write_simple(const byte *text, bool instant)
 {
-    return ptgb_write(
-        text, instant, 9999, -1); // This is kinda silly but it'll work.
+    return ptgb_write(text, instant, 9999, -1); // This is kinda silly but it'll work.
 }
 
 // Re-implementing TTE's "tte_write" to use the gen 3 character encoding chart
@@ -355,8 +334,7 @@ int ptgb_write(const byte *text, bool instant, int length, int box_type)
 
     while ((ch = *str) != 0xFF && num < length)
     {
-        if (get_frame_count() % 2 == 0 || key_held(KEY_B) || key_held(KEY_A) ||
-            instant)
+        if (get_frame_count() % 2 == 0 || key_held(KEY_B) || key_held(KEY_A) || instant)
         {
             str++;
             switch (ch)
@@ -451,13 +429,12 @@ int ptgb_write_debug(const u16 *charset, const char *text, bool instant)
         else
         {
             u16 utf16_char;
-            // we need to use this conversion function in order to convert char
-            // values >= 0x80 correctly to UTF-16 (which is used by the charset)
+            // we need to use this conversion function in order to convert char values >= 0x80
+            // correctly to UTF-16 (which is used by the charset)
             convert_utf8_to_utf16_char((const u8 *)(text + i), utf16_char);
-            // WARNING: the conversion of the text characters from u8 to u16
-            // done here, is incorrect for every character value >= 0x80. The
-            // character set uses UTF-16 to represent characters. But the input
-            // text is in UTF-8.
+            // WARNING: the conversion of the text characters from u8 to u16 done here, is incorrect
+            // for every character value >= 0x80. The character set uses UTF-16 to represent
+            // characters. But the input text is in UTF-8.
             temp_holding[i] = get_char_from_charset(charset, utf16_char);
         }
     }
@@ -503,40 +480,36 @@ void wait_for_user_to_continue(int right, int bottom)
     // obj_hide(scroll_indicator_gray);
 }
 
-void scroll_text(bool instant, TTC *tc, bool scrollUp, int left, int top,
-    int right, int bottom)
+void scroll_text(bool instant, TTC *tc, bool scrollUp, int left, int top, int right, int bottom)
 {
     int direction = scrollUp ? 1 : -1;
 
     for (int i = 1; i <= tc->font->charH; i++)
     {
         REG_BG3VOFS = i * direction;
-        tte_erase_rect(
-            left, top - tc->font->charH, right, top + (i * direction));
-        if (!instant) // This is somewhat of a silly way to do this - can be
-                      // optimized
+        tte_erase_rect(left, top - tc->font->charH, right, top + (i * direction));
+        if (!instant) // This is somewhat of a silly way to do this - can be optimized
         {
             VBlankIntrWait();
         }
     }
     REG_BG3VOFS = 0;
 
-    // The map starts at tile 0 in the top left, increases by 1 as you go down,
-    // and then loops back at the top.
+    // The map starts at tile 0 in the top left, increases by 1 as you go down, and then loops back
+    // at the top.
     if (scrollUp)
     {
         for (int i = 0; i < 30; i++)
         {
-            tonccpy(&tile_mem[TILESET_TEXT][0 + (i * 20)],
-                &tile_mem[TILESET_TEXT][2 + (i * 20)], 20 * 32);
+            tonccpy(&tile_mem[TILESET_TEXT][0 + (i * 20)], &tile_mem[TILESET_TEXT][2 + (i * 20)],
+                20 * 32);
         }
     }
     else
     {
         for (int i = 29; i >= 0; i--)
         {
-            // Due to the order of tonccpy, we need to store the data in a
-            // temporary buffer
+            // Due to the order of tonccpy, we need to store the data in a temporary buffer
             byte buffer[20 * 32];
             tonccpy(&buffer, &tile_mem[TILESET_TEXT][0 + (i * 20)], 20 * 32);
             tonccpy(&tile_mem[TILESET_TEXT][2 + (i * 20)], &buffer, 20 * 32);
@@ -547,7 +520,6 @@ void scroll_text(bool instant, TTC *tc, bool scrollUp, int left, int top,
         scrollUp ? top : (bottom + tc->font->charH));
 
     tc->cursorY = (scrollUp ? bottom - tc->font->charH
-                            : top); // The newline will trigger after this and
-                                    // move it down a line
+                            : top); // The newline will trigger after this and move it down a line
     tc->cursorX = left;
 }

@@ -313,48 +313,36 @@ enum LinkConnectionError
 
 enum PayloadCommand
 {
-    CMD_NONE = 0x7F, // Using 0x7F instead of -1, since that ends up being 0xFE.
-    CMD_ReloadCurrentBox =
-        0, // no arguments used. Reloads the current box from SRAM. Use this as
-           // the first command byte before performing other commands.
-    CMD_TransferPokemon, // 1st argument = secondary payload size, 2nd argument
-                         // = box that should be transferred from. This command
-                         // uses a secondary payload. The size of this secondary
-                         // payload needs to be declared beforehand. Prior to
-                         // requesting a secondary payload, the program will use
-                         // the second argument to load a specific box from
-                         // SRAM. Box numbers are 0-indexed and range from 0x00
-                         // (box 1) to 0x0B(box 12). This load procedure
-                         // currently cannot be skipped. Once the secondary
-                         // payload arrives, the program will verify its
-                         // integrity and align the payload. Afterwards, it will
-                         // use the information within this payload to remove
-                         // pokémon from the current box. Once all transferred
-                         // pokémon have been removed, the program will save the
-                         // current box.
-    CMD_SoftReset,        // no arguments used. Instantly soft resets the game.
-    CMD_ModifySRAMAccess, // 1st argument = SRAM dis/enable. set to 0x0A to open
-                          // access, set to 0x00 to close access. Second
-                          // argument = SRAM bank. When closing SRAM access, set
-                          // to 0x00. SRAM remains open until closed by this
-                          // command or until closed by
-                          // CMD_TransferPokemon/CMD_ReloadCurrentBox.
-    CMD_RunSecondaryPayload, // 1st argument = secondary payload size. This
-                             // command uses a secondary payload. The size of
-                             // this secondary payload needs to be declared
-                             // beforehand. Once the secondary payload arrives,
-                             // the program will verify its integrity and align
-                             // the payload. Afterwards, it will jump to the
-                             // secondary payload and execute it. IMPORTANT: if
-                             // you want to report an error when executing this
-                             // secondary payload, return with carry flag set.
-                             // IMPORTANT: if you want to report that the
-                             // payload was executed safely, return with carry
-                             // flag reset.*/
-    CMD_ReadDataRequest,     // a request to read data starting from the address
-                             // defined by the 16-bit pointer.
-    CMD_SecondaryPayload =
-        0xFF, // Used whenever a packet is for a secondary payload.
+    CMD_NONE = 0x7F,          // Using 0x7F instead of -1, since that ends up being 0xFE.
+    CMD_ReloadCurrentBox = 0, // no arguments used. Reloads the current box from SRAM. Use this as
+                              // the first command byte before performing other commands.
+    CMD_TransferPokemon, // 1st argument = secondary payload size, 2nd argument = box that should be
+                         // transferred from. This command uses a secondary payload. The size of
+                         // this secondary payload needs to be declared beforehand. Prior to
+                         // requesting a secondary payload, the program will use the second argument
+                         // to load a specific box from SRAM. Box numbers are 0-indexed and range
+                         // from 0x00 (box 1) to 0x0B(box 12). This load procedure currently cannot
+                         // be skipped. Once the secondary payload arrives, the program will verify
+                         // its integrity and align the payload. Afterwards, it will use the
+                         // information within this payload to remove pokémon from the current box.
+                         // Once all transferred pokémon have been removed, the program will save
+                         // the current box.
+    CMD_SoftReset,       // no arguments used. Instantly soft resets the game.
+    CMD_ModifySRAMAccess, // 1st argument = SRAM dis/enable. set to 0x0A to open access, set to 0x00
+                          // to close access. Second argument = SRAM bank. When closing SRAM access,
+                          // set to 0x00. SRAM remains open until closed by this command or until
+                          // closed by CMD_TransferPokemon/CMD_ReloadCurrentBox.
+    CMD_RunSecondaryPayload, // 1st argument = secondary payload size. This command uses a secondary
+                             // payload. The size of this secondary payload needs to be declared
+                             // beforehand. Once the secondary payload arrives, the program will
+                             // verify its integrity and align the payload. Afterwards, it will jump
+                             // to the secondary payload and execute it. IMPORTANT: if you want to
+                             // report an error when executing this secondary payload, return with
+                             // carry flag set. IMPORTANT: if you want to report that the payload
+                             // was executed safely, return with carry flag reset.*/
+    CMD_ReadDataRequest, // a request to read data starting from the address defined by the 16-bit
+                         // pointer.
+    CMD_SecondaryPayload = 0xFF, // Used whenever a packet is for a secondary payload.
 };
 
 #define OUTP_PREAMBLE_INDEX 0
@@ -392,9 +380,8 @@ struct LinkPacket
     byte *secondaryPayloadData = nullptr;
     int secondaryPayloadDataSize = 0;
     byte secondaryPayloadSizeChecksum = 0;
-#define SECONDARY_PAYLOAD_HEADER_SIZE                                          \
-    4 // The size of a secondary packet, not including the data bytes or
-      // checksum
+#define SECONDARY_PAYLOAD_HEADER_SIZE                                                              \
+    4 // The size of a secondary packet, not including the data bytes or checksum
 
     LinkPacket() {};
     LinkPacket(PayloadCommand cmd, byte arg1, byte arg2, u16 addr);
@@ -414,18 +401,16 @@ class LinkConnection
     uint8_t outData = 0xFF;
     uint8_t nextOutData = 0xFF;
 
-    int globalStateCounter =
-        0; // The counter for the total number of bytes sent
-    int subStateCounter =
-        0; // The counter for the total number of bytes sent in this substate
+    int globalStateCounter = 0; // The counter for the total number of bytes sent
+    int subStateCounter = 0;    // The counter for the total number of bytes sent in this substate
 
     int gen = 0;                      // The generation we are trading with
     Language lang = LANGUAGE_UNKNOWN; // The language we are trading with
     Version vers = VERSION_UNKNOWN;   // The version we are trading with
-    GameBoyROM currROM = NO_GB_ROM; // The GameBoy ROM we're communicating with
-    const GB_ROM *pccsROMptr = nullptr; // A pointer to the ROM data for the
-                                        // game we're communicating with
-    byte boxNum = 0;                    // The current box the user has selected
+    GameBoyROM currROM = NO_GB_ROM;   // The GameBoy ROM we're communicating with
+    const GB_ROM *pccsROMptr =
+        nullptr;     // A pointer to the ROM data for the game we're communicating with
+    byte boxNum = 0; // The current box the user has selected
 
     int FF_count = 0;   // The number of 0xFF bytes that have been in a row
     int zero_count = 0; // The number of 0x00 bytes that have been in a row
@@ -446,18 +431,16 @@ class LinkConnection
     LinkPacket *currOutgoingPacket;
     LinkPacket *currIncomingPacket;
     LinkPacket dummyPacket = LinkPacket();
-    byte linkPacketArrIndex =
-        LINK_PACKET_ARRAY_SIZE; // We want to avoid starting at zero, since that
-                                // is a common value sent back in error.
+    byte linkPacketArrIndex = LINK_PACKET_ARRAY_SIZE; // We want to avoid starting at zero, since
+                                                      // that is a common value sent back in error.
     u16 linkPacketDataAddr = 0;
     u16 linkPacketDataStart = 0;
     int linkPacketDataSize = 0;
     byte *outDataArrayPtr;
 
-    bool pauseOnByte = false; // Used for pausing and sending one byte at a time
-    bool pauseOnPacket =
-        false;              // Used for pausing and sending one packet at a time
-    bool skipPrint = false; // Skips printing to the screen
+    bool pauseOnByte = false;   // Used for pausing and sending one byte at a time
+    bool pauseOnPacket = false; // Used for pausing and sending one packet at a time
+    bool skipPrint = false;     // Skips printing to the screen
 
     void setup(const u16 *debug_charset);
     void startConnection(LinkState startState);
@@ -472,19 +455,18 @@ class LinkConnection
     // These are all the Link Commands
     bool LinkCommand_InitalizeConnection(bool waitForCompletion = true);
     bool LinkCommand_ReloadCurrentBox(bool waitForCompletion = true);
-    bool LinkCommand_TransferPokemon(int boxNumber, byte removalArray[],
-        int removalArrayLength, bool waitForCompletion = true);
+    bool LinkCommand_TransferPokemon(
+        int boxNumber, byte removalArray[], int removalArrayLength, bool waitForCompletion = true);
     bool LinkCommand_SoftReset(bool waitForCompletion = true);
     bool LinkCommand_ModifySRAMAccess(
         bool enableSRAM, byte SRAMbank, bool waitForCompletion = true);
     bool LinkCommand_RunSecondaryPayload(
         byte payload[], int payloadLength, bool waitForCompletion = true);
-    bool LinkCommand_ReadMemorySection(u32 dataPointer, byte outArray[],
-        int outArraySize, bool waitForCompletion = true);
+    bool LinkCommand_ReadMemorySection(
+        u32 dataPointer, byte outArray[], int outArraySize, bool waitForCompletion = true);
 
     // Some operations are too long to be done within the IRQ.
-    // So we need to handle them in the main loop instead to avoid data
-    // corruption.
+    // So we need to handle them in the main loop instead to avoid data corruption.
     void handleCartIO();
 
   private:

@@ -55,8 +55,7 @@ int Box_Menu::box_main(PokeBox *box, Version vers)
     obj_unhide(box_select, 0);
     int index = 0;
 
-    namesReader.init(
-        names_decompression_buffer, sizeof(names_decompression_buffer));
+    namesReader.init(names_decompression_buffer, sizeof(names_decompression_buffer));
 
     while (true)
     {
@@ -146,8 +145,7 @@ int Box_Menu::box_main(PokeBox *box, Version vers)
         if (update_pos)
         {
             index = x + (y * BOXMENU_HNUM);
-            obj_set_pos(box_select,
-                BOXMENU_LEFT + (x * (BOXMENU_SPRITE_WIDTH + BOXMENU_HSPACE)),
+            obj_set_pos(box_select, BOXMENU_LEFT + (x * (BOXMENU_SPRITE_WIDTH + BOXMENU_HSPACE)),
                 BOXMENU_TOP + (y * (BOXMENU_SPRITE_HEIGHT + BOXMENU_VSPACE)));
             tte_erase_rect(6, 16, 80, 152);
             GBPokemon *curr_pkmn = box->getGBPokemon(index);
@@ -159,12 +157,9 @@ int Box_Menu::box_main(PokeBox *box, Version vers)
 
                 tte_set_pos(6, 88);
                 if (
-                    // Only the name if the language is either both Japanese or
-                    // neither is Japanese
-                    ((curr_pkmn->getLanguage() == JAPANESE) &&
-                        (PTGB_BUILD_LANGUAGE == JPN_ID)) ||
-                    ((curr_pkmn->getLanguage() != JAPANESE) &&
-                        (PTGB_BUILD_LANGUAGE != JPN_ID)))
+                    // Only the name if the language is either both Japanese or neither is Japanese
+                    ((curr_pkmn->getLanguage() == JAPANESE) && (PTGB_BUILD_LANGUAGE == JPN_ID)) ||
+                    ((curr_pkmn->getLanguage() != JAPANESE) && (PTGB_BUILD_LANGUAGE != JPN_ID)))
                 {
                     curr_pkmn->externalConvertNickname(&pkmnTables, val);
                     ptgb_write_simple(val, true);
@@ -192,8 +187,8 @@ int Box_Menu::box_main(PokeBox *box, Version vers)
                 val[3] = 0x00; // " "
                 val[4] = 0xFF; // endline
                 ptgb_write_simple(val, true);
-                convert_int_to_ptgb_str(curr_pkmn->getLevel(),
-                    val); // Val should never go out of bounds
+                convert_int_to_ptgb_str(
+                    curr_pkmn->getLevel(), val); // Val should never go out of bounds
                 ptgb_write_simple(val, true);
 
                 update_front_box_sprite(curr_pkmn, true);

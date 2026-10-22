@@ -6,11 +6,11 @@ script_obj::script_obj(const script_obj_params &params) : params_(params) {}
 
 bool script_obj::has_text() const
 {
-    // So the thing is: when conditional_index is set, its value will always be
-    // higher than 0 because the way these integer defines have been set up. So
-    // that means that if conditional_index IS 0, then we must have a text entry
-    // index defined instead! We can't base this check on the text_entry_index
-    // itself since unfortunately its value being zero can be legit.
+    // So the thing is: when conditional_index is set, its value will always be higher than 0
+    // because the way these integer defines have been set up.
+    // So that means that if conditional_index IS 0, then we must have a text entry index defined
+    // instead! We can't base this check on the text_entry_index itself since unfortunately its
+    // value being zero can be legit.
     return (params_.conditional_index == 0);
 }
 
