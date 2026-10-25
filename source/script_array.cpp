@@ -696,6 +696,7 @@ bool run_conditional(int index)
             obj_set_pos(gb_flag, 1.5 * 8, 14 * 8);
         
             globalLinkCable.LinkCommand_ReadMemorySection(globalLinkCable.pccsROMptr->wCurrentBoxNum, &globalLinkCable.boxNum, 1);
+            globalLinkCable.boxNum &= 0x7F; // The highest bit of boxNum is set when the box has been changed, so discard it
 
             byte boxDataArray[globalLinkCable.pccsROMptr->box_data_size];
             globalLinkCable.LinkCommand_ReadMemorySection(globalLinkCable.pccsROMptr->wBoxDataStart,
